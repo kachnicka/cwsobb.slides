@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Wide SOBB Hierarchies — Refit Prototype</title>
+<title>Wide SOBB Hierarchies for Ray Tracing of Dynamic Scenes</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="vendor/reveal.css">
 <link rel="stylesheet" href="vendor/white.css">
@@ -12,35 +12,28 @@
 <div class="reveal">
   <div class="slides">
 
-    <!-- 1. Title -->
+    <!-- L0. Title -->
     <section id="slide-title" data-animator="title">
       <div class="title-wrap">
-        <p class="t-line kicker">Research prototype deck</p>
+        <p class="t-line kicker">PG26 · Singapore</p>
         <h1 class="t-line paper-title">Wide SOBB Hierarchies<br>for Ray Tracing of Dynamic Scenes</h1>
         <div class="t-line rule"></div>
         <p class="t-line authors">M.&nbsp;Káčerik&ensp;·&ensp;T.&nbsp;Hlavová&ensp;·&ensp;J.&nbsp;Bittner</p>
         <p class="t-line affil">Czech Technical University in Prague</p>
-        <p class="t-line venue">Venue TBD</p>
+        <p class="t-line venue">Pacific Graphics 2026 · October 6–9, 2026</p>
+      </div>
+      <!-- Outside .t-line: plain CSS placement, no entrance stagger. -->
+      <div class="title-logos">
+        <img src="img/logos/pg26.png" alt="Pacific Graphics 2026">
+        <img src="img/logos/dcgi.png" alt="DCGI">
       </div>
     </section>
 
-    <!-- 1b. Outline (static) -->
-    <section id="slide-outline">
-      <h2 class="slide-head">Outline</h2>
-      <ol class="outline-list">
-        <li><span class="ol-num">01</span>Why tight bounds?</li>
-        <li><span class="ol-num">02</span>Build pipeline — binary to wide SOBB</li>
-        <li><span class="ol-num">03</span>Wide node construction &amp; quantization</li>
-        <li><span class="ol-num">04</span>Choosing the SOBB basis</li>
-        <li><span class="ol-num">05</span>Child ordering — greedy swaps</li>
-        <li><span class="ol-num">06</span>Ordered traversal &amp; early-out</li>
-        <li><span class="ol-num">07</span>Refitting for dynamic scenes</li>
-      </ol>
-    </section>
-
-    <!-- 2. Teaser: AABB vs tight oriented box -->
-    <section id="slide-teaser" data-animator="teaser">
+    <!-- L1. Teaser: AABB vs tight oriented box (reused animator) -->
+    <section id="slide-why" data-animator="teaser">
       <h2 class="slide-head">Why tight bounds?</h2>
+      <!-- Spoken: secondary/incoherent rays dominate 90–98% of trace time;
+           why-now: k-DOP/OBB/DOBB research wave + AMD HW OBBs. -->
       <div class="teaser-row">
         <figure class="teaser-fig">
           <div id="teaser-loose" class="panel"></div>
@@ -53,11 +46,42 @@
       </div>
       <p class="teaser-note">Looser bounds mean more wasted ray–box and ray–triangle tests.</p>
       <span class="fragment"></span>
+      <span class="fragment"></span>
     </section>
 
-    <!-- 3. Build pipeline -->
+    <!-- L2. What is a SOBB? -->
+    <section id="slide-sobb" data-animator="sobbmorph">
+      <h2 class="slide-head">What is a SOBB?</h2>
+      <div class="canvas-row">
+        <div id="morph-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span class="cap">A skewed OBB: three arbitrary slab pairs — same memory as an OBB, same slab intersection test.</span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L3. Fitting SOBBs — EG25 in one slide -->
+    <section id="slide-fit" data-animator="kdopfan">
+      <h2 class="slide-head">Fitting SOBBs — EG25 in one slide</h2>
+      <div class="canvas-row">
+        <div id="kdop-canvas" class="panel"></div>
+      </div>
+      <!-- Two caption lines: line 2 lives in the footer status-row (single
+           line keeps the footer y identical across slides), line 1 sits in
+           an extra flex-none row just above it. -->
+      <div class="cap-extra-row"><span class="cap" id="kdop-promise"></span></div>
+      <div class="cap-extra-row"><span class="cap">Temporary k-DOP per node → pick 3 slab directions → SOBB.</span></div>
+      <div class="status-row"><span class="cap">2.6× faster to build than DiTO-based OBB fitting — comparable or faster tracing.</span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L4. Build pipeline (reused animator) -->
     <section id="slide-pipeline" data-animator="pipeline">
-      <h2 class="slide-head">Build pipeline — four stages</h2>
+      <h2 class="slide-head">Build pipeline — binary to wide SOBB</h2>
       <div class="canvas-row">
         <div id="pipe-canvas" class="panel"></div>
       </div>
@@ -68,9 +92,12 @@
       <span class="fragment"></span>
     </section>
 
-    <!-- 4. Wide node construction & quantization -->
-    <section id="slide-widenode" data-animator="widenode">
-      <h2 class="slide-head">Wide node construction — collapse &amp; quantize</h2>
+    <!-- L5. Wide node construction & quantization (reused animator) -->
+    <section id="slide-quant" data-animator="widenode">
+      <!-- TODO(animator upgrade): missing causal beat — independent child
+           bases → sparse grid → inflated boxes → shared basis fix (sets up
+           slide-basis). -->
+      <h2 class="slide-head">Compression forces the question</h2>
       <div class="canvas-row">
         <div id="wide-canvas" class="panel"></div>
       </div>
@@ -80,9 +107,11 @@
       <span class="fragment"></span>
     </section>
 
-    <!-- 5. SOBB basis -->
-    <section id="slide-sobb" data-animator="sobbasis">
-      <h2 class="slide-head">Choosing the SOBB basis</h2>
+    <!-- L6. SOBB basis (reused animator) -->
+    <section id="slide-basis" data-animator="sobbasis">
+      <!-- TODO(animator upgrade): add comparison strip — C_sum (accurate,
+           slow) / C_union (cheap, overlap-blind) / C_avg proxy (chosen). -->
+      <h2 class="slide-head">One shared basis for eight children</h2>
       <div class="canvas-row">
         <div id="sobb-canvas" class="panel"></div>
       </div>
@@ -93,32 +122,58 @@
       <span class="fragment"></span>
     </section>
 
-    <!-- 6. Greedy swaps -->
-    <section id="slide-swaps" data-animator="swaps">
-      <h2 class="slide-head">Child ordering — greedy swaps</h2>
-      <div class="canvas-row">
-        <div id="swap-canvas" class="panel"></div>
+    <!-- L7. Static scenes results (static bar chart) -->
+    <section id="slide-results">
+      <h2 class="slide-head">Static scenes — secondary rays</h2>
+      <div class="results-col">
+        <div class="bar-chart fragment">
+          <div class="bar-row">
+            <span class="bar-label">San Miguel</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 62.4%"></div><div class="bar-baseline"></div></div>
+            <span class="bar-value">1.06×</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Mammoth</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 67.6%"></div><div class="bar-baseline"></div></div>
+            <span class="bar-value">1.15×</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Crown</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 72.4%"></div><div class="bar-baseline"></div></div>
+            <span class="bar-value">1.23×</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Powerplant</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 84.1%"></div><div class="bar-baseline"></div></div>
+            <span class="bar-value">1.43×</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Bistro ext.</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 85.9%"></div><div class="bar-baseline"></div></div>
+            <span class="bar-value">1.46×</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Hairball</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 90.6%"></div><div class="bar-baseline"></div></div>
+            <span class="bar-value">1.54×</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Bistro int.</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 91.8%"></div><div class="bar-baseline"></div></div>
+            <span class="bar-value">1.56×</span>
+          </div>
+        </div>
+        <!-- Same words as the original one-liner, split into name + headline
+             number spans so the tile reads as a callout band, not a row. -->
+        <div class="sheep-tile fragment"><span class="sheep-name">Sheep (dense fur)</span><span class="sheep-num">up to 9.3×</span></div>
+        <div class="cost-strip fragment"><span>+14–26% build</span><span>·</span><span>+5% memory</span><span>·</span><span>+7–15 bits/node</span></div>
       </div>
-      <div class="status-row"><span id="swap-caption" class="cap"></span></div>
-      <span class="fragment"></span>
-      <span class="fragment"></span>
-      <span class="fragment"></span>
+      <div class="status-row"><span class="cap results-note">Primary rays: +6% avg — coherent rays; secondary dominate the workload. Bars vs compressed AABB BVH8, SOBB8 38-DOP; Sheep callout = best config (56-DOP).</span></div>
     </section>
 
-    <!-- 7. Ordered traversal & early-out -->
-    <section id="slide-ray" data-animator="raytest">
-      <h2 class="slide-head">Ordered traversal &amp; early-out</h2>
-      <div class="canvas-row">
-        <div id="ray-canvas" class="panel"></div>
-      </div>
-      <div class="status-row"><span id="ray-caption" class="cap"></span></div>
-      <span class="fragment"></span>
-      <span class="fragment"></span>
-    </section>
-
-    <!-- 8. Core: refit wave -->
-    <section id="slide-refit" data-animator="refit">
-      <h2 class="slide-head">Refit — preserve topology, re-fit bottom-up</h2>
+    <!-- L8. Refit — the problem (reused animator) -->
+    <section id="slide-refit-problem" data-animator="refit">
+      <h2 class="slide-head">Refit — the problem</h2>
       <div class="refit-row">
         <div id="refit-scene" class="panel"></div>
         <div id="refit-tree" class="panel"></div>
@@ -131,15 +186,249 @@
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
     </section>
 
-    <!-- 9. Closing -->
+    <!-- L9. Refit by geometry — the idea -->
+    <section id="slide-refit-geo" data-animator="refitgeo">
+      <h2 class="slide-head">Refit by geometry — the idea</h2>
+      <div class="canvas-row">
+        <div id="geo-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span class="cap">Propagate triangles, not bounds — one thread per leaf cluster climbs to the root; local test first, atomic min/max only on growth.</span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L10. Refit by geometry — the numbers (static) -->
+    <section id="slide-refit-numbers">
+      <h2 class="slide-head">Refit by geometry — the numbers</h2>
+      <div class="num-cards">
+        <div class="num-card fragment"><div class="num-big">~3×</div><div class="num-small">faster than standard SOBB refit</div></div>
+        <div class="num-card fragment"><div class="num-big">4×</div><div class="num-small">less scratch memory (60 → 15 MB)</div></div>
+        <div class="num-card fragment"><div class="num-big">1.47×</div><div class="num-small">an AABB refit (+0.49 ms)</div></div>
+        <div class="num-card fragment"><div class="num-big">1.42–1.49×</div><div class="num-small">trace speedup retained</div></div>
+        <div class="num-card fragment"><div class="num-big num-big-long">&lt;2% / &lt;3% / ~5%</div><div class="num-small">degradation over 64 frames (small/med/large)</div></div>
+      </div>
+      <div class="video-row"><div class="video-todo wide">VIDEO TODO — animated Bistro w/ live refit-timing HUD (loop)</div></div>
+    </section>
+
+    <!-- L11. Takeaways (static) -->
+    <section id="slide-conclusion">
+      <h2 class="slide-head">Takeaways</h2>
+      <ol class="outline-list">
+        <li class="fragment"><span class="ol-num">01</span><span><span class="tk-lead">Static:</span> 1.07–1.6× faster secondary-ray traversal than state-of-the-art compressed 8-ary AABB BVH (BVH8) — Sheep: 9.3×.</span></li>
+        <li class="fragment"><span class="ol-num">02</span><span><span class="tk-lead">Dynamic:</span> SOBB refit ≈ 1.5× an AABB refit — the trace advantage survives.</span></li>
+        <li class="fragment"><span class="ol-num">03</span><span><span class="tk-lead">Modest costs:</span> +14–26% build, +5% memory, 7–15 bits/node.</span></li>
+      </ol>
+      <div class="concl-footer">
+        <div class="concl-notes">
+          <p class="mentions"><strong>Also in the paper:</strong> greedy-swaps child ordering · basis pruning · k²/k³ candidate exploration · node layout</p>
+          <p class="future"><strong>Next:</strong> two-level TLAS/BLAS, motion-aware slabs.</p>
+        </div>
+        <!-- Same URL as before, restructured: "QR" tag above the address,
+             arrow dropped. Placeholder for the real code image. -->
+        <div class="qr-box"><span class="qr-tag">QR</span><span class="qr-url">dcgi.fel.cvut.cz/projects/cwsobb/</span></div>
+      </div>
+    </section>
+
+    <!-- L12. Closing -->
     <section id="slide-thanks" data-animator="closing">
       <div class="title-wrap">
         <h1 class="t-line paper-title">Thanks</h1>
         <div class="t-line rule"></div>
         <p class="t-line authors">Questions?</p>
+        <div class="video-todo">VIDEO TODO — looping Bistro refit</div>
       </div>
+    </section>
+
+    <!-- L13. Backup — child traversal ordering -->
+    <section id="slide-backup-order">
+      <h2 class="slide-head">Backup — child traversal ordering</h2>
+      <figure class="slide-fig">
+        <!-- Static 2-panel chart, Table 3 averages relative to random order.
+             Scale 0.8–1.5 shared; dashed hairline = random baseline 1.0;
+             greedy-swaps group keyed with a blue tick (ours). -->
+        <svg viewBox="0 0 1090 480" width="100%" height="100%" role="img" aria-label="Ordering methods vs build cost, AABB8 and SOBB8, relative to random order">
+          <title>Child traversal ordering, relative to random</title>
+          <rect x="337" y="9" width="16" height="10" class="svg-bar-build"/>
+          <text x="360" y="18" class="svg-faint">build vs random</text>
+          <rect x="466" y="9" width="16" height="10" class="svg-bar-perf"/>
+          <text x="489" y="18" class="svg-faint">secondary MRps vs random</text>
+          <line x1="655" y1="14" x2="679" y2="14" class="svg-baseline"/>
+          <text x="686" y="18" class="svg-faint">1.0 = random</text>
+
+          <text x="290" y="56" text-anchor="middle" class="svg-panel-title">AABB8</text>
+          <text x="800" y="56" text-anchor="middle" class="svg-panel-title">SOBB8 (38-DOP)</text>
+
+          <!-- parity baselines (1.0 / 0.7 of the 400px panel scale) -->
+          <line x1="174.3" y1="88" x2="174.3" y2="436" class="svg-baseline"/>
+          <line x1="684.3" y1="88" x2="684.3" y2="436" class="svg-baseline"/>
+          <text x="174.3" y="452" text-anchor="middle" class="svg-faint">1.0</text>
+          <text x="684.3" y="452" text-anchor="middle" class="svg-faint">1.0</text>
+
+          <!-- AABB8 panel -->
+          <text x="60" y="96" class="svg-lbl">Octant (auction)</text>
+          <rect x="60" y="104" width="160.0" height="16" class="svg-bar-build"/>
+          <rect x="60" y="126" width="342.9" height="16" class="svg-bar-perf"/>
+          <text x="227.0" y="116" class="svg-val">1.08</text>
+          <text x="409.9" y="138" class="svg-val">1.40</text>
+
+          <rect x="44" y="176" width="9" height="9" class="svg-key"/>
+          <text x="60" y="184" class="svg-lbl svg-lbl-strong">Octant (greedy swaps)</text>
+          <rect x="60" y="192" width="125.7" height="16" class="svg-bar-build"/>
+          <rect x="60" y="214" width="342.9" height="16" class="svg-bar-perf"/>
+          <text x="192.7" y="204" class="svg-val">1.02</text>
+          <text x="409.9" y="226" class="svg-val">1.40</text>
+
+          <text x="60" y="272" class="svg-lbl">Closest two</text>
+          <rect x="60" y="280" width="114.3" height="16" class="svg-bar-build"/>
+          <rect x="60" y="302" width="337.1" height="16" class="svg-bar-perf"/>
+          <text x="181.3" y="292" class="svg-val">1.00</text>
+          <text x="404.1" y="314" class="svg-val">1.39</text>
+
+          <text x="60" y="360" class="svg-lbl svg-lbl-soft">Random</text>
+          <rect x="60" y="368" width="114.3" height="16" class="svg-bar-build"/>
+          <rect x="60" y="390" width="114.3" height="16" class="svg-bar-perf"/>
+          <text x="181.3" y="380" class="svg-val">1.00</text>
+          <text x="181.3" y="402" class="svg-val">1.00</text>
+
+          <!-- SOBB8 panel -->
+          <text x="570" y="96" class="svg-lbl">Octant (auction)</text>
+          <rect x="570" y="104" width="148.6" height="16" class="svg-bar-build"/>
+          <rect x="570" y="126" width="302.9" height="16" class="svg-bar-perf"/>
+          <text x="725.6" y="116" class="svg-val">1.06</text>
+          <text x="879.9" y="138" class="svg-val">1.33</text>
+
+          <rect x="554" y="176" width="9" height="9" class="svg-key"/>
+          <text x="570" y="184" class="svg-lbl svg-lbl-strong">Octant (greedy swaps)</text>
+          <rect x="570" y="192" width="120.0" height="16" class="svg-bar-build"/>
+          <rect x="570" y="214" width="302.9" height="16" class="svg-bar-perf"/>
+          <text x="697.0" y="204" class="svg-val">1.01</text>
+          <text x="879.9" y="226" class="svg-val">1.33</text>
+
+          <text x="570" y="272" class="svg-lbl">Closest two</text>
+          <rect x="570" y="280" width="114.3" height="16" class="svg-bar-build"/>
+          <rect x="570" y="302" width="308.6" height="16" class="svg-bar-perf"/>
+          <text x="691.3" y="292" class="svg-val">1.00</text>
+          <text x="885.6" y="314" class="svg-val">1.34</text>
+
+          <text x="570" y="360" class="svg-lbl svg-lbl-soft">Random</text>
+          <rect x="570" y="368" width="114.3" height="16" class="svg-bar-build"/>
+          <rect x="570" y="390" width="114.3" height="16" class="svg-bar-perf"/>
+          <text x="691.3" y="380" class="svg-val">1.00</text>
+          <text x="691.3" y="402" class="svg-val">1.00</text>
+        </svg>
+      </figure>
+      <div class="status-row"><span class="cap">Ordering methods vs build cost — greedy-swaps ≈ auction at a fraction of build cost; closest-two-hits best for SOBB runtime.</span></div>
+    </section>
+
+    <!-- L14. Backup — node memory layout -->
+    <section id="slide-backup-layout">
+      <h2 class="slide-head">Backup — node memory layout</h2>
+      <figure class="slide-fig">
+        <!-- Schematic segment map of one BVH8 node. Relative widths only;
+             ruler endpoints keep byte anchors (0 / ≈128 B) without claiming
+             exact segment boundaries. -->
+        <svg viewBox="0 0 1090 420" width="100%" height="100%" role="img" aria-label="Schematic memory map of one BVH8 node with 4 extra bytes for the shared SOBB basis">
+          <title>BVH8 node memory layout (schematic)</title>
+          <text x="1020" y="32" text-anchor="end" class="svg-faint">schematic — relative widths</text>
+
+          <rect x="70" y="250" width="100" height="64" class="svg-seg svg-seg-head"/>
+          <rect x="170" y="250" width="520" height="64" class="svg-seg"/>
+          <rect x="690" y="250" width="280" height="64" class="svg-seg"/>
+          <rect x="970" y="250" width="46" height="64" class="svg-seg-basis"/>
+
+          <!-- 8 child-bound cells -->
+          <line x1="235" y1="250" x2="235" y2="314" class="svg-cell-sep"/>
+          <line x1="300" y1="250" x2="300" y2="314" class="svg-cell-sep"/>
+          <line x1="365" y1="250" x2="365" y2="314" class="svg-cell-sep"/>
+          <line x1="430" y1="250" x2="430" y2="314" class="svg-cell-sep"/>
+          <line x1="495" y1="250" x2="495" y2="314" class="svg-cell-sep"/>
+          <line x1="560" y1="250" x2="560" y2="314" class="svg-cell-sep"/>
+          <line x1="625" y1="250" x2="625" y2="314" class="svg-cell-sep"/>
+          <text x="202.5" y="288" text-anchor="middle" class="svg-faint">c0</text>
+          <text x="267.5" y="288" text-anchor="middle" class="svg-faint">c1</text>
+          <text x="332.5" y="288" text-anchor="middle" class="svg-faint">c2</text>
+          <text x="397.5" y="288" text-anchor="middle" class="svg-faint">c3</text>
+          <text x="462.5" y="288" text-anchor="middle" class="svg-faint">c4</text>
+          <text x="527.5" y="288" text-anchor="middle" class="svg-faint">c5</text>
+          <text x="592.5" y="288" text-anchor="middle" class="svg-faint">c6</text>
+          <text x="657.5" y="288" text-anchor="middle" class="svg-faint">c7</text>
+
+          <text x="120" y="228" text-anchor="middle" class="svg-lbl">base node header</text>
+          <text x="430" y="228" text-anchor="middle" class="svg-lbl">8× quantized child bounds</text>
+          <text x="830" y="228" text-anchor="middle" class="svg-lbl">child offsets + flags</text>
+
+          <!-- byte anchors only — no fake interior scale -->
+          <line x1="70" y1="314" x2="70" y2="322" class="svg-tick"/>
+          <line x1="970" y1="314" x2="970" y2="322" class="svg-tick"/>
+          <text x="70" y="336" text-anchor="start" class="svg-faint">0</text>
+          <text x="966" y="336" text-anchor="end" class="svg-faint">≈128 B</text>
+
+          <!-- basis callout -->
+          <line x1="993" y1="314" x2="993" y2="336" class="svg-tick"/>
+          <text x="993" y="356" text-anchor="middle" class="svg-lbl">+4 B shared SOBB basis</text>
+          <text x="993" y="376" text-anchor="middle" class="svg-faint">7–15 extra bits per node</text>
+        </svg>
+      </figure>
+      <div class="status-row"><span class="cap">Ylitie-style BVH8 layout + 4 bytes for the shared SOBB basis.</span></div>
+    </section>
+
+    <!-- L15. Backup — refit degradation -->
+    <section id="slide-backup-degradation">
+      <h2 class="slide-head">Backup — refit degradation</h2>
+      <figure class="slide-fig">
+        <!-- Qualitative shape consistent with the paper's reported endpoints
+             (medium movement: AABB −3%, SOBB −2.5%, SOBB starting at the
+             1.46× trace ratio); no per-frame data in-repo, marked "≈" at
+             the endpoint labels. y domain 0.85–1.55 relative trace perf. -->
+        <svg viewBox="0 0 1090 440" width="100%" height="100%" role="img" aria-label="Relative trace performance declining over 64 frames without rebuild, SOBB staying above AABB">
+          <title>Refit degradation over 64 frames (medium movement)</title>
+
+          <line x1="90" y1="113" x2="1010" y2="113" class="svg-grid"/>
+          <line x1="90" y1="307" x2="1010" y2="307" class="svg-grid"/>
+          <line x1="90" y1="356" x2="1010" y2="356" class="svg-grid"/>
+          <text x="80" y="117" text-anchor="end" class="svg-faint">1.4×</text>
+          <text x="80" y="311" text-anchor="end" class="svg-faint">1.0×</text>
+          <text x="80" y="360" text-anchor="end" class="svg-faint">0.9×</text>
+
+          <line x1="90" y1="380" x2="1010" y2="380" class="svg-axis"/>
+          <line x1="90" y1="380" x2="90" y2="386" class="svg-tick"/>
+          <line x1="320" y1="380" x2="320" y2="386" class="svg-tick"/>
+          <line x1="550" y1="380" x2="550" y2="386" class="svg-tick"/>
+          <line x1="780" y1="380" x2="780" y2="386" class="svg-tick"/>
+          <line x1="1010" y1="380" x2="1010" y2="386" class="svg-tick"/>
+          <text x="90" y="402" text-anchor="middle" class="svg-faint">0</text>
+          <text x="320" y="402" text-anchor="middle" class="svg-faint">16</text>
+          <text x="550" y="402" text-anchor="middle" class="svg-faint">32</text>
+          <text x="780" y="402" text-anchor="middle" class="svg-faint">48</text>
+          <text x="1010" y="402" text-anchor="middle" class="svg-faint">64</text>
+          <text x="550" y="426" text-anchor="middle" class="svg-faint">frame</text>
+
+          <line x1="110" y1="10" x2="134" y2="10" class="svg-line-aabb"/>
+          <text x="142" y="14" class="svg-lbl">AABB BVH8</text>
+          <line x1="110" y1="34" x2="134" y2="34" class="svg-line-sobb"/>
+          <text x="142" y="38" class="svg-lbl">SOBB BVH8</text>
+          <text x="1000" y="62" text-anchor="end" class="svg-faint">medium movement</text>
+
+          <polyline class="svg-line-aabb" points="90,307.0 147.5,307.5 205,308.9 262.5,309.4 320,310.9 377.5,311.3 435,312.8 492.5,313.3 550,314.7 607.5,315.2 665,316.7 722.5,317.7 780,318.7 837.5,319.6 895,320.6 952.5,321.1 1010,321.6"/>
+          <polyline class="svg-line-sobb" points="90,83.7 147.5,82.7 205,84.7 262.5,86.6 320,85.7 377.5,88.6 435,89.5 492.5,91.5 550,90.5 607.5,92.9 665,94.4 722.5,95.4 780,97.3 837.5,98.3 895,100.2 952.5,101.2 1010,101.7"/>
+
+          <circle cx="90" cy="307.0" r="3.5" class="svg-dot-aabb"/>
+          <circle cx="1010" cy="321.6" r="3.5" class="svg-dot-aabb"/>
+          <circle cx="90" cy="83.7" r="3.5" class="svg-dot-sobb"/>
+          <circle cx="1010" cy="101.7" r="3.5" class="svg-dot-sobb"/>
+
+          <text x="1018" y="106" class="svg-end-sobb">≈1.42×</text>
+          <text x="1018" y="326" class="svg-end-aabb">≈0.97×</text>
+        </svg>
+      </figure>
+      <div class="status-row"><span class="cap">Relative trace performance over 64 frames without rebuild (medium movement).</span></div>
     </section>
 
   </div>
@@ -152,9 +441,10 @@
 <script src="js/pipeline.js"></script>
 <script src="js/widenode.js"></script>
 <script src="js/sobbbasis.js"></script>
-<script src="js/swaps.js"></script>
-<script src="js/raytest.js"></script>
 <script src="js/refit.js"></script>
+<script src="js/sobbmorph.js"></script>
+<script src="js/kdopfan.js"></script>
+<script src="js/refitgeo.js"></script>
 <script src="js/deck.js"></script>
 </body>
 </html>

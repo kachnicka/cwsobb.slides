@@ -61,7 +61,7 @@
     'A wide node packs up to 8 child boxes into one compressed record.',
     'Interior collapse: 7 binary nodes become one 8-ary node.',
     'Each node defines a local quantization grid over its bounds.',
-    'Child boxes snap OUTWARD to grid cells — conservative, never smaller.'
+    'Child boxes snap OUTWARD to grid cells — conservative, never smaller. With 8 different bases, one grid must cover mismatched orientations.'
   ];
 
   /* ==================== pure math (exported for tests) ==================== */

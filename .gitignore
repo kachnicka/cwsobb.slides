@@ -1,2 +1,5 @@
 .slim
 .paper
+
+# deepwork state (git-local, OpenCode-readable via .ignore negation)
+.slim/deepwork/

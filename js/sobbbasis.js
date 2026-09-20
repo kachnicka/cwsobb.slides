@@ -41,7 +41,7 @@
     'Merge child k-DOPs into one averaged proxy.',
     'Rotate the proxy through candidate bases.',
     'Lock the lowest-cost basis.',
-    'Fit tight skewed boxes to every child in that basis.'
+    'Fit tight skewed boxes to every child in that basis — cheaper than summing children, smarter than the union.'
   ];
 
   /* ==================== pure math ==================== */

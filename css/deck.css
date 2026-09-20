@@ -250,11 +250,20 @@
   gap: 26px;
 }
 
+/* Takeaway numbering picks up the accent — same cascade voice as the
+   payoff-card numbers on L10. */
 .ol-num {
   font-size: 16px;
-  color: var(--ink-faint);
+  color: var(--blue);
+  font-weight: 650;
   font-variant-numeric: tabular-nums;
   min-width: 34px;
+}
+
+/* Lead phrase of each takeaway carries the weight; the number payload
+   stays regular so the claims scan fast. */
+.tk-lead {
+  font-weight: 650;
 }
 
 /* Fixed slide chrome template */
@@ -310,6 +319,17 @@
   flex: none;
 }
 
+/* Secondary caption line stacked above the footer status-row (same look,
+   deliberately NOT a .status-row so the verify harness footer anchor —
+   the first .status-row in the section — stays single-line everywhere). */
+.cap-extra-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+  min-height: 26px;
+  flex: none;
+}
+
 .cap {
   font-size: 18px;
   color: var(--ink);
@@ -330,3 +350,378 @@
 .svg-side-label{ fill: var(--ink-faint); font-size: 13px; letter-spacing: 0.08em; }
 .svg-dot       { fill: var(--ink); }
 .svg-cloud-box { fill: none; stroke-width: 1.6; }
+
+/* Static chart SVGs (L13–L15 backups) — no GSAP here, so CSS rules on
+   paint props are safe (the attribute-only rule applies to animated
+   slides). viewBox units map roughly 1:1 onto the logical space at 1280. */
+
+.svg-lbl         { fill: var(--ink); font-size: 15px; }
+.svg-lbl-strong  { font-weight: 650; }
+.svg-lbl-soft    { fill: var(--ink-soft); }
+.svg-val         { fill: var(--ink-soft); font-size: 13px; font-variant-numeric: tabular-nums; }
+.svg-faint       { fill: var(--ink-faint); font-size: 12px; }
+.svg-panel-title { fill: var(--ink); font-size: 18px; font-weight: 650; }
+
+/* L13 ordering chart */
+.svg-bar-build { fill: #b9bfca; }
+.svg-bar-perf  { fill: var(--blue); }
+.svg-key       { fill: var(--blue); }
+.svg-baseline  { stroke: var(--ink-faint); stroke-width: 1.5; stroke-dasharray: 5 4; }
+
+/* L14 memory map */
+.svg-seg       { fill: #f4f6f9; stroke: var(--ink-soft); stroke-width: 1.2; }
+.svg-seg-head  { fill: #e9edf3; }
+.svg-seg-basis { fill: #e7effd; stroke: var(--blue); stroke-width: 1.5; }
+.svg-cell-sep  { stroke: var(--hairline); stroke-width: 1; }
+.svg-tick      { stroke: var(--ink-faint); stroke-width: 1; }
+
+/* L15 degradation chart */
+.svg-grid      { stroke: var(--hairline); stroke-width: 1; stroke-dasharray: 3 4; }
+.svg-axis      { stroke: var(--ink-faint); stroke-width: 1; }
+.svg-line-aabb { fill: none; stroke: var(--ink-soft); stroke-width: 2.2; stroke-linejoin: round; }
+.svg-line-sobb { fill: none; stroke: var(--blue); stroke-width: 3; stroke-linejoin: round; }
+.svg-dot-aabb  { fill: var(--ink-soft); }
+.svg-dot-sobb  { fill: var(--blue); }
+.svg-end-aabb  { fill: var(--ink-soft); font-size: 13px; font-variant-numeric: tabular-nums; }
+.svg-end-sobb  { fill: var(--blue); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ---------- Title slide logos ---------- */
+
+/* Absolutely positioned inside the pinned 1280x720 section (sections are
+   Reveal-managed containing blocks), one logo per bottom corner, inset to
+   the same 95px content gutter as every other slide. Outside the .t-line
+   set — the GSAP entrance stagger deliberately excludes them, so they get
+   their own quiet CSS-only fade-in timed to land after the title lines.
+   Opacity only, no layout motion. */
+.title-logos {
+  position: absolute;
+  left: 95px;
+  right: 95px;
+  bottom: 42px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  opacity: 0;
+  animation: title-logos-in 0.8s ease 0.9s forwards;
+}
+
+.title-logos img {
+  height: 54px;
+  width: auto;
+  opacity: 0.7;
+}
+
+@keyframes title-logos-in {
+  to { opacity: 1; }
+}
+
+/* ---------- Animator placeholder panels ---------- */
+
+/* Intentionally unfinished but tidy: paper tint inside a quiet dashed
+   hairline, so the slot reads as "reserved" rather than "broken". */
+.todo-panel {
+  border: 1.5px dashed var(--hairline);
+  background: #fbfcfe;
+  color: var(--ink-faint);
+  font-size: 18px;
+  text-align: center;
+  padding: 0 64px;
+  line-height: 1.55;
+}
+
+/* ---------- Paper-figure slides (static figures) ---------- */
+
+.slide-fig {
+  flex: 1;
+  min-height: 0;
+  margin: 0 95px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-fig img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  /* Paper-figure presence: 1px hairline keyline + soft lift. box-shadow
+     has zero layout effect, so contain sizing/overflow are untouched. */
+  box-shadow: 0 0 0 1px var(--hairline), 0 10px 28px rgba(20, 22, 26, 0.08);
+}
+
+/* ---------- Results: bar chart (L7) ---------- */
+
+.results-col {
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  margin: 0 95px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 22px;
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.bar-label {
+  flex: none;
+  width: 128px;
+  text-align: right;
+  font-size: 18px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* Light trough behind each bar: the bar lengths read against a full-width
+   scale, like a plotted paper figure. */
+.bar-track {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  position: relative;
+  background: #f3f5f9;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--blue);
+}
+
+/* 1.0 parity axis: 1.0 / 1.7 of full track width. Repeated in EVERY row's
+   track with a 6px overhang top and bottom — rows sit 12px apart, so the
+   dashes meet and read as one continuous axis crossing the chart. The
+   "1.0×" tick label is drawn once, above the first row only. */
+.bar-baseline {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: 58.8%;
+  border-left: 1.5px dashed var(--ink-faint);
+}
+
+.bar-row:first-child .bar-baseline::after {
+  content: "1.0×";
+  position: absolute;
+  top: -19px;
+  left: -12px;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.bar-value {
+  flex: none;
+  width: 60px;
+  font-size: 18px;
+  font-weight: 550;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Outlier callout band, not a list item: full chart width, red keyline on
+   the left edge, pale red wash. Name sits left, headline number right. */
+.sheep-tile {
+  flex: none;
+  align-self: stretch;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  border-left: 3px solid var(--red);
+  background: rgba(217, 54, 54, 0.05);
+  padding: 12px 18px;
+}
+
+.sheep-name {
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.sheep-num {
+  font-size: 22px;
+  font-weight: 650;
+  color: var(--red);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Quiet cost footer: middot-separated footnote, not a button row. */
+.cost-strip {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  font-size: 15px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Specificity lifted over white.css `.reveal p`-adjacent caption styling:
+   small gray footnote in the shared status-row footer slot. */
+.reveal .slides .results-note {
+  font-size: 14px;
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+/* ---------- Number cards (L10) ---------- */
+
+.num-cards {
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  margin: 0 95px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* Climax slide: five 236px stat cards (px on content chrome is fine — the
+   no-px rule covers canvas hosts). Number + label anchor to the shared top
+   horizon, so mixed 1–3-line captions never shift the numbers; spare space
+   pools uniformly at the card floor. */
+.num-card {
+  flex: 1;
+  min-width: 0;
+  height: 236px;
+  border: 1px solid var(--hairline);
+  border-top: 3px solid var(--blue);
+  box-sizing: border-box;
+  padding: 24px 8px 18px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 36px + tight tracking keeps the longest value ("1.42–1.49×", ~5em wide)
+   inside the ~188px inner card width across Helvetica/Arial/Segoe metrics. */
+.num-big {
+  font-size: 36px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--blue);
+  white-space: nowrap;
+}
+
+/* Long multi-part values ("<2% / <3% / ~5%", ~7.5em) would spill at 36px,
+   so they drop to 24px (~180px worst-case metrics) — same color/weight/
+   nowrap, same top horizon and label position as every other card. */
+.num-big.num-big-long {
+  font-size: 24px;
+  letter-spacing: -0.01em;
+}
+
+.num-small {
+  font-size: 15px;
+  color: var(--ink-soft);
+  line-height: 1.35;
+  margin-top: 14px;
+}
+
+/* ---------- Video placeholders (L10, L12) ---------- */
+
+.video-row {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+/* Reserved-but-recessive: paper tint + quiet dashed hairline + small
+   letterspaced label. Clearly a slot, clearly not content yet. */
+.video-todo {
+  width: 340px;
+  aspect-ratio: 16 / 9;
+  box-sizing: border-box;
+  border: 1.5px dashed var(--hairline);
+  background: #fbfcfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: var(--ink-faint);
+  padding: 0 20px;
+  margin-top: 20px;
+}
+
+.video-todo.wide {
+  width: 460px;
+  margin-top: 0;
+}
+
+/* ---------- Conclusion (L11) ---------- */
+
+/* Lifts the footer content clear of the 8px progress bar and gives the
+   QR slot breathing room (this row is not a harness footer anchor). */
+.concl-footer {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  box-sizing: border-box;
+  margin: 12px 95px 24px;
+}
+
+/* Specificity lifted over white.css `.reveal p` (font-size/margin).
+   text-align must be explicit: reveal.css centers all slide text by
+   viewport inheritance, and a footer blob of centered prose looks lost. */
+.reveal .slides .concl-notes p {
+  font-size: 15px;
+  margin: 4px 0;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.reveal .slides .concl-notes p strong {
+  font-weight: 650;
+}
+
+.mentions { color: var(--ink-faint); }
+.future   { color: var(--ink-soft); }
+
+/* Square placeholder slot, same dashed-placeholder voice as .todo-panel /
+   .video-todo: paper tint, dashed hairline, micro caps tag above the URL. */
+.qr-box {
+  flex: none;
+  width: 112px;
+  height: 112px;
+  box-sizing: border-box;
+  border: 1.5px dashed var(--hairline);
+  background: #fbfcfe;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  text-align: center;
+  padding: 10px;
+}
+
+.qr-tag {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
+}
+
+.qr-url {
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: var(--ink-faint);
+  word-break: break-all;
+}
