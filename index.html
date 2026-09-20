@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wide SOBB Hierarchies — Refit Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="vendor/reveal.css">
+<link rel="stylesheet" href="vendor/white.css">
+<link rel="stylesheet" href="css/deck.css">
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+
+    <!-- 1. Title -->
+    <section id="slide-title" data-animator="title">
+      <div class="title-wrap">
+        <p class="t-line kicker">Research prototype deck</p>
+        <h1 class="t-line paper-title">Wide SOBB Hierarchies<br>for Ray Tracing of Dynamic Scenes</h1>
+        <div class="t-line rule"></div>
+        <p class="t-line authors">M.&nbsp;Káčerik&ensp;·&ensp;T.&nbsp;Hlavová&ensp;·&ensp;J.&nbsp;Bittner</p>
+        <p class="t-line affil">Czech Technical University in Prague</p>
+        <p class="t-line venue">Venue TBD</p>
+      </div>
+    </section>
+
+    <!-- 1b. Outline (static) -->
+    <section id="slide-outline">
+      <h2 class="slide-head">Outline</h2>
+      <ol class="outline-list">
+        <li><span class="ol-num">01</span>Why tight bounds?</li>
+        <li><span class="ol-num">02</span>Build pipeline — binary to wide SOBB</li>
+        <li><span class="ol-num">03</span>Wide node construction &amp; quantization</li>
+        <li><span class="ol-num">04</span>Choosing the SOBB basis</li>
+        <li><span class="ol-num">05</span>Child ordering — greedy swaps</li>
+        <li><span class="ol-num">06</span>Ordered traversal &amp; early-out</li>
+        <li><span class="ol-num">07</span>Refitting for dynamic scenes</li>
+      </ol>
+    </section>
+
+    <!-- 2. Teaser: AABB vs tight oriented box -->
+    <section id="slide-teaser" data-animator="teaser">
+      <h2 class="slide-head">Why tight bounds?</h2>
+      <div class="teaser-row">
+        <figure class="teaser-fig">
+          <div id="teaser-loose" class="panel"></div>
+          <figcaption>axis-aligned box&ensp;<span class="area-tag" id="area-loose"></span></figcaption>
+        </figure>
+        <figure class="teaser-fig">
+          <div id="teaser-tight" class="panel"></div>
+          <figcaption>oriented box&ensp;<span class="area-tag" id="area-tight"></span></figcaption>
+        </figure>
+      </div>
+      <p class="teaser-note">Looser bounds mean more wasted ray–box and ray–triangle tests.</p>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- 3. Build pipeline -->
+    <section id="slide-pipeline" data-animator="pipeline">
+      <h2 class="slide-head">Build pipeline — four stages</h2>
+      <div class="canvas-row">
+        <div id="pipe-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="pipe-caption" class="cap"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- 4. Wide node construction & quantization -->
+    <section id="slide-widenode" data-animator="widenode">
+      <h2 class="slide-head">Wide node construction — collapse &amp; quantize</h2>
+      <div class="canvas-row">
+        <div id="wide-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="wide-caption" class="cap"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- 5. SOBB basis -->
+    <section id="slide-sobb" data-animator="sobbasis">
+      <h2 class="slide-head">Choosing the SOBB basis</h2>
+      <div class="canvas-row">
+        <div id="sobb-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="sobb-caption" class="cap"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- 6. Greedy swaps -->
+    <section id="slide-swaps" data-animator="swaps">
+      <h2 class="slide-head">Child ordering — greedy swaps</h2>
+      <div class="canvas-row">
+        <div id="swap-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="swap-caption" class="cap"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- 7. Ordered traversal & early-out -->
+    <section id="slide-ray" data-animator="raytest">
+      <h2 class="slide-head">Ordered traversal &amp; early-out</h2>
+      <div class="canvas-row">
+        <div id="ray-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="ray-caption" class="cap"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- 8. Core: refit wave -->
+    <section id="slide-refit" data-animator="refit">
+      <h2 class="slide-head">Refit — preserve topology, re-fit bottom-up</h2>
+      <div class="refit-row">
+        <div id="refit-scene" class="panel"></div>
+        <div id="refit-tree" class="panel"></div>
+      </div>
+      <div class="refit-status">
+        <span class="legend"><span class="sw sw-stale"></span>stale bound&emsp;<span class="sw sw-refit"></span>re-fitted bound</span>
+        <span id="refit-caption" class="refit-caption"></span>
+      </div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- 9. Closing -->
+    <section id="slide-thanks" data-animator="closing">
+      <div class="title-wrap">
+        <h1 class="t-line paper-title">Thanks</h1>
+        <div class="t-line rule"></div>
+        <p class="t-line authors">Questions?</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="vendor/reveal.js"></script>
+<script src="vendor/gsap.min.js"></script>
+<script src="js/common.js"></script>
+<script src="js/teaser.js"></script>
+<script src="js/pipeline.js"></script>
+<script src="js/widenode.js"></script>
+<script src="js/sobbbasis.js"></script>
+<script src="js/swaps.js"></script>
+<script src="js/raytest.js"></script>
+<script src="js/refit.js"></script>
+<script src="js/deck.js"></script>
+</body>
+</html>

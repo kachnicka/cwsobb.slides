@@ -1,0 +1,232 @@
+/* Deck theme — clean "paper figure comes alive" look.
+   Palette: ink + one blue + one red, thin lines, generous whitespace. */
+
+:root {
+  --ink: #14161a;
+  --ink-soft: #5b6068;
+  --ink-faint: #9aa1ad;
+  --hairline: #d4d8e0;
+  --blue: #1f6fe5;
+  --red: #d93636;
+  --paper: #ffffff;
+  --r-background-color: #ffffff;
+  --r-main-color: var(--ink);
+  --r-heading-color: var(--ink);
+  --r-main-font: "Helvetica Neue", Helvetica, "Segoe UI", Arial, sans-serif;
+  --r-heading-font: "Helvetica Neue", Helvetica, "Segoe UI", Arial, sans-serif;
+  --r-heading-text-transform: none;
+  --r-heading-font-weight: 650;
+  --r-heading-letter-spacing: 0;
+  --r-link-color: var(--blue);
+}
+
+.reveal {
+  font-family: var(--r-main-font);
+  color: var(--ink);
+}
+
+.reveal h1, .reveal h2, .reveal h3 {
+  font-family: var(--r-heading-font);
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+/* Thin progress bar in accent blue */
+.reveal .progress { height: 3px; color: var(--blue); }
+
+/* ---------- Title slide ---------- */
+
+.title-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.kicker {
+  font-size: 20px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 6px;
+}
+
+.paper-title {
+  font-size: 54px;
+  line-height: 1.15;
+  font-weight: 700;
+  margin: 0;
+}
+
+.rule {
+  width: 220px;
+  height: 2px;
+  background: var(--ink);
+  transform-origin: center;
+  margin: 10px 0;
+}
+
+.authors {
+  font-size: 26px;
+  color: var(--ink);
+  margin: 0;
+}
+
+.affil, .venue {
+  font-size: 20px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.venue { color: var(--ink-faint); }
+
+/* ---------- Content slides ---------- */
+
+.slide-head {
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  margin: 0 0 18px;
+  padding-bottom: 10px;
+  border-bottom: 1.5px solid var(--ink);
+  text-align: left;
+}
+
+.panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel svg { display: block; }
+
+/* Teaser */
+
+.teaser-row {
+  display: flex;
+  gap: 48px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.teaser-fig { margin: 0; text-align: center; }
+
+.teaser-fig figcaption {
+  font-size: 18px;
+  color: var(--ink-soft);
+  margin-top: 10px;
+}
+
+.area-tag {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 1px 8px;
+}
+
+.teaser-note {
+  font-size: 19px;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: 20px 0 0;
+}
+
+/* Refit */
+
+.refit-row {
+  display: flex;
+  gap: 36px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.refit-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 14px;
+  font-size: 18px;
+}
+
+.legend { color: var(--ink-soft); white-space: nowrap; }
+
+.sw {
+  display: inline-block;
+  width: 26px;
+  height: 0;
+  vertical-align: middle;
+  margin: 0 8px 3px 0;
+  border-top: 2px solid var(--blue);
+}
+
+.sw-stale { border-top: 2px dashed var(--red); }
+
+.refit-caption {
+  color: var(--ink);
+  font-weight: 550;
+  text-align: right;
+  min-height: 24px;
+}
+
+/* Outline slide */
+
+.outline-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  text-align: left;
+}
+
+.outline-list li {
+  font-size: 26px;
+  color: var(--ink);
+  padding: 9px 0;
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  align-items: baseline;
+  gap: 26px;
+}
+
+.ol-num {
+  font-size: 16px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  min-width: 34px;
+}
+
+/* Generic animated-slide canvas + caption rows */
+
+.canvas-row {
+  display: flex;
+  justify-content: center;
+}
+
+.status-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+  min-height: 26px;
+}
+
+.cap {
+  font-size: 18px;
+  color: var(--ink);
+  font-weight: 550;
+}
+
+/* SVG shared strokes */
+
+.svg-tri       { fill: #edf0f7; stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; }
+/* Note: box strokes are set as attributes (GSAP attr tweens target attributes,
+   and CSS rules would beat presentation attributes). Keep only paint props
+   that are never re-animated here. */
+.svg-box       { fill: none; stroke-width: 1.6; }
+.svg-box-root  { stroke-width: 2.2; }
+.svg-edge      { stroke: var(--hairline); stroke-width: 1.6; }
+.svg-node      { fill: #ffffff; stroke: var(--ink); stroke-width: 1.6; }
+.svg-node-text { fill: var(--ink); font-size: 15px; }
+.svg-side-label{ fill: var(--ink-faint); font-size: 13px; letter-spacing: 0.08em; }
+.svg-dot       { fill: var(--ink); }
+.svg-cloud-box { fill: none; stroke-width: 1.6; }
