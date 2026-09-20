@@ -91,7 +91,7 @@
 
   function build() {
     var host = document.getElementById('swap-canvas');
-    svg = el('svg', { viewBox: '0 0 1120 460', width: 1090, height: 448 }, host);
+    svg = el('svg', { viewBox: '0 0 1120 460', width: '100%', height: '100%' }, host);
 
     /* slots */
     for (var s = 0; s < N; s++) {

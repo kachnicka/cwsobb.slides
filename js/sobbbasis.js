@@ -137,7 +137,7 @@
 
   function build() {
     var host = document.getElementById('sobb-canvas');
-    svg = el('svg', { viewBox: '0 0 1120 560', width: 1090, height: 545 }, host);
+    svg = el('svg', { viewBox: '0 0 1120 560', width: '100%', height: '100%' }, host);
 
     /* children k-DOP polygons (black) */
     CHILDREN.forEach(function (ch) {

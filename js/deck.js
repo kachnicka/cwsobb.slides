@@ -73,12 +73,26 @@
     if (a && a.step) a.step(fragCount(slide));
   }
 
+  /* Slide number is hidden on the title slide only. reveal's slide-number
+     module writes inline display:block on the element, so deck.css hides
+     it via a .hide-number class with !important. */
+  function syncSlideNumber() {
+    var sn = document.querySelector('.slide-number');
+    if (sn) sn.classList.toggle('hide-number', Reveal.getIndices().h === 0);
+  }
+
   Reveal.initialize({
     width: 1280,
     height: 720,
     margin: 0.04,
     hash: true,
-    center: true,
+    center: false,
+    /* Reveal's slideContent.load() writes this value as an INLINE
+       display style on every loaded slide — an inline style beats any
+       stylesheet display rule, so the config value itself must be flex
+       for the fixed-chrome flex column in deck.css to apply. */
+    display: 'flex',
+    slideNumber: 'c/t',
     controls: false,
     progress: true,
     transition: 'fade',
@@ -86,11 +100,13 @@
     fragments: true
   }).then(function () {
     enter(Reveal.getCurrentSlide());
+    syncSlideNumber();
   });
 
   Reveal.on('slidechanged', function (event) {
     leave(event.previousSlide);
     enter(event.currentSlide);
+    syncSlideNumber();
   });
 
   Reveal.on('fragmentshown', function () {

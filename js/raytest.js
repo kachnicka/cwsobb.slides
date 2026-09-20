@@ -104,7 +104,7 @@
 
   function build() {
     var host = document.getElementById('ray-canvas');
-    svg = el('svg', { viewBox: '0 0 640 560', width: 640, height: 560 }, host);
+    svg = el('svg', { viewBox: '0 0 640 560', width: '100%', height: '100%' }, host);
 
     parentRect = el('rect', {
       x: PARENT.x, y: PARENT.y, width: PARENT.w, height: PARENT.h,
@@ -162,8 +162,13 @@
       x: 330, y: 552, 'text-anchor': 'middle', 'font-size': 14, fill: FAINT, opacity: 0
     }, svg);
 
-    /* hit marker */
-    var hx = P0[0] + DIR[0] * HIT_T, hy = P0[1] + DIR[1] * HIT_T;
+    /* hit marker — placed slightly PAST box entry (HIT_T is exactly on
+       box id 3's left border, and a ring straddling the border reads as
+       a stray circle between cells). +0.06 in t keeps the ring on the
+       ray but unambiguously inside the hit box, with clear margins even
+       at the pulse's max radius (r=16). */
+    var HIT_MARK_T = HIT_T + 0.06;
+    var hx = P0[0] + DIR[0] * HIT_MARK_T, hy = P0[1] + DIR[1] * HIT_MARK_T;
     hitRing = el('circle', {
       cx: hx, cy: hy, r: 14, fill: 'none', stroke: RED, 'stroke-width': 2.4, opacity: 0
     }, svg);

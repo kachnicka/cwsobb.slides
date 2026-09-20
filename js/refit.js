@@ -71,7 +71,13 @@
   var LEVEL_LABELS = [
     { text: 'root', y: 86 },
     { text: 'internal', y: 240 },
-    { text: 'leaves', y: 394 }
+    /* leaves: raised above the row center (394) — at 394 the label's
+       tail slides under leaf node A's box (A starts at x=52, the label
+       extends to ~x=74). At 364 the baseline sits at 369 and the label
+       clears both the box (top 378) and the M0->A edge further right.
+       Tree geometry is static across all fragment steps (only node
+       fill/edge stroke pulses), so this holds at every step. */
+    { text: 'leaves', y: 364 }
   ];
 
   var BOX_PAD = 12; // visual padding around each bound
@@ -189,7 +195,7 @@
 
   function buildScene(container) {
     sceneSvg = el('svg', {
-      viewBox: '0 0 600 600', width: 500, height: 500
+      viewBox: '0 0 600 600', width: '100%', height: '100%'
     }, container);
 
     // triangles (geometry under the boxes)
@@ -219,7 +225,7 @@
 
   function buildTree(container) {
     treeSvg = el('svg', {
-      viewBox: '0 0 560 600', width: 468, height: 500
+      viewBox: '0 0 560 600', width: '100%', height: '100%'
     }, container);
 
     LEVEL_LABELS.forEach(function (l) {

@@ -95,7 +95,7 @@
 
   function build() {
     var host = document.getElementById('pipe-canvas');
-    svg = el('svg', { viewBox: '0 0 1120 520', width: 1090, height: 506 }, host);
+    svg = el('svg', { viewBox: '0 0 1120 520', width: '100%', height: '100%' }, host);
 
     /* stage chips */
     CHIPS.forEach(function (c, i) {

@@ -54,7 +54,21 @@
         CLOUD_CENTER[1] + x * sin + y * cos
       ]);
     }
-    return pts;
+    // Normalize into the 600x600 viewBox: the seeded Gaussian has unbounded
+    // tails, and this seed's raw cloud spans x -95..699 — points, the padded
+    // AABB, and the OBB's rotated corners all clipped at the viewBox edge.
+    // Uniform scale + recenter (bbox center -> 300,300) keeps the exact
+    // seeded shape; everything downstream (boxes, areas, angles) derives
+    // from the normalized points, so the "genuine tight fit" story is intact.
+    var b = aabb(pts);
+    var M = 46; // inner margin: 14px AABB pad + dot radius + OBB corner
+                // overhang past the point extents (worst ~29% of bbox height
+                // for this seed; overhang scales with the same factor)
+    var s = Math.min((600 - 2 * M) / b.w, (600 - 2 * M) / b.h);
+    var bcx = b.x + b.w / 2, bcy = b.y + b.h / 2;
+    return pts.map(function (p) {
+      return [300 + (p[0] - bcx) * s, 300 + (p[1] - bcy) * s];
+    });
   }
 
   /* ==================== pure geometry helpers ==================== */
@@ -159,21 +173,19 @@
     areaLooseEl = document.getElementById('area-loose');
     areaTightEl = document.getElementById('area-tight');
 
-    // left panel: static AABB
+    // left panel: static AABB — exact, no padding, so it is identical to
+    // the right panel's theta=0 state (the morph then reads as pure
+    // rotation into the tight OBB) and matches the area label below.
     var hostL = document.getElementById('teaser-loose');
-    var svgL = el('svg', { viewBox: '0 0 600 600', width: 430, height: 430 }, hostL);
+    var svgL = el('svg', { viewBox: '0 0 600 600', width: '100%', height: '100%' }, hostL);
     looseDotsG = el('g', {}, svgL);
     drawCloud(looseDotsG);
-    var pad = 14;
     looseRectEl = el('rect', { 'class': 'svg-cloud-box' }, svgL);
-    setBox(looseRectEl, {
-      x: looseBox.x - pad, y: looseBox.y - pad,
-      w: looseBox.w + 2 * pad, h: looseBox.h + 2 * pad
-    });
+    setBox(looseRectEl, looseBox);
 
     // right panel: morphing oriented box
     var hostR = document.getElementById('teaser-tight');
-    var svgR = el('svg', { viewBox: '0 0 600 600', width: 430, height: 430 }, hostR);
+    var svgR = el('svg', { viewBox: '0 0 600 600', width: '100%', height: '100%' }, hostR);
     tightDotsG = el('g', {}, svgR);
     drawCloud(tightDotsG);
     tightGroup = el('g', {}, svgR);

@@ -106,7 +106,7 @@
     BOXES = childBoxes();
 
     var host = document.getElementById('wide-canvas');
-    svg = el('svg', { viewBox: '0 0 1120 560', width: 1090, height: 545 }, host);
+    svg = el('svg', { viewBox: '0 0 1120 560', width: '100%', height: '100%' }, host);
 
     /* ---- left: binary subtree ---- */
     SUB_EDGES.forEach(function (pair) {
