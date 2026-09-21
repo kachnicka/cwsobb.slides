@@ -29,22 +29,26 @@
       </div>
     </section>
 
-    <!-- L1. Teaser: AABB vs tight oriented box (reused animator) -->
+    <!-- L0.5. Ray tracing with a BVH (superbrief intro) -->
+    <section id="slide-bvh" data-animator="bvhintro">
+      <h2 class="slide-head">Ray tracing with a BVH</h2>
+      <div class="canvas-row">
+        <div id="bvh-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span class="cap" id="bvh-caption"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L1. Teaser: one cloud, AABB → OBB in place, and a ray that hits one but not the other -->
     <section id="slide-why" data-animator="teaser">
       <h2 class="slide-head">Why tight bounds?</h2>
-      <!-- Spoken: secondary/incoherent rays dominate 90–98% of trace time;
-           why-now: k-DOP/OBB/DOBB research wave + AMD HW OBBs. -->
-      <div class="teaser-row">
-        <figure class="teaser-fig">
-          <div id="teaser-loose" class="panel"></div>
-          <figcaption>axis-aligned box&ensp;<span class="area-tag" id="area-loose"></span></figcaption>
-        </figure>
-        <figure class="teaser-fig">
-          <div id="teaser-tight" class="panel"></div>
-          <figcaption>oriented box&ensp;<span class="area-tag" id="area-tight"></span></figcaption>
-        </figure>
+      <div class="canvas-row">
+        <div id="teaser-canvas" class="panel"></div>
       </div>
-      <p class="teaser-note">Looser bounds mean more wasted ray–box and ray–triangle tests.</p>
+      <div class="status-row"><span class="cap" id="teaser-caption"></span></div>
       <span class="fragment"></span>
       <span class="fragment"></span>
     </section>
@@ -445,6 +449,7 @@
 <script src="js/sobbmorph.js"></script>
 <script src="js/kdopfan.js"></script>
 <script src="js/refitgeo.js"></script>
+<script src="js/bvhintro.js"></script>
 <script src="js/deck.js"></script>
 </body>
 </html>
