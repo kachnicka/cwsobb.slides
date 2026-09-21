@@ -53,13 +53,103 @@
       <span class="fragment"></span>
     </section>
 
+    <!-- L1.5. Related work — tight-BVH landscape (static SVG timeline;
+         fragments 1–4 auto-advance via js/related.js, "this work" manual) -->
+    <section id="slide-related" data-animator="related">
+      <h2 class="slide-head">Tight bounds — who’s doing what</h2>
+      <figure class="slide-fig">
+        <!-- Year columns (gridlines) cross three BV-type lanes. Scaffold is
+             always visible; five fragments reveal one pill per work, and each
+             relation arrow rides with its target pill. "This work" carries the
+             accent and lands last. -->
+        <svg viewBox="0 0 1090 480" width="100%" height="100%" role="img" aria-label="Timeline 2023 to 2026 of tight-fitting bounding-volume research in OBB, k-DOP and SOBB lanes: Vitsas and Sabino in 2023, Kacerik and Bittner 2024, Kern 2025, Kacerik and Bittner 2025 SOBB and uBVH, converging on this work — wide SOBB BVH8">
+          <title>Tight-BVH research lines converging on wide SOBB</title>
+          <defs>
+            <marker id="rw-head" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" class="svg-rw-head"/>
+            </marker>
+            <marker id="rw-head-blue" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" class="svg-rw-head-blue"/>
+            </marker>
+          </defs>
+
+          <!-- scaffold: year gridlines + labels -->
+          <line x1="200" y1="52" x2="200" y2="448" class="svg-rw-grid"/>
+          <line x1="415" y1="52" x2="415" y2="448" class="svg-rw-grid"/>
+          <line x1="645" y1="52" x2="645" y2="448" class="svg-rw-grid"/>
+          <line x1="910" y1="52" x2="910" y2="448" class="svg-rw-grid"/>
+          <text x="200" y="462" text-anchor="middle" class="svg-rw-year">2023</text>
+          <text x="415" y="462" text-anchor="middle" class="svg-rw-year">2024</text>
+          <text x="645" y="462" text-anchor="middle" class="svg-rw-year">2025</text>
+          <text x="910" y="462" text-anchor="middle" class="svg-rw-year">2026</text>
+
+          <!-- lane labels: BV glyph + name -->
+          <g transform="translate(24,120)"><rect x="-11" y="-7" width="22" height="14" transform="rotate(-16)" class="svg-rw-glyph"/></g>
+          <text x="40" y="125" class="svg-rw-lane">OBB</text>
+          <g transform="translate(24,245)"><polygon points="-13,0 -7,-8 7,-8 13,0 7,8 -7,8" class="svg-rw-glyph"/></g>
+          <text x="40" y="250" class="svg-rw-lane">k-DOP</text>
+          <g transform="translate(24,370)"><polygon points="-6,-8 10,-8 4,8 -12,8" class="svg-rw-glyph"/></g>
+          <text x="40" y="375" class="svg-rw-lane">SOBB</text>
+
+          <!-- frag 1: the 2023 × OBB cell — Vitsas on the lane centerline,
+               Sabino stacked quieter just below it (same year, same lane;
+               no link drawn, the shared cell is the relation) -->
+          <g class="fragment">
+            <rect x="123" y="100" width="154" height="40" rx="20" class="svg-rw-node"/>
+            <text x="200" y="125" text-anchor="middle" class="svg-rw-title">Vitsas et al. ’23</text>
+            <rect x="123" y="152" width="154" height="40" rx="20" class="svg-rw-node svg-rw-node-soft"/>
+            <text x="200" y="177" text-anchor="middle" class="svg-rw-title svg-rw-title-soft">Sabino et al. ’23</text>
+          </g>
+
+          <!-- frag 2: K&amp;B '24, k-DOP lane -->
+          <g class="fragment">
+            <rect x="350" y="225" width="130" height="40" rx="20" class="svg-rw-node"/>
+            <text x="415" y="250" text-anchor="middle" class="svg-rw-title">K&amp;B ’24</text>
+          </g>
+
+          <!-- frag 3: Kern '25, OBB lane — conversion line continues -->
+          <g class="fragment">
+            <line x1="280" y1="120" x2="567" y2="120" class="svg-rw-link" marker-end="url(#rw-head)"/>
+            <rect x="570" y="100" width="150" height="40" rx="20" class="svg-rw-node"/>
+            <text x="645" y="125" text-anchor="middle" class="svg-rw-title">Kern et al. ’25</text>
+          </g>
+
+          <!-- frag 4: K&amp;B '25, SOBB lane — k-DOP machinery drops down a lane;
+               the arrow lands on the SOBB pill's top-left corner (SOBB fitting is
+               the k-DOP line's direct heir). uBVH (same authors, published later
+               at HPG) stacks quieter 12px below, matching the 2023 cell. -->
+          <g class="fragment">
+            <path d="M 455,268 L 573,346" class="svg-rw-link" marker-end="url(#rw-head)"/>
+            <text x="565" y="330" class="svg-rw-rellbl">k-DOP fit</text>
+            <rect x="580" y="350" width="130" height="40" rx="20" class="svg-rw-node"/>
+            <text x="645" y="375" text-anchor="middle" class="svg-rw-title">K&amp;B ’25</text>
+            <rect x="580" y="402" width="130" height="40" rx="20" class="svg-rw-node svg-rw-node-soft"/>
+            <text x="645" y="427" text-anchor="middle" class="svg-rw-title svg-rw-title-soft">K&amp;B ’25 uBVH</text>
+          </g>
+
+          <!-- frag 5: this work — three accent relations converge -->
+          <g class="fragment">
+            <path d="M 170,97 C 280,14 940,10 995,346" class="svg-rw-link-hl" marker-end="url(#rw-head-blue)"/>
+            <text x="300" y="30" class="svg-rw-rellbl-hl">refit</text>
+            <path d="M 700,143 L 880,346" class="svg-rw-link-hl" marker-end="url(#rw-head-blue)"/>
+            <text x="796" y="240" class="svg-rw-rellbl-hl">shared basis</text>
+            <path d="M 713,370 L 816,370" class="svg-rw-link-main" marker-end="url(#rw-head-blue)"/>
+            <text x="765" y="347" text-anchor="middle" class="svg-rw-rellbl-hl">SOBB fitting</text>
+            <rect x="820" y="350" width="180" height="40" rx="20" class="svg-rw-this"/>
+            <text x="910" y="375" text-anchor="middle" class="svg-rw-title svg-rw-title-this">This work · PG26</text>
+          </g>
+        </svg>
+      </figure>
+      <div class="status-row"><span class="cap">This work stands where the three lines meet.</span></div>
+    </section>
+
     <!-- L2. What is a SOBB? -->
     <section id="slide-sobb" data-animator="sobbmorph">
       <h2 class="slide-head">What is a SOBB?</h2>
       <div class="canvas-row">
         <div id="morph-canvas" class="panel"></div>
       </div>
-      <div class="status-row"><span class="cap">A skewed OBB: three arbitrary slab pairs — same memory as an OBB, same slab intersection test.</span></div>
+      <div class="status-row"><span class="cap">A SOBB skews its three slab pairs away from perpendicular — same memory as an OBB, same intersection test.</span></div>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
@@ -98,9 +188,6 @@
 
     <!-- L5. Wide node construction & quantization (reused animator) -->
     <section id="slide-quant" data-animator="widenode">
-      <!-- TODO(animator upgrade): missing causal beat — independent child
-           bases → sparse grid → inflated boxes → shared basis fix (sets up
-           slide-basis). -->
       <h2 class="slide-head">Compression forces the question</h2>
       <div class="canvas-row">
         <div id="wide-canvas" class="panel"></div>
@@ -109,17 +196,17 @@
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
+      <span class="fragment"></span>
     </section>
 
     <!-- L6. SOBB basis (reused animator) -->
     <section id="slide-basis" data-animator="sobbasis">
-      <!-- TODO(animator upgrade): add comparison strip — C_sum (accurate,
-           slow) / C_union (cheap, overlap-blind) / C_avg proxy (chosen). -->
       <h2 class="slide-head">One shared basis for eight children</h2>
       <div class="canvas-row">
         <div id="sobb-canvas" class="panel"></div>
       </div>
       <div class="status-row"><span id="sobb-caption" class="cap"></span></div>
+      <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
@@ -172,7 +259,7 @@
         <div class="sheep-tile fragment"><span class="sheep-name">Sheep (dense fur)</span><span class="sheep-num">up to 9.3×</span></div>
         <div class="cost-strip fragment"><span>+14–26% build</span><span>·</span><span>+5% memory</span><span>·</span><span>+7–15 bits/node</span></div>
       </div>
-      <div class="status-row"><span class="cap results-note">Primary rays: +6% avg — coherent rays; secondary dominate the workload. Bars vs compressed AABB BVH8, SOBB8 38-DOP; Sheep callout = best config (56-DOP).</span></div>
+      <div class="status-row"><span class="cap results-note">Primary rays barely move (+6% avg) — secondary rays dominate, which is what these bars show, against a compressed wide AABB tree. Sheep's result uses a larger box budget.</span></div>
     </section>
 
     <!-- L8. Refit — the problem (reused animator) -->
@@ -236,7 +323,7 @@
         </div>
         <!-- Same URL as before, restructured: "QR" tag above the address,
              arrow dropped. Placeholder for the real code image. -->
-        <div class="qr-box"><span class="qr-tag">QR</span><span class="qr-url">dcgi.fel.cvut.cz/projects/cwsobb/</span></div>
+        <div class="qr-box"><span class="qr-tag">QR</span><span class="qr-url">dcgi.fel.cvut.cz/<wbr>projects/<wbr>cwsobb/</span></div>
       </div>
     </section>
 
@@ -340,8 +427,12 @@
              exact segment boundaries. -->
         <svg viewBox="0 0 1090 420" width="100%" height="100%" role="img" aria-label="Schematic memory map of one BVH8 node with 4 extra bytes for the shared SOBB basis">
           <title>BVH8 node memory layout (schematic)</title>
-          <text x="1020" y="32" text-anchor="end" class="svg-faint">schematic — relative widths</text>
+          <text x="1020" y="70" text-anchor="end" class="svg-faint">schematic — relative widths</text>
 
+          <!-- Diagram shifted up 90 units from its originally-authored
+               position: the note above and the diagram itself used to sit
+               ~200px apart with nothing between them. -->
+          <g transform="translate(0,-90)">
           <rect x="70" y="250" width="100" height="64" class="svg-seg svg-seg-head"/>
           <rect x="170" y="250" width="520" height="64" class="svg-seg"/>
           <rect x="690" y="250" width="280" height="64" class="svg-seg"/>
@@ -378,6 +469,7 @@
           <line x1="993" y1="314" x2="993" y2="336" class="svg-tick"/>
           <text x="993" y="356" text-anchor="middle" class="svg-lbl">+4 B shared SOBB basis</text>
           <text x="993" y="376" text-anchor="middle" class="svg-faint">7–15 extra bits per node</text>
+          </g>
         </svg>
       </figure>
       <div class="status-row"><span class="cap">Ylitie-style BVH8 layout + 4 bytes for the shared SOBB basis.</span></div>
@@ -450,6 +542,7 @@
 <script src="js/kdopfan.js"></script>
 <script src="js/refitgeo.js"></script>
 <script src="js/bvhintro.js"></script>
+<script src="js/related.js"></script>
 <script src="js/deck.js"></script>
 </body>
 </html>
