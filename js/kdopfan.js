@@ -34,7 +34,7 @@
                                  // 100 ⊥ AXIS1, 160 ⊥ AXIS2, 130 bisector)
   var MARGIN = 30;              // clip rect inside the viewBox
 
-  var PROMISE_TEXT = 'Next: static scenes first, then — dynamic.';
+  var PROMISE_TEXT = 'This talk: static scenes first, then what changes when they move.';
 
   /* ==================== pure helpers ==================== */
 

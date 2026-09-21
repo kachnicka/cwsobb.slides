@@ -43,7 +43,11 @@
     { text: 'LEAVES', y: 385 }
   ];
 
-  var STAT_TEXT = '~20% of local tests → atomics (avg) · 0.0003% at root';
+  /* Each annotation carries its own number exactly once — tagAtomic and
+   * tagRoot are the precise, node-anchored readings; the closing stamp
+   * is a plain-language synthesis, not a third repetition of the same
+   * two numbers. */
+  var STAT_TEXT = 'Atomics are common near the leaves, but vanish by the root.';
   var THREAD_TAG = '8 threads — one per leaf cluster';
   var ROOT_TAG = 'root: ~0.0003% of tests';
 
@@ -147,7 +151,7 @@
     tagThread = text(THREAD_TAG, {
       x: 1090, y: 452, 'text-anchor': 'end', 'font-size': 13, fill: GREEN, opacity: 0
     }, svg);
-    tagAtomic = text('atomic', {
+    tagAtomic = text('atomic · ~20%', {
       x: 984, y: 229, 'font-size': 13, fill: ATOMIC_RED, opacity: 0
     }, svg);
     tagRoot = text(ROOT_TAG, {

@@ -61,13 +61,36 @@
     'A wide node packs up to 8 child boxes into one compressed record.',
     'Interior collapse: 7 binary nodes become one 8-ary node.',
     'Each node defines a local quantization grid over its bounds.',
-    'Child boxes snap OUTWARD to grid cells — conservative, never smaller. With 8 different bases, one grid must cover mismatched orientations.'
+    'Give every child its own basis, and the shared grid can only cover it conservatively — boxes balloon.',
+    'One shared basis per node: children snap back into line, and the same grid fits every box tightly.'
   ];
+
+  /* independent-basis failure beat: each child tilts to its own angle;
+   * the shared grid can only bound the rotated shape axis-aligned, so
+   * the conservative quantized box balloons past the true fit. */
+  var FAIL_ROT = [24, -16, 30, -12, 20, -28, 14, -22];
 
   /* ==================== pure math (exported for tests) ==================== */
 
   function exactBox(tri) {
     return D.inflate(D.aabb(tri), BOX_PAD);
+  }
+
+  function rotatePoint(p, cx, cy, rad) {
+    var dx = p[0] - cx, dy = p[1] - cy;
+    var c = Math.cos(rad), s = Math.sin(rad);
+    return [cx + dx * c - dy * s, cy + dx * s + dy * c];
+  }
+
+  /* AABB of a box rotated by angleDeg about (cx, cy) — the conservative
+   * bound a shared axis-aligned grid is forced to use for a child that
+   * kept its own independent basis. */
+  function rotatedAABB(b, angleDeg, cx, cy) {
+    var rad = angleDeg * Math.PI / 180;
+    var corners = [
+      [b.x, b.y], [b.x + b.w, b.y], [b.x + b.w, b.y + b.h], [b.x, b.y + b.h]
+    ].map(function (p) { return rotatePoint(p, cx, cy, rad); });
+    return D.aabb(corners);
   }
 
   /* Snap a box outward to the grid: min edges floor, max edges ceil.
@@ -97,13 +120,20 @@
   var wideSlots = [];
   var miniCapEl;
   var parentRect, gridLines = [];
-  var childTris = [], ghostRects = [], quantRects = [];
-  var BOXES = null;
+  var childTris = [], ghostRects = [], quantRects = [], failQuants = [];
+  var BOXES = null, FAIL_BOXES = null;
   var captionEl;
   var tl = null;
 
   function build() {
     BOXES = childBoxes();
+    FAIL_BOXES = BOXES.map(function (b, i) {
+      var eb = b.exact, cx = eb.x + eb.w / 2, cy = eb.y + eb.h / 2;
+      /* raw world-axis-aligned bound of the child in its own tilted basis —
+       * the box a shared grid would be forced to store, before even
+       * accounting for quantization coarseness. */
+      return { cx: cx, cy: cy, quant: rotatedAABB(eb, FAIL_ROT[i], cx, cy) };
+    });
 
     var host = document.getElementById('wide-canvas');
     svg = el('svg', { viewBox: '0 0 1120 560', width: '100%', height: '100%' }, host);
@@ -164,14 +194,17 @@
     }
 
     CHILD_TRIS.forEach(function (tri, i) {
+      var rot0 = 'rotate(0 ' + FAIL_BOXES[i].cx + ' ' + FAIL_BOXES[i].cy + ')';
       childTris.push(el('polygon', {
         points: tri.map(function (p) { return p.join(','); }).join(' '),
-        fill: LIGHT, stroke: INK, 'stroke-width': 1.2, 'stroke-linejoin': 'round'
+        fill: LIGHT, stroke: INK, 'stroke-width': 1.2, 'stroke-linejoin': 'round',
+        transform: rot0
       }, svg));
       var g = el('rect', {
         x: BOXES[i].exact.x, y: BOXES[i].exact.y,
         width: BOXES[i].exact.w, height: BOXES[i].exact.h,
-        fill: 'none', stroke: INK, 'stroke-width': 1.3
+        fill: 'none', stroke: INK, 'stroke-width': 1.3,
+        transform: rot0
       }, svg);
       ghostRects.push(g);
       var q = el('rect', {
@@ -180,6 +213,12 @@
         fill: 'none', stroke: BLUE, 'stroke-width': 2, opacity: 0
       }, svg);
       quantRects.push(q);
+      var fq = el('rect', {
+        x: FAIL_BOXES[i].quant.x, y: FAIL_BOXES[i].quant.y,
+        width: FAIL_BOXES[i].quant.w, height: FAIL_BOXES[i].quant.h,
+        fill: 'none', stroke: RED, 'stroke-width': 2, 'stroke-dasharray': '5 4', opacity: 0
+      }, svg);
+      failQuants.push(fq);
     });
 
     captionEl = document.getElementById('wide-caption');
@@ -223,15 +262,17 @@
       gsap.killTweensOf(l);
       l.setAttribute('opacity', 0);
     });
-    childTris.forEach(function (t) {
+    childTris.forEach(function (t, i) {
       gsap.killTweensOf(t);
       t.setAttribute('opacity', 1);
+      t.setAttribute('transform', 'rotate(0 ' + FAIL_BOXES[i].cx + ' ' + FAIL_BOXES[i].cy + ')');
     });
     ghostRects.forEach(function (g, i) {
       gsap.killTweensOf(g);
       D.setRect(g, BOXES[i].exact);
       g.setAttribute('opacity', 1);
       g.setAttribute('stroke', INK);
+      g.setAttribute('transform', 'rotate(0 ' + FAIL_BOXES[i].cx + ' ' + FAIL_BOXES[i].cy + ')');
     });
     quantRects.forEach(function (q, i) {
       gsap.killTweensOf(q);
@@ -239,11 +280,15 @@
       q.setAttribute('opacity', 0);
       q.setAttribute('stroke', BLUE);
     });
+    failQuants.forEach(function (q) {
+      gsap.killTweensOf(q);
+      q.setAttribute('opacity', 0);
+    });
   }
 
   /* ==================== timeline ==================== */
 
-  var SECTIONS = 3;
+  var SECTIONS = 4;
 
   function buildTimeline() {
     tl = gsap.timeline({ paused: true });
@@ -293,20 +338,43 @@
     tl.to(gridLines, { attr: { opacity: 1 }, duration: 0.5, stagger: 0.02 }, at);
     tl.addLabel('s2', tl.duration()); /* label at true timeline end */
 
-    /* s3 — child boxes snap outward to grid cells */
+    /* s3 — independent-basis failure: each child tilts to its own angle;
+     * the shared grid can only bound it conservatively, so the axis-
+     * aligned quantized box balloons past the true fit. */
     tl.to({}, { duration: 0.25 }, '>');
     at = tl.duration();
+    childTris.forEach(function (t, i) {
+      var rot = 'rotate(' + FAIL_ROT[i] + ' ' + FAIL_BOXES[i].cx + ' ' + FAIL_BOXES[i].cy + ')';
+      tl.to(t, { attr: { transform: rot }, duration: 0.6, ease: 'power2.inOut' }, at + i * 0.03);
+      tl.to(ghostRects[i], { attr: { transform: rot }, duration: 0.6, ease: 'power2.inOut' }, at + i * 0.03);
+    });
+    failQuants.forEach(function (q, i) {
+      tl.fromTo(q, { attr: { opacity: 0 } }, { attr: { opacity: 1 }, duration: 0.3 }, at + 0.5 + i * 0.03);
+    });
+    tl.addLabel('s3', tl.duration()); /* label at true timeline end */
+
+    /* s4 — shared basis fix: children snap back into one basis, then
+     * the same grid fits every box tightly (original snap-outward beat) */
+    tl.to({}, { duration: 0.3 }, '>');
+    at = tl.duration();
+    childTris.forEach(function (t, i) {
+      var rot0 = 'rotate(0 ' + FAIL_BOXES[i].cx + ' ' + FAIL_BOXES[i].cy + ')';
+      tl.to(t, { attr: { transform: rot0 }, duration: 0.5, ease: 'power2.inOut' }, at + i * 0.02);
+      tl.to(ghostRects[i], { attr: { transform: rot0 }, duration: 0.5, ease: 'power2.inOut' }, at + i * 0.02);
+    });
+    tl.to(failQuants, { attr: { opacity: 0 }, duration: 0.3 }, at);
+    var at2 = at + 0.7;
     quantRects.forEach(function (q, i) {
       var qb = BOXES[i].quant;
-      tl.to(q, { attr: { opacity: 1 }, duration: 0.25 }, at + i * 0.04);
+      tl.to(q, { attr: { opacity: 1 }, duration: 0.25 }, at2 + i * 0.04);
       tl.to(q, {
         attr: { x: qb.x, y: qb.y, width: qb.w, height: qb.h },
         duration: 0.7, ease: 'power2.inOut'
-      }, at + i * 0.04);
+      }, at2 + i * 0.04);
     });
     // ghosts dim slightly so the inflated blue bounds dominate
-    tl.to(ghostRects, { attr: { opacity: 0.55 }, duration: 0.4 }, at + 0.3);
-    tl.addLabel('s3', tl.duration()); /* label at true timeline end */
+    tl.to(ghostRects, { attr: { opacity: 0.55 }, duration: 0.4 }, at2 + 0.3);
+    tl.addLabel('s4', tl.duration()); /* label at true timeline end */
   }
 
   /* ==================== animator ==================== */
@@ -335,6 +403,8 @@
   animator._test = {
     childBoxes: childBoxes,
     quantizeBox: quantizeBox,
+    rotatedAABB: rotatedAABB,
+    FAIL_ROT: FAIL_ROT,
     P: P, GRID: GRID, CELL: CELL,
     sections: SECTIONS
   };

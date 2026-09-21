@@ -97,11 +97,13 @@
 
   /* s5: orientation crosses — one per level (root/internal/leaf), each
    * rotated differently so parent/child misalignment reads at a glance.
-   * Offsets clear the nodes, edges, and the s6/s7 overlays. */
+   * Offsets clear the nodes, edges, the s6/s7 overlays, AND the
+   * ROOT/INTERNAL/LEAVES row labels (arm length 8: see the ±8 in the
+   * line coords below — verified against label text width). */
   var CROSSES = [
     { id: 'R',  cx: 222, cy: 78,  rot: 0 },
-    { id: 'M0', cx: 96,  cy: 232, rot: 36 },
-    { id: 'A',  cx: 24,  cy: 386, rot: -24 }
+    { id: 'M0', cx: 108, cy: 232, rot: 36 },
+    { id: 'A',  cx: 24,  cy: 396, rot: -24 }
   ];
 
   /* s6: k-DOP overlays traveling up the leftmost path. */
@@ -360,11 +362,11 @@
         opacity: 0
       }, treeSvg);
       el('line', {
-        x1: -13, y1: 0, x2: 13, y2: 0,
+        x1: -8, y1: 0, x2: 8, y2: 0,
         stroke: BLUE, 'stroke-width': 1.8, 'marker-end': 'url(#refit-geo-arrow)'
       }, g);
       el('line', {
-        x1: 0, y1: 13, x2: 0, y2: -13,
+        x1: 0, y1: 8, x2: 0, y2: -8,
         stroke: BLUE, 'stroke-width': 1.8, 'marker-end': 'url(#refit-geo-arrow)'
       }, g);
       crossEls[c.id] = g;
