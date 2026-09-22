@@ -573,14 +573,15 @@
   gap: 16px;
 }
 
-/* Climax slide: five 236px stat cards (px on content chrome is fine — the
-   no-px rule covers canvas hosts). Number + label anchor to the shared top
-   horizon, so mixed 1–3-line captions never shift the numbers; spare space
-   pools uniformly at the card floor. */
+/* Climax slide: five 176px stat cards (px on content chrome is fine — the
+   no-px rule covers canvas hosts). Height fits the 3-line-label worst case
+   (24 pad + 43 number + 14 gap + 61 label + 18 pad = 160) with slack; the
+   freed vertical budget goes to the video below. Number + label anchor to
+   the shared top horizon, so mixed 1–3-line captions never shift. */
 .num-card {
   flex: 1;
   min-width: 0;
-  height: 236px;
+  height: 176px;
   border: 1px solid var(--hairline);
   border-top: 3px solid var(--blue);
   box-sizing: border-box;
@@ -618,35 +619,59 @@
 
 /* ---------- Video placeholders (L10, L12) ---------- */
 
+/* Stretch layout: as the section's last flex item the row bottom lands on
+   y=720 whatever the video size — margin-bottom lifts the video clear of
+   the 8px progress bar; the flex:1 .num-cards region absorbs the slack. */
 .video-row {
   flex: none;
   display: flex;
   justify-content: center;
   margin-top: 14px;
+  margin-bottom: 10px;
 }
 
-/* Reserved-but-recessive: paper tint + quiet dashed hairline + small
-   letterspaced label. Clearly a slot, clearly not content yet. */
-.video-todo {
+/* Reserved-but-recessive placeholder, now replaced by .slide-video. */
+
+/* ---------- Slide videos (L10, L12) ---------- */
+
+/* Replaces the .video-todo placeholders. Muted autoplay + loop; sizing
+   mirrors the old slots — px width on content chrome is fine, and the
+   16/9 ratio matches the 1280x720 source, so no letterboxing. */
+.slide-video {
+  display: block;
   width: 340px;
   aspect-ratio: 16 / 9;
   box-sizing: border-box;
-  border: 1.5px dashed var(--hairline);
-  background: #fbfcfe;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 14px;
-  letter-spacing: 0.02em;
-  color: var(--ink-faint);
-  padding: 0 20px;
+  border: 1px solid var(--hairline);
+  background: #000;
   margin-top: 20px;
 }
 
-.video-todo.wide {
-  width: 460px;
+/* Vendor white.css caps `.reveal video` at max-width/max-height:95%. The
+   height cap resolves inside L10's definite-height flex chain and silently
+   shrinks the video box (~0.95x, breaking the 16:9 frame) — kill both caps.
+   Specificity lifted: bare .slide-video (0,1,0) loses to .reveal video
+   (0,1,1). */
+.reveal .slides .slide-video {
+  max-width: none;
+  max-height: none;
+}
+
+/* L10: 688px wide → 387px tall. Vertical budget: head (71) + cards region
+   (239, 176 cards centered) + 14 margin + 387 video = 711, leaving ~9px
+   clear above the progress bar. */
+.slide-video.wide {
+  width: 688px;
   margin-top: 0;
+}
+
+/* Closing slide: 760px wide → 428px tall, spanning to ~57px above the
+   bottom edge. The bigger video swells the centered .title-wrap stack, so
+   the Thanks/rule/Questions block rides up into the upper third with no
+   dead center gap. */
+.slide-video.big {
+  width: 760px;
+  margin-top: 6px;
 }
 
 /* ---------- Conclusion (L11) ---------- */
@@ -680,8 +705,8 @@
 .mentions { color: var(--ink-faint); }
 .future   { color: var(--ink-soft); }
 
-/* Square placeholder slot, same dashed-placeholder voice as .todo-panel /
-   .video-todo: paper tint, dashed hairline, micro caps tag above the URL. */
+/* Square placeholder slot, same dashed-placeholder voice as .todo-panel:
+   paper tint, dashed hairline, micro caps tag above the URL. */
 .qr-box {
   flex: none;
   width: 112px;
