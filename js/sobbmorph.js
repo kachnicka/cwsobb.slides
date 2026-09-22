@@ -1,14 +1,16 @@
-/* Animator: L2 "What is a SOBB?" — morph AABB → OBB → SOBB.
+/* Animator: L2 "What is a SOBB?" — stacking bounds: AABB → OBB → SOBB.
  *
- * One seeded triangle cluster, fitted three ways over the fragments:
- *   base: axis-aligned box (AABB, area 100%)
- *   s1:   frame rotates to the cluster's dominant axis (OBB, ~87%)
- *   s2:   frame shears to the cluster's skewed axes (SOBB, ~77%)
- *   s3:   settle on the SOBB (tint emphasis)
- * All three fits are computed once from the deterministic cluster, so the
- * geometry and the area numbers are stable across runs. A small axis glyph
- * in the corner mirrors the frame: orthogonal through s1, visibly skewed
- * at s2 (skew ≠ rotation). Host: #morph-canvas. Fragments: 3 (s1..s3).
+ * One deterministic triangle cluster (DeckSVG.makeCluster, shared with
+ * L3 kdopfan), fitted three ways, and all three bounds stay on screen:
+ *   base: tight AABB in ink (SA = 100%)
+ *   s1:   tight OBB draws in over it in blue (frame e1, perp(e1), ~80%);
+ *         the AABB recedes
+ *   s2:   tight SOBB draws in the same way in teal (frame e1, e2, ~65%);
+ *         the OBB recedes
+ *   s3:   #sobb-ineq caption (AABB ⊆ OBB ⊆ SOBB)
+ *   s4:   #sobb-saineq caption (SA(AABB) ≥ SA(OBB) ≥ SA(SOBB))
+ * The right-column rows #bv-obb / #bv-sobb fade in at s1 / s2 with
+ * computed area percentages. Host: #morph-canvas. Fragments: 4 (s1..s4).
  */
 (function () {
   'use strict';
@@ -17,30 +19,10 @@
 
   /* ==================== LAYOUT DATA ==================== */
 
-  var VB_W = 1040, VB_H = 560;   // logical viewBox (SVG scales to the slot)
-  var SEED = 20260918;
-  var AXIS1 = 6;                 // dominant cluster axis, degrees
-  var AXIS2 = 115;               // skewed second axis, degrees
-  var S = 190, T = 100;          // cluster half-extents along each axis
-  var TRI = 16;                  // triangle radius scale
-  var CENTER = [430, 290];
-  var GLYPH = [930, 482];        // axis glyph origin (bottom-right)
-  var GLYPH_LEN = 50;
-  var SKEW = AXIS2 - AXIS1 - 90; // glyph deviation from perpendicular at s2
+  var VB_W = 800, VB_H = 540;     // logical viewBox (SVG scales to the slot)
+  var CENTER = [385, 275];        // cluster center
 
   /* ==================== pure helpers ==================== */
-
-  function mulberry32(seed) {
-    var a = seed >>> 0;
-    return function () {
-      a |= 0; a = (a + 0x6D2B79F5) | 0;
-      var t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  function rad(d) { return d * Math.PI / 180; }
 
   function perp(v) { return [-v[1], v[0]]; }
 
@@ -56,32 +38,6 @@
     return out;
   }
 
-  /* 4x2 jittered grid of small triangles in the skewed basis (e1, e2);
-   * s spans +/-S, t spans +/-T so the cluster fills its parallelogram. */
-  function makeCluster() {
-    var rand = mulberry32(SEED);
-    var e1 = [Math.cos(rad(AXIS1)), Math.sin(rad(AXIS1))];
-    var e2 = [Math.cos(rad(AXIS2)), Math.sin(rad(AXIS2))];
-    var tris = [];
-    for (var i = 0; i < 4; i++) {
-      for (var j = 0; j < 2; j++) {
-        var s = -S + (2 * S) * i / 3 + (rand() - 0.5) * 0.06 * S;
-        var t = -T + (2 * T) * j + (rand() - 0.5) * 0.06 * T;
-        var cx = CENTER[0] + s * e1[0] + t * e2[0];
-        var cy = CENTER[1] + s * e1[1] + t * e2[1];
-        var a0 = rand() * 2 * Math.PI;
-        var rr = TRI * (0.75 + rand() * 0.5);
-        var tri = [];
-        for (var k = 0; k < 3; k++) {
-          var a = a0 + k * 2 * Math.PI / 3;
-          tri.push([cx + rr * Math.cos(a), cy + rr * Math.sin(a)]);
-        }
-        tris.push(tri);
-      }
-    }
-    return tris;
-  }
-
   function aabbPts(pts) {
     var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     pts.forEach(function (p) {
@@ -93,8 +49,7 @@
 
   /* Tight box in the (possibly skewed) basis (u, v) around pts:
    * p - c = s*u + t*v, so s is read out with the normal of v and vice
-   * versa. Returns coefficient bounds; corners come out in a consistent
-   * (s,t) sign order: (-,-), (+,-), (+,+), (-,+). */
+   * versa. Corners come out in (s,t) sign order: (-,-), (+,-), (+,+), (-,+). */
   function frameFit(pts, c, u, v) {
     var nu = perp(u), nv = perp(v);
     var du = u[0] * nv[0] + u[1] * nv[1];
@@ -136,47 +91,21 @@
   /* ==================== animator ==================== */
 
   var built = false;
-  var svg, boxEl, labelEls, glyphG, arrowBLine, arrowBHead;
+  var svg, aabbEl, obbEl, obbLabelEl, sobbEl, sobbLabelEl;
+  var bvObb, bvSobb, bvObbSa, bvSobbSa, capIneq, capSa;
   var aabbC, obbC, sobbC, areaStrs;
+  var obbLen = 0, sobbLen = 0;
   var tl = null;
-  var proxy = { rot: 0, skew: 0 };
-
-  function makeLabel(name, area, col, visible) {
-    var g = D.el('g', { opacity: visible ? 1 : 0 }, svg);
-    D.text(name, {
-      x: 788, y: 150, fill: col, 'font-size': 24, 'font-weight': 600
-    }, g);
-    D.text(area, { x: 788, y: 180, fill: col, 'font-size': 16 }, g);
-    return g;
-  }
-
-  /* Axis glyph: arrow A fixed along +x, arrow B at -90 deg + skew; the
-   * whole group rotates with the frame. Updated from the proxy. */
-  function updateGlyph() {
-    glyphG.setAttribute('transform',
-      'rotate(' + proxy.rot + ' ' + GLYPH[0] + ' ' + GLYPH[1] + ')');
-    var phi = rad(-90 + proxy.skew);
-    var dx = Math.cos(phi), dy = Math.sin(phi);
-    var px = -dy, py = dx;
-    var L = GLYPH_LEN;
-    arrowBLine.setAttribute('x2', GLYPH[0] + (L - 8) * dx);
-    arrowBLine.setAttribute('y2', GLYPH[1] + (L - 8) * dy);
-    var tx = GLYPH[0] + (L + 2) * dx, ty = GLYPH[1] + (L + 2) * dy;
-    arrowBHead.setAttribute('points', pts2str([
-      [tx, ty],
-      [tx - 9 * dx + 5 * px, ty - 9 * dy + 5 * py],
-      [tx - 9 * dx - 5 * px, ty - 9 * dy - 5 * py]
-    ]));
-  }
 
   function build() {
-    var tris = makeCluster();
+    var cl = D.makeCluster(CENTER[0], CENTER[1]);
+    var tris = cl.tris;
     var pts = flatVerts(tris);
     var c = centroid(pts);
-    var e1 = [Math.cos(rad(AXIS1)), Math.sin(rad(AXIS1))];
-    var e2 = [Math.cos(rad(AXIS2)), Math.sin(rad(AXIS2))];
+    var e1 = cl.e1, e2 = cl.e2;
     var v1 = perp(e1);
 
+    // the three tight fits
     var b = aabbPts(pts);
     aabbC = [
       [b.x, b.y], [b.x + b.w, b.y],
@@ -187,9 +116,9 @@
 
     var a0 = b.w * b.h;
     areaStrs = [
-      'area 100%',
-      'area ' + Math.round(polyArea(obbC) / a0 * 100) + '%',
-      'area ' + Math.round(polyArea(sobbC) / a0 * 100) + '%'
+      'SA = 100%',
+      'SA = ' + Math.round(polyArea(obbC) / a0 * 100) + '%',
+      'SA = ' + Math.round(polyArea(sobbC) / a0 * 100) + '%'
     ];
 
     var host = document.getElementById('morph-canvas');
@@ -202,99 +131,135 @@
       D.el('polygon', { 'class': 'svg-tri', points: pts2str(tri) }, svg);
     });
 
-    // the morphing bound: 4 corners, same sign order in every frame
-    boxEl = D.el('polygon', {
+    // AABB: ink, always present from the base state
+    aabbEl = D.el('polygon', {
       points: pts2str(aabbC),
+      fill: 'none',
+      stroke: D.INK, 'stroke-width': 1.6, 'stroke-opacity': 1,
+      'stroke-linejoin': 'round'
+    }, svg);
+    D.text('AABB', {
+      x: 156, y: 112,
+      fill: D.INK, 'font-size': 16, 'font-weight': 600
+    }, svg);
+
+    // OBB: blue, swept on at s1 (stroke-dashoffset draw, kdopfan pattern)
+    obbEl = D.el('polygon', {
+      points: pts2str(obbC),
       fill: D.BLUE, 'fill-opacity': 0,
-      stroke: D.INK, 'stroke-width': 1.6, 'stroke-linejoin': 'round'
+      stroke: D.BLUE, 'stroke-width': 2, 'stroke-opacity': 1,
+      'stroke-linejoin': 'round', opacity: 0
+    }, svg);
+    obbLen = obbEl.getTotalLength();
+    obbEl.setAttribute('stroke-dasharray', obbLen);
+    obbEl.setAttribute('stroke-dashoffset', obbLen);
+    obbLabelEl = D.text('SA(OBB)', {
+      x: 666, y: 218,
+      fill: D.BLUE, 'font-size': 18, 'font-weight': 600, opacity: 0
     }, svg);
 
-    // name + area tags, one group per state, cross-faded by the timeline
-    labelEls = [
-      makeLabel('AABB', areaStrs[0], D.INK, true),
-      makeLabel('OBB', areaStrs[1], D.BLUE, false),
-      makeLabel('SOBB', areaStrs[2], D.BLUE, false)
-    ];
-
-    // corner axis glyph
-    glyphG = D.el('g', {}, svg);
-    D.el('line', {
-      x1: GLYPH[0], y1: GLYPH[1],
-      x2: GLYPH[0] + GLYPH_LEN - 8, y2: GLYPH[1],
-      stroke: D.INK, 'stroke-width': 2
-    }, glyphG);
-    D.el('polygon', {
-      points: pts2str([
-        [GLYPH[0] + GLYPH_LEN + 2, GLYPH[1]],
-        [GLYPH[0] + GLYPH_LEN - 7, GLYPH[1] - 5],
-        [GLYPH[0] + GLYPH_LEN - 7, GLYPH[1] + 5]
-      ]),
-      fill: D.INK
-    }, glyphG);
-    arrowBLine = D.el('line', {
-      x1: GLYPH[0], y1: GLYPH[1],
-      x2: GLYPH[0], y2: GLYPH[1] - GLYPH_LEN + 8,
-      stroke: D.INK, 'stroke-width': 2
-    }, glyphG);
-    arrowBHead = D.el('polygon', { fill: D.INK }, glyphG);
-    D.text('AXES', {
-      'class': 'svg-side-label',
-      x: GLYPH[0], y: GLYPH[1] + 34, 'text-anchor': 'middle'
+    // SOBB: teal, swept on at s2 the same way
+    sobbEl = D.el('polygon', {
+      points: pts2str(sobbC),
+      fill: D.TEAL, 'fill-opacity': 0,
+      stroke: D.TEAL, 'stroke-width': 2,
+      'stroke-linejoin': 'round', opacity: 0
+    }, svg);
+    sobbLen = sobbEl.getTotalLength();
+    sobbEl.setAttribute('stroke-dasharray', sobbLen);
+    sobbEl.setAttribute('stroke-dashoffset', sobbLen);
+    sobbLabelEl = D.text('SA(SOBB)', {
+      x: 540, y: 460,
+      fill: D.TEAL, 'font-size': 18, 'font-weight': 600, opacity: 0
     }, svg);
 
-    updateGlyph();
+    // right-column rows + caption lines (start visible in CSS; hidden here)
+    bvObb = document.getElementById('bv-obb');
+    bvSobb = document.getElementById('bv-sobb');
+    bvObbSa = document.getElementById('bv-obb-sa');
+    bvSobbSa = document.getElementById('bv-sobb-sa');
+    capIneq = document.getElementById('sobb-ineq');
+    capSa = document.getElementById('sobb-saineq');
+    bvObbSa.textContent = areaStrs[1];
+    bvSobbSa.textContent = areaStrs[2];
+
     built = true;
   }
 
   function resetState() {
-    var animEls = [boxEl].concat(labelEls);
+    var animEls = [aabbEl, obbEl, obbLabelEl, sobbEl, sobbLabelEl,
+      bvObb, bvSobb, capIneq, capSa];
     gsap.killTweensOf(animEls);
-    boxEl.setAttribute('points', pts2str(aabbC));
-    boxEl.setAttribute('stroke', D.INK);
-    boxEl.setAttribute('fill-opacity', 0);
-    boxEl.setAttribute('stroke-width', 1.6);
-    labelEls[0].setAttribute('opacity', 1);
-    labelEls[1].setAttribute('opacity', 0);
-    labelEls[2].setAttribute('opacity', 0);
-    proxy.rot = 0;
-    proxy.skew = 0;
-    updateGlyph();
+    aabbEl.setAttribute('stroke-opacity', 1);
+    obbEl.setAttribute('opacity', 0);
+    obbEl.setAttribute('stroke-dashoffset', obbLen);
+    obbEl.setAttribute('fill-opacity', 0);
+    obbEl.setAttribute('stroke-opacity', 1);
+    obbLabelEl.setAttribute('opacity', 0);
+    sobbEl.setAttribute('opacity', 0);
+    sobbEl.setAttribute('stroke-dashoffset', sobbLen);
+    sobbEl.setAttribute('fill-opacity', 0);
+    sobbLabelEl.setAttribute('opacity', 0);
+    gsap.set([bvObb, bvSobb, capIneq, capSa], { opacity: 0, y: 0 });
   }
 
   function buildTimeline() {
     tl = gsap.timeline({ paused: true });
 
-    // section 1 (0 → s1): rotate the frame into the OBB
-    tl.to(boxEl, {
-      attr: { points: pts2str(obbC) },
-      duration: 1.15, ease: 'power2.inOut'
+    // s1: the OBB draws in over the AABB; the AABB recedes
+    tl.to(obbEl, {
+      attr: { opacity: 1, 'stroke-dashoffset': 0 },
+      duration: 1.1, ease: 'power2.inOut'
     }, 0);
-    tl.to(proxy, {
-      rot: AXIS1, duration: 1.15, ease: 'power2.inOut', onUpdate: updateGlyph
-    }, 0);
-    tl.to(labelEls[0], { attr: { opacity: 0 }, duration: 0.35, ease: 'power1.out' }, 0.25);
-    tl.to(labelEls[1], { attr: { opacity: 1 }, duration: 0.35, ease: 'power1.out' }, 0.5);
-    tl.set(boxEl, { attr: { stroke: D.BLUE } }, 1.0);
+    tl.to(obbEl, {
+      attr: { 'fill-opacity': 0.08 }, duration: 0.5, ease: 'power1.out'
+    }, 0.7);
+    tl.to(aabbEl, {
+      attr: { 'stroke-opacity': 0.5 }, duration: 0.5, ease: 'power1.out'
+    }, 0.3);
+    tl.to(obbLabelEl, {
+      attr: { opacity: 1 }, duration: 0.35, ease: 'power1.out'
+    }, 0.75);
+    tl.fromTo(bvObb,
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', immediateRender: false },
+      0.4);
     tl.addLabel('s1', 1.2);
 
-    // section 2 (s1 → s2): shear the frame into the SOBB
-    tl.to(boxEl, {
-      attr: { points: pts2str(sobbC) },
-      duration: 1.15, ease: 'power2.inOut'
+    // s2: the SOBB draws in in teal; the OBB recedes
+    tl.to(sobbEl, {
+      attr: { opacity: 1, 'stroke-dashoffset': 0 },
+      duration: 1.1, ease: 'power2.inOut'
     }, 's1+=0.25');
-    tl.to(proxy, {
-      skew: SKEW, duration: 1.15, ease: 'power2.inOut', onUpdate: updateGlyph
-    }, 's1+=0.25');
-    tl.to(labelEls[1], { attr: { opacity: 0 }, duration: 0.35, ease: 'power1.out' }, 's1+=0.5');
-    tl.to(labelEls[2], { attr: { opacity: 1 }, duration: 0.35, ease: 'power1.out' }, 's1+=0.75');
-    tl.addLabel('s2', 's1+=1.45');
+    tl.to(sobbEl, {
+      attr: { 'fill-opacity': 0.08 }, duration: 0.5, ease: 'power1.out'
+    }, 's1+=0.95');
+    tl.to(obbEl, {
+      attr: { 'stroke-opacity': 0.5, 'fill-opacity': 0.05 },
+      duration: 0.5, ease: 'power1.out'
+    }, 's1+=0.45');
+    tl.to(sobbLabelEl, {
+      attr: { opacity: 1 }, duration: 0.35, ease: 'power1.out'
+    }, 's1+=1.05');
+    tl.fromTo(bvSobb,
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', immediateRender: false },
+      's1+=0.45');
+    tl.addLabel('s2', 's1+=1.5');
 
-    // section 3 (s2 → s3): settle on the SOBB
-    tl.to(boxEl, {
-      attr: { 'fill-opacity': 0.08, 'stroke-width': 2.2 },
-      duration: 0.7, ease: 'power1.inOut'
-    }, 's2+=0.25');
-    tl.addLabel('s3', 's2+=1.0');
+    // s3: family caption
+    tl.fromTo(capIneq,
+      { opacity: 0, y: 8 },
+      { opacity: 1, y: 0, duration: 0.5, ease: 'power1.out', immediateRender: false },
+      's2+=0.2');
+    tl.addLabel('s3', 's2+=0.8');
+
+    // s4: surface-area caption
+    tl.fromTo(capSa,
+      { opacity: 0, y: 8 },
+      { opacity: 1, y: 0, duration: 0.5, ease: 'power1.out', immediateRender: false },
+      's3+=0.2');
+    tl.addLabel('s4', 's3+=0.8');
   }
 
   var animator = {
@@ -303,10 +268,7 @@
       animator.stop();
       resetState();
       buildTimeline();
-      if (fragStep > 0) {
-        tl.seek(D.stopsFor(tl, 3)[fragStep], true);
-        updateGlyph(); // seek may suppress tween onUpdate callbacks
-      }
+      if (fragStep > 0) tl.seek(D.stopsFor(tl, 4)[fragStep], true);
       gsap.fromTo(svg,
         { opacity: 0, y: 14 },
         { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out', overwrite: 'auto' });
@@ -314,7 +276,7 @@
 
     step: function (fragStep) {
       if (!tl) return;
-      tl.tweenTo(D.stopsFor(tl, 3)[fragStep], { ease: 'none' });
+      tl.tweenTo(D.stopsFor(tl, 4)[fragStep], { ease: 'none' });
     },
 
     stop: function () {
@@ -324,9 +286,9 @@
 
   // expose pure geometry for headless smoke tests
   animator._test = {
-    aabbC: function () { return aabbC; },
-    obbC: function () { return obbC; },
-    sobbC: function () { return sobbC; },
+    aabb: function () { return aabbC; },
+    obb: function () { return obbC; },
+    sobb: function () { return sobbC; },
     areaStrs: function () { return areaStrs; }
   };
 

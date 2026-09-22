@@ -1,4 +1,4 @@
-/* Refit slide animator — the core algorithm animation.
+/* Refit slide animator — the standard AABB refit procedure.
  *
  * Data-driven: all SVG is generated from the layout data below.
  * To extend toward the real paper figures, edit only the LAYOUT DATA
@@ -6,17 +6,11 @@
  * timeline consume those structures generically.
  *
  * Timeline sections (one per reveal.js fragment step):
- *   s1: leaves re-fit        -> geometry moves, stale leaf boxes shrink-wrap
- *   s2: bounds propagate     -> internal boxes union their children
+ *   s1: leaves re-fit        -> geometry moves, stale leaf boxes shrink-wrap;
+ *                               then the triangles fade — above the leaves
+ *                               only the boundary carries information
+ *   s2: bounds propagate     -> internal boxes union their (faded) children
  *   s3: tree settles         -> root re-fits, hierarchy valid again
- *   s4: Phase A climax       -> atomic-counter sync beat on parent M0
- *                               (badge "wait n/8" ticks 1->8, children
- *                               flash as they arrive, parked thread dots)
- *   s5: Phase B transition   -> SOBB orientation crosses on three levels,
- *                               visibly mis-aligned between parent/child
- *   s6: previous fix (EG25)  -> k-DOP overlays travel up A -> M0 -> R,
- *                               scene boxes go heavy (wide stroke, fill)
- *   s7: the bar              -> red cost badge near the root
  */
 (function () {
   'use strict';
@@ -89,43 +83,16 @@
 
   var BOX_PAD = 12; // visual padding around each bound
 
-  /* s4: atomic-counter sync beat, staged on parent M0 (right of the node,
-   * clear of both child edges; dot queue sits under the badge). */
-  var SYNC_NODE = 'M0';
-  var SYNC_BADGE = { x: 187, y: 226, w: 92, h: 22 };
-  var SYNC_DOTS = [{ x: 192, y: 258 }, { x: 206, y: 258 }, { x: 220, y: 258 }];
-
-  /* s5: orientation crosses — one per level (root/internal/leaf), each
-   * rotated differently so parent/child misalignment reads at a glance.
-   * Offsets clear the nodes, edges, the s6/s7 overlays, AND the
-   * ROOT/INTERNAL/LEAVES row labels (arm length 8: see the ±8 in the
-   * line coords below — verified against label text width). */
-  var CROSSES = [
-    { id: 'R',  cx: 222, cy: 78,  rot: 0 },
-    { id: 'M0', cx: 108, cy: 232, rot: 36 },
-    { id: 'A',  cx: 24,  cy: 396, rot: -24 }
-  ];
-
-  /* s6: k-DOP overlays traveling up the leftmost path. */
-  var KDOP_PATH = ['A', 'M0', 'R'];
-  var KDOP_TAG = {
-    A:  { x: 75,  y: 434, anchor: 'middle' },
-    M0: { x: 190, y: 222, anchor: 'start' },
-    R:  { x: 280, y: 52,  anchor: 'middle' }
-  };
-
-  /* s7: red cost badge beside the root. */
-  var COST_BADGE = { x: 322, y: 74, w: 148, h: 26, text: '4.4–4.7× · ~60 MB' };
+  /* s1: after the leaf refit, the triangles fade to this opacity —
+   * faintly visible, but the message is that their information is
+   * spent; only the boundary propagates upward. */
+  var TRI_FADE = 0.15;
 
   var CAPTIONS = [
     'Static scene — every box tightly bounds its geometry.',
-    'Geometry moved — each leaf refits from its own triangles.',
+    'Geometry moved — leaves refit; above them, only the boundary matters.',
     'Bounds propagate — each internal box unions its children.',
-    'Root refit — the hierarchy is valid again.',
-    'Parent waits for ALL 8 children of the wide node — atomic counters.',
-    'SOBBs: each level has its own orientation — child bounds don’t compose.',
-    'EG25 fix: propagate full k-DOPs, refit every node.',
-    '4.4–4.7× slower than AABB refit · ~60 MB scratch — the bar to beat.'
+    'Root refit — the hierarchy is valid again.'
   ];
 
   /* ==================== pure geometry helpers ==================== */
@@ -230,13 +197,6 @@
   var BOXES = null;          // computed bounds
   var tl = null;             // GSAP timeline
   var panelEls = [];
-  // s4..s7 elements (all start hidden; timeline tweens own the reveal)
-  var syncBadgeG, syncBadgeText;
-  var parkedDots = [];
-  var flashEls = {};         // nodeId -> highlight rect over the node
-  var crossEls = {};         // nodeId -> orientation-cross group
-  var kdopEls = {};          // nodeId -> overlay group (frame + tag)
-  var costBadgeG;
 
   function buildScene(container) {
     sceneSvg = el('svg', {
@@ -305,104 +265,6 @@
       }, g);
       t.textContent = label;
     });
-
-    buildStoryEls();
-  }
-
-  /* ==================== s4..s7 story elements ==================== */
-
-  function buildStoryEls() {
-    var id, p;
-
-    // node flash overlays (arrival beats at s4, root settle at s7):
-    // fill + attr opacity, so timeline tweens can show/hide them without
-    // fighting the .svg-node CSS class on the node rects themselves.
-    Object.keys(NODE_POS).forEach(function (nid) {
-      p = NODE_POS[nid];
-      flashEls[nid] = el('rect', {
-        x: p.x - NODE_W / 2, y: p.y - NODE_H / 2,
-        width: NODE_W, height: NODE_H, rx: 5,
-        fill: '#bcd6f8', opacity: 0, 'pointer-events': 'none'
-      }, treeSvg);
-    });
-
-    // s4: atomic-counter badge + parked-thread dot queue
-    syncBadgeG = el('g', { opacity: 0 }, treeSvg);
-    el('rect', {
-      x: SYNC_BADGE.x, y: SYNC_BADGE.y,
-      width: SYNC_BADGE.w, height: SYNC_BADGE.h, rx: 5,
-      fill: '#ffffff', stroke: BLUE, 'stroke-width': 1.6
-    }, syncBadgeG);
-    syncBadgeText = el('text', {
-      x: SYNC_BADGE.x + SYNC_BADGE.w / 2,
-      y: SYNC_BADGE.y + 15,
-      'text-anchor': 'middle', 'font-size': 13, fill: INK,
-      'font-variant-numeric': 'tabular-nums'
-    }, syncBadgeG);
-    syncBadgeText.textContent = 'wait 1/8';
-    SYNC_DOTS.forEach(function (d) {
-      parkedDots.push(el('circle', {
-        cx: d.x, cy: d.y, r: 5, fill: INK, opacity: 0
-      }, treeSvg));
-    });
-
-    // shared arrowhead marker for the orientation crosses
-    var defs = el('defs', {}, treeSvg);
-    var mk = el('marker', {
-      id: 'refit-geo-arrow', viewBox: '0 0 8 8', refX: 6, refY: 4,
-      markerWidth: 7, markerHeight: 7, orient: 'auto'
-    }, defs);
-    el('path', { d: 'M0,0 L8,4 L0,8 z', fill: BLUE }, mk);
-
-    // s5: orientation crosses — two short perpendicular arrows per node,
-    // each group rotated to that level's (different) orientation.
-    CROSSES.forEach(function (c) {
-      var g = el('g', {
-        transform: 'translate(' + c.cx + ' ' + c.cy + ') rotate(' + c.rot + ')',
-        opacity: 0
-      }, treeSvg);
-      el('line', {
-        x1: -8, y1: 0, x2: 8, y2: 0,
-        stroke: BLUE, 'stroke-width': 1.8, 'marker-end': 'url(#refit-geo-arrow)'
-      }, g);
-      el('line', {
-        x1: 0, y1: 8, x2: 0, y2: -8,
-        stroke: BLUE, 'stroke-width': 1.8, 'marker-end': 'url(#refit-geo-arrow)'
-      }, g);
-      crossEls[c.id] = g;
-    });
-
-    // s6: k-DOP overlays on the A -> M0 -> R path — voluminous bounds
-    // (light fill, heavy stroke) with a small tag beside each.
-    KDOP_PATH.forEach(function (nid) {
-      p = NODE_POS[nid];
-      var g = el('g', { opacity: 0 }, treeSvg);
-      el('rect', {
-        x: p.x - 34, y: p.y - 25, width: 68, height: 50, rx: 8,
-        fill: '#dcebfd', 'fill-opacity': 0.6,
-        stroke: BLUE, 'stroke-width': 2.4
-      }, g);
-      var tagPos = KDOP_TAG[nid];
-      var tag = el('text', {
-        x: tagPos.x, y: tagPos.y,
-        'text-anchor': tagPos.anchor, 'font-size': 12, fill: BLUE
-      }, g);
-      tag.textContent = 'k-DOP';
-      kdopEls[nid] = g;
-    });
-
-    // s7: red cost badge beside the root
-    costBadgeG = el('g', { opacity: 0 }, treeSvg);
-    el('rect', {
-      x: COST_BADGE.x, y: COST_BADGE.y,
-      width: COST_BADGE.w, height: COST_BADGE.h, rx: 6,
-      fill: '#fbeaea', stroke: RED, 'stroke-width': 1.8
-    }, costBadgeG);
-    var costText = el('text', {
-      x: COST_BADGE.x + COST_BADGE.w / 2, y: COST_BADGE.y + 17.5,
-      'text-anchor': 'middle', 'font-size': 14, fill: RED, 'font-weight': 650
-    }, costBadgeG);
-    costText.textContent = COST_BADGE.text;
   }
 
   function setRect(r, b) {
@@ -450,20 +312,20 @@
 
   function stopTimes() {
     var times = [0];
-    for (var i = 1; i <= 7; i++) times.push(tl.labels['s' + i]);
+    for (var i = 1; i <= 3; i++) times.push(tl.labels['s' + i]);
     return times;
   }
 
   function resetDom() {
-    // geometry back to rest pose
+    // geometry back to rest pose, triangles fully visible again
     polyEls.forEach(function (p) {
       gsap.killTweensOf(p.el);
       p.el.setAttribute('points', pts2str(p.rest));
+      p.el.setAttribute('opacity', 1);
     });
     // boxes back to rest bounds and neutral style
     Object.keys(boxEls).forEach(function (id) {
       gsap.killTweensOf(boxEls[id]);
-      gsap.set(boxEls[id], { clearProps: 'fill,strokeWidth,fillOpacity' }); // s6 heavy style
       setRect(boxEls[id], BOXES[id].rest);
       boxRestStyle(boxEls[id]);
     });
@@ -476,25 +338,14 @@
       gsap.killTweensOf(edgeForChild[id]);
       gsap.set(edgeForChild[id], { clearProps: 'stroke' });
     });
-    // s4..s7 story elements back to hidden/neutral
-    gsap.killTweensOf([syncBadgeG, costBadgeG]
-      .concat(parkedDots, Object.keys(crossEls).map(function (k) { return crossEls[k]; }),
-              Object.keys(kdopEls).map(function (k) { return kdopEls[k]; }),
-              Object.keys(flashEls).map(function (k) { return flashEls[k]; })));
-    syncBadgeG.setAttribute('opacity', 0);
-    syncBadgeText.textContent = 'wait 1/8';
-    costBadgeG.setAttribute('opacity', 0);
-    parkedDots.forEach(function (d) { d.setAttribute('opacity', 0); });
-    Object.keys(crossEls).forEach(function (k) { crossEls[k].setAttribute('opacity', 0); });
-    Object.keys(kdopEls).forEach(function (k) { kdopEls[k].setAttribute('opacity', 0); });
-    Object.keys(flashEls).forEach(function (k) { flashEls[k].setAttribute('opacity', 0); });
   }
 
   function buildTimeline() {
     tl = gsap.timeline({ paused: true });
 
-    // s1: geometry deforms, all boxes go stale (red dashed), then the
-    // leaves re-fit — shrink-wrapping their own triangles again.
+    // s1: geometry deforms, all boxes go stale (red dashed), the leaves
+    // re-fit — shrink-wrapping their own triangles again — and then the
+    // triangles fade: above the leaves, only the boundary is needed.
     polyEls.forEach(function (p, i) {
       tl.to(p.el, {
         attr: { points: pts2str(p.moved) },
@@ -504,7 +355,13 @@
     var allRects = Object.keys(boxEls).map(function (id) { return boxEls[id]; });
     tl.set(allRects, { attr: { stroke: RED, 'stroke-dasharray': '7 5' } }, '>');
     tl.add(function () { pulseNodes(LEAVES); }, '>');
+    var leafAt = tl.duration();
     addBoxRefit(tl, LEAVES, '>');
+    var triEls = polyEls.map(function (p) { return p.el; });
+    tl.to(triEls, {
+      attr: { opacity: TRI_FADE },
+      duration: 0.8, ease: 'power1.inOut'
+    }, leafAt + 0.6);
     tl.addLabel('s1', tl.duration());
 
     // s2: bounds propagate — internal level re-fits (parents union children).
@@ -518,71 +375,6 @@
     tl.add(function () { pulseNodes(['R']); }, '>');
     addBoxRefit(tl, ['R'], '>');
     tl.addLabel('s3', tl.duration());
-
-    // Each section starts with a settle gap so its first zero-duration
-    // change sits strictly AFTER the previous label (labels add no time,
-    // and a set placed exactly at a stop time would fire at the stop).
-
-    // s4: Phase A climax — synchronization on parent M0: badge fades in,
-    // parked threads queue up, the counter ticks 1->8 while the children
-    // flash as they arrive, then the queue drains.
-    tl.to({}, { duration: 0.35 }, '>');
-    tl.fromTo(syncBadgeG,
-      { attr: { opacity: 0 } },
-      { attr: { opacity: 1 }, duration: 0.3, ease: 'power1.out' }, '>');
-    tl.fromTo(parkedDots,
-      { attr: { opacity: 0 } },
-      { attr: { opacity: 1 }, duration: 0.25, ease: 'power1.out', stagger: 0.09 }, '<');
-    var counter = { n: 1 };
-    tl.fromTo(counter, { n: 1 }, {
-      n: 8, duration: 1.3, ease: 'none',
-      onUpdate: function () {
-        syncBadgeText.textContent = 'wait ' + Math.round(counter.n) + '/8';
-      }
-    }, '>');
-    tl.to(flashEls.A, { attr: { opacity: 1 }, duration: 0.18, ease: 'power1.in' }, '+=0.15');
-    tl.to(flashEls.A, { attr: { opacity: 0 }, duration: 0.45, ease: 'power1.out' }, '>');
-    tl.to(flashEls.B, { attr: { opacity: 1 }, duration: 0.18, ease: 'power1.in' }, '+=0.3');
-    tl.to(flashEls.B, { attr: { opacity: 0 }, duration: 0.45, ease: 'power1.out' }, '>');
-    tl.to(parkedDots,
-      { attr: { opacity: 0 }, duration: 0.35, ease: 'power1.in', stagger: 0.06 }, '>');
-    tl.addLabel('s4', tl.duration());
-
-    // s5: Phase B transition — the sync story leaves, orientation crosses
-    // land on three levels, each pointing a different way.
-    tl.to({}, { duration: 0.3 }, '>');
-    tl.to([syncBadgeG].concat(parkedDots),
-      { attr: { opacity: 0 }, duration: 0.3, ease: 'power1.in' }, '>');
-    tl.fromTo(CROSSES.map(function (c) { return crossEls[c.id]; }),
-      { attr: { opacity: 0 } },
-      { attr: { opacity: 1 }, duration: 0.4, ease: 'power1.out', stagger: 0.18 },
-      '>');
-    tl.addLabel('s5', tl.duration());
-
-    // s6: the EG25 fix — k-DOP overlays travel up the path while the
-    // scene boxes go heavy (wide stroke, light fill) in the same order.
-    tl.to({}, { duration: 0.3 }, '>');
-    KDOP_PATH.forEach(function (id) {
-      tl.fromTo(kdopEls[id],
-        { attr: { opacity: 0 } },
-        { attr: { opacity: 1 }, duration: 0.35, ease: 'power1.out' }, '>');
-      // fill/strokeWidth as inline styles: the .svg-box CSS class sets
-      // fill:none / stroke-width, which would beat attribute tweens.
-      // fill-opacity keeps the fill translucent — an opaque fill (esp. on
-      // the root, whose box spans the whole scene) erases every triangle.
-      tl.to(boxEls[id],
-        { fill: '#eef3fb', fillOpacity: 0.32, strokeWidth: 3, duration: 0.3, ease: 'power1.out' }, '<');
-    });
-    tl.addLabel('s6', tl.duration());
-
-    // s7: the bar — the tree settles with a red cost badge near the root.
-    tl.to({}, { duration: 0.3 }, '>');
-    tl.fromTo(costBadgeG,
-      { attr: { opacity: 0 } },
-      { attr: { opacity: 1 }, duration: 0.4, ease: 'power1.out' }, '>');
-    tl.to(flashEls.R, { attr: { opacity: 1 }, duration: 0.2, ease: 'power1.in' }, '<');
-    tl.to(flashEls.R, { attr: { opacity: 0 }, duration: 0.7, ease: 'power1.out' }, '>');
-    tl.addLabel('s7', tl.duration());
   }
 
   var animator = {
@@ -605,9 +397,6 @@
       captionEl.textContent = CAPTIONS[fragStep] || CAPTIONS[0];
       if (fragStep > 0) {
         tl.seek(stopTimes()[fragStep], true); // jump without firing callbacks
-        // seek suppresses the counter's onUpdate; set the badge text
-        // for the stop directly (ticks completed at every stop >= s4)
-        if (fragStep >= 4) syncBadgeText.textContent = 'wait 8/8';
       }
 
       // gentle entrance of both panels

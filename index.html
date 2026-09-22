@@ -146,17 +146,46 @@
     <!-- L2. What is a SOBB? -->
     <section id="slide-sobb" data-animator="sobbmorph">
       <h2 class="slide-head">What is a SOBB?</h2>
-      <div class="canvas-row">
+      <div class="canvas-row sobb-row">
         <div id="morph-canvas" class="panel"></div>
+        <div class="bv-rows">
+          <div class="bv-col-label">SURFACE AREA</div>
+          <div class="bv-row" id="bv-aabb"><span class="bv-sw bv-sw-ink"></span><span class="bv-name">AABB</span><span class="bv-sa">SA = 100%</span></div>
+          <div class="bv-row" id="bv-obb"><span class="bv-sw bv-sw-blue"></span><span class="bv-name">OBB</span><span class="bv-sa" id="bv-obb-sa"></span></div>
+          <div class="bv-row" id="bv-sobb"><span class="bv-sw bv-sw-sobb"></span><span class="bv-name">SOBB</span><span class="bv-sa" id="bv-sobb-sa"></span></div>
+        </div>
       </div>
-      <div class="status-row"><span class="cap">A SOBB skews its three slab pairs away from perpendicular — same memory as an OBB, same intersection test.</span></div>
+      <!-- Gated lines below the image: family containment, then the
+           minimal-SA consequence. Both start hidden; the animator
+           reveals them (kdop-promise pattern). -->
+      <div class="cap-extra-row"><span class="cap" id="sobb-ineq">AABB ⊆ OBB ⊆ SOBB — every AABB is an OBB; every OBB is a SOBB</span></div>
+      <div class="cap-extra-row"><span class="cap" id="sobb-saineq">SA(AABB) ≥ SA(OBB) ≥ SA(SOBB) — the minimal bound only shrinks as the family grows</span></div>
+      <div class="status-row"><span class="cap">A SOBB skews its three slab normals away from perpendicular — same memory as an OBB, same intersection test.</span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L2.5. From slab pairs to a k-DOP -->
+    <section id="slide-kdop" data-animator="kdopintro">
+      <h2 class="slide-head">From slab pairs to a k-DOP</h2>
+      <div class="canvas-row">
+        <div id="kdopintro-canvas" class="panel"></div>
+      </div>
+      <!-- Empty cap-extra rows: match the fit slide's canvas-row height so
+           the k-DOP diagram renders at the identical scale and position,
+           making the fade into slide-fit visually continuous. -->
+      <div class="cap-extra-row"></div>
+      <div class="cap-extra-row"></div>
+      <div class="status-row"><span class="cap">Fit each slab pair tight to the geometry — their intersection is the k-DOP.</span></div>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
     </section>
 
     <!-- L3. Fitting SOBBs — EG25 in one slide -->
-    <section id="slide-fit" data-animator="kdopfan">
+    <section id="slide-fit" data-animator="kdopfan" data-transition="none">
       <h2 class="slide-head">Fitting SOBBs — EG25 in one slide</h2>
       <div class="canvas-row">
         <div id="kdop-canvas" class="panel"></div>
@@ -184,11 +213,24 @@
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L4.5. Shared basis insertion (new animator) -->
+    <section id="slide-sharedbasis" data-animator="sharedbasis">
+      <h2 class="slide-head">Insert: wide nodes take a shared basis</h2>
+      <div class="canvas-row">
+        <div id="sb-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="sb-caption" class="cap"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
     </section>
 
     <!-- L5. Wide node construction & quantization (reused animator) -->
     <section id="slide-quant" data-animator="widenode">
-      <h2 class="slide-head">Compression forces the question</h2>
+      <h2 class="slide-head">Quantization demands a shared basis</h2>
       <div class="canvas-row">
         <div id="wide-canvas" class="panel"></div>
       </div>
@@ -210,61 +252,171 @@
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
-      <span class="fragment"></span>
     </section>
 
-    <!-- L7. Static scenes results (static bar chart) -->
+    <!-- L7. Static scenes results (static Pareto scatter), 38-DOP.
+         X: secondary-ray speed vs AABB8 (linear 1.0–2.0, then an axis break
+         and a compressed extension to 10× for Sheep). Y: build cost vs AABB8.
+         Mapping: mainX = 90 + (v-1)*700; extX = 820 + (v-2)*30;
+         Y = 460 - (v-1)*1500. Each dot carries a 64×64 thumbnail chip
+         (rounded-rect clip, tight offset) plus name + speed label.
+         3 fragment steps: 0 = axes + AABB8 reference, 1 = the 7 in-range
+         dots (staggered via CSS delays), 2 = Sheep + beam + summary strip
+         (sheep group and strip share data-fragment-index 2). -->
     <section id="slide-results">
-      <h2 class="slide-head">Static scenes — secondary rays</h2>
+      <h2 class="slide-head">Static scenes — speed vs build cost (38-DOP)</h2>
       <div class="results-col">
-        <div class="bar-chart fragment">
-          <div class="bar-row">
-            <span class="bar-label">San Miguel</span>
-            <div class="bar-track"><div class="bar-fill" style="width: 62.4%"></div><div class="bar-baseline"></div></div>
-            <span class="bar-value">1.06×</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Mammoth</span>
-            <div class="bar-track"><div class="bar-fill" style="width: 67.6%"></div><div class="bar-baseline"></div></div>
-            <span class="bar-value">1.15×</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Crown</span>
-            <div class="bar-track"><div class="bar-fill" style="width: 72.4%"></div><div class="bar-baseline"></div></div>
-            <span class="bar-value">1.23×</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Powerplant</span>
-            <div class="bar-track"><div class="bar-fill" style="width: 84.1%"></div><div class="bar-baseline"></div></div>
-            <span class="bar-value">1.43×</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Bistro ext.</span>
-            <div class="bar-track"><div class="bar-fill" style="width: 85.9%"></div><div class="bar-baseline"></div></div>
-            <span class="bar-value">1.46×</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Hairball</span>
-            <div class="bar-track"><div class="bar-fill" style="width: 90.6%"></div><div class="bar-baseline"></div></div>
-            <span class="bar-value">1.54×</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">Bistro int.</span>
-            <div class="bar-track"><div class="bar-fill" style="width: 91.8%"></div><div class="bar-baseline"></div></div>
-            <span class="bar-value">1.56×</span>
-          </div>
+        <div class="pareto-fig">
+          <svg viewBox="0 0 1100 560" width="100%" height="100%" role="img" aria-label="Pareto scatter of SOBB8 38-DOP vs AABB8: secondary-ray speed against build time, eight scenes plus Sheep outlier">
+            <title>SOBB8 (38-DOP) vs AABB BVH8 — secondary speed vs build time</title>
+
+            <defs>
+              <clipPath id="tn38-sm"><rect x="121" y="202" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn38-mam"><rect x="163" y="114" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn38-crown"><rect x="338" y="144" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn38-bext"><rect x="422" y="307" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn38-pp"><rect x="562" y="159" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn38-hb"><rect x="546" y="255" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn38-bint"><rect x="697" y="278" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn38-sheep"><rect x="950" y="264" width="64" height="64" rx="10"/></clipPath>
+            </defs>
+
+            <!-- f1: axes, grid, guides, AABB8 reference -->
+            <g class="fragment" data-fragment-index="0">
+              <!-- compressed extension 2×→10×: tinted, grid-free, dashed 2× boundary -->
+              <rect x="820" y="85" width="240" height="387" class="svg-extbg"/>
+
+              <!-- main-region grid -->
+              <line x1="265" y1="85" x2="265" y2="472" class="svg-grid"/>
+              <line x1="440" y1="85" x2="440" y2="472" class="svg-grid"/>
+              <line x1="615" y1="85" x2="615" y2="472" class="svg-grid"/>
+              <line x1="70" y1="85" x2="790" y2="85" class="svg-grid"/>
+              <line x1="70" y1="160" x2="790" y2="160" class="svg-grid"/>
+              <line x1="70" y1="235" x2="790" y2="235" class="svg-grid"/>
+              <line x1="70" y1="310" x2="790" y2="310" class="svg-grid"/>
+              <line x1="70" y1="385" x2="790" y2="385" class="svg-grid"/>
+
+              <!-- reference guides: X=1 and Y=1 through the AABB8 marker, + 2× boundary -->
+              <line x1="90" y1="85" x2="90" y2="472" class="svg-baseline"/>
+              <line x1="70" y1="460" x2="796" y2="460" class="svg-baseline"/>
+              <line x1="820" y1="460" x2="1060" y2="460" class="svg-baseline"/>
+              <line x1="790" y1="85" x2="790" y2="472" class="svg-baseline"/>
+
+              <!-- axes -->
+              <line x1="70" y1="85" x2="70" y2="472" class="svg-axis"/>
+              <line x1="70" y1="472" x2="796" y2="472" class="svg-axis"/>
+              <line x1="820" y1="472" x2="1060" y2="472" class="svg-axis"/>
+              <text x="808" y="479" text-anchor="middle" class="svg-faint">&#8943;</text>
+
+              <!-- x ticks -->
+              <line x1="90" y1="472" x2="90" y2="477" class="svg-tick"/>
+              <line x1="265" y1="472" x2="265" y2="477" class="svg-tick"/>
+              <line x1="440" y1="472" x2="440" y2="477" class="svg-tick"/>
+              <line x1="615" y1="472" x2="615" y2="477" class="svg-tick"/>
+              <line x1="790" y1="472" x2="790" y2="477" class="svg-tick"/>
+              <line x1="1060" y1="472" x2="1060" y2="477" class="svg-tick"/>
+              <text x="90" y="494" text-anchor="middle" class="svg-val">1.0</text>
+              <text x="265" y="494" text-anchor="middle" class="svg-val">1.25</text>
+              <text x="440" y="494" text-anchor="middle" class="svg-val">1.5</text>
+              <text x="615" y="494" text-anchor="middle" class="svg-val">1.75</text>
+              <text x="790" y="494" text-anchor="middle" class="svg-val">2.0</text>
+              <text x="1060" y="494" text-anchor="middle" class="svg-val">10&#215;</text>
+
+              <!-- y ticks -->
+              <line x1="65" y1="460" x2="70" y2="460" class="svg-tick"/>
+              <line x1="65" y1="385" x2="70" y2="385" class="svg-tick"/>
+              <line x1="65" y1="310" x2="70" y2="310" class="svg-tick"/>
+              <line x1="65" y1="235" x2="70" y2="235" class="svg-tick"/>
+              <line x1="65" y1="160" x2="70" y2="160" class="svg-tick"/>
+              <line x1="65" y1="85" x2="70" y2="85" class="svg-tick"/>
+              <text x="58" y="464" text-anchor="end" class="svg-val">1.00</text>
+              <text x="58" y="389" text-anchor="end" class="svg-val">1.05</text>
+              <text x="58" y="314" text-anchor="end" class="svg-val">1.10</text>
+              <text x="58" y="239" text-anchor="end" class="svg-val">1.15</text>
+              <text x="58" y="164" text-anchor="end" class="svg-val">1.20</text>
+              <text x="58" y="89" text-anchor="end" class="svg-val">1.25</text>
+
+              <!-- axis metric labels -->
+              <text x="433" y="528" text-anchor="middle" class="svg-faint">relative traversal speed</text>
+              <text transform="rotate(-90 25 278)" x="25" y="278" text-anchor="middle" class="svg-faint">relative build time</text>
+
+              <!-- AABB8 reference at (1,1): ink diamond on the guide crossing -->
+              <polygon points="90,451 99,460 90,469 81,460" class="svg-dot-ref"/>
+              <text x="104" y="443" class="svg-val">AABB8 reference (1&#215;, 1&#215;)</text>
+            </g>
+
+            <!-- f2: the 7 in-range SOBB8 dots, staggered via CSS delays -->
+            <g class="fragment px-dots" data-fragment-index="1">
+              <g class="px-pt">
+                <image href="img/tn/tn_sm.png" x="121" y="202" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-sm)"/>
+                <rect x="121" y="202" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="153" cy="190" r="5.5" class="svg-dot-sobb"/>
+                <text x="153" y="286" text-anchor="middle" class="svg-scene">San Miguel</text>
+                <text x="153" y="301" text-anchor="middle" class="svg-scene-spd">1.09&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_mammoth.png" x="163" y="114" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-mam)"/>
+                <rect x="163" y="114" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="195" cy="190" r="5.5" class="svg-dot-sobb"/>
+                <text x="233" y="141" class="svg-scene">Mammoth</text>
+                <text x="233" y="156" class="svg-scene-spd">1.15&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_crown.png" x="338" y="144" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-crown)"/>
+                <rect x="338" y="144" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="370" cy="220" r="5.5" class="svg-dot-sobb"/>
+                <text x="372" y="121" text-anchor="middle" class="svg-scene">Crown</text>
+                <text x="372" y="136" text-anchor="middle" class="svg-scene-spd">1.40&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_bext.png" x="422" y="307" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-bext)"/>
+                <rect x="422" y="307" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="454" cy="295" r="5.5" class="svg-dot-sobb"/>
+                <text x="454" y="391" text-anchor="middle" class="svg-scene">Bistro ext.</text>
+                <text x="454" y="406" text-anchor="middle" class="svg-scene-spd">1.52&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_pplant.png" x="562" y="159" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-pp)"/>
+                <rect x="562" y="159" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="594" cy="235" r="5.5" class="svg-dot-sobb"/>
+                <text x="594" y="135" text-anchor="middle" class="svg-scene">Powerplant</text>
+                <text x="594" y="150" text-anchor="middle" class="svg-scene-spd">1.72&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_hb.png" x="546" y="255" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-hb)"/>
+                <rect x="546" y="255" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="622" cy="250" r="5.5" class="svg-dot-sobb"/>
+                <text x="578" y="339" text-anchor="middle" class="svg-scene">Hairball</text>
+                <text x="578" y="354" text-anchor="middle" class="svg-scene-spd">1.76&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_bint.png" x="697" y="278" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-bint)"/>
+                <rect x="697" y="278" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="685" cy="310" r="5.5" class="svg-dot-sobb"/>
+                <text x="729" y="362" text-anchor="middle" class="svg-scene">Bistro int.</text>
+                <text x="729" y="377" text-anchor="middle" class="svg-scene-spd">1.85&#215;</text>
+              </g>
+            </g>
+
+            <!-- f3: Sheep outlier in the compressed extension, beam to 10× -->
+            <g class="fragment" data-fragment-index="2">
+              <rect x="988" y="245" width="72" height="10" class="svg-beam"/>
+              <image href="img/tn/tn_sheep.png" x="950" y="264" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-sheep)"/>
+              <rect x="950" y="264" width="64" height="64" rx="10" class="svg-chip"/>
+              <circle cx="982" cy="250" r="6" class="svg-dot-sheep"/>
+              <text x="982" y="216" text-anchor="middle" class="svg-scene">Sheep</text>
+              <text x="982" y="231" text-anchor="middle" class="svg-scene-num">7.4&#215;</text>
+            </g>
+          </svg>
         </div>
-        <!-- Same words as the original one-liner, split into name + headline
-             number spans so the tile reads as a callout band, not a row. -->
-        <div class="sheep-tile fragment"><span class="sheep-name">Sheep (dense fur)</span><span class="sheep-num">up to 9.3×</span></div>
-        <div class="cost-strip fragment"><span>+14–26% build</span><span>·</span><span>+5% memory</span><span>·</span><span>+7–15 bits/node</span></div>
+        <div class="cost-strip fragment" data-fragment-index="2"><span>+10–18% build</span><span>·</span><span>≤+5% memory</span></div>
       </div>
-      <div class="status-row"><span class="cap results-note">Primary rays barely move (+6% avg) — secondary rays dominate, which is what these bars show, against a compressed wide AABB tree. Sheep's result uses a larger box budget.</span></div>
+      <div class="status-row"><span class="cap results-note">SOBB8 38-DOP vs AABB BVH8 reference — X: secondary-ray traversal speed, Y: build time; primary rays roughly break even (0.95–1.34×); Sheep (dense fur) the extreme outlier.</span></div>
     </section>
 
-    <!-- L8. Refit — the problem (reused animator) -->
+    <!-- L8. Refit — the standard procedure -->
     <section id="slide-refit-problem" data-animator="refit">
-      <h2 class="slide-head">Refit — the problem</h2>
+      <h2 class="slide-head">Refit — the standard procedure</h2>
       <div class="refit-row">
         <div id="refit-scene" class="panel"></div>
         <div id="refit-tree" class="panel"></div>
@@ -275,6 +427,20 @@
       </div>
       <span class="fragment"></span>
       <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L8b. SOBB refit — the problem -->
+    <section id="slide-sobbrefit-problem" data-animator="sobbrefit">
+      <h2 class="slide-head">SOBB refit — the problem</h2>
+      <div class="refit-row">
+        <div id="sobbrefit-scene" class="panel"></div>
+        <div id="sobbrefit-tree" class="panel"></div>
+      </div>
+      <div class="refit-status">
+        <span class="legend"><span class="sw sw-stale"></span>stale bound&emsp;<span class="sw sw-refit"></span>re-fitted bound</span>
+        <span id="sobbrefit-caption" class="refit-caption"></span>
+      </div>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
@@ -288,7 +454,20 @@
       <div class="canvas-row">
         <div id="geo-canvas" class="panel"></div>
       </div>
-      <div class="status-row"><span class="cap">Propagate triangles, not bounds — one thread per leaf cluster climbs to the root; local test first, atomic min/max only on growth.</span></div>
+      <div class="status-row"><span class="cap">Propagate geometry, not bounds — each leaf-child thread carries its triangles to the root; local test first, write only on change.</span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L9.5. Atomics — pressure self-balances (animated) -->
+    <section id="slide-refit-atomics" data-animator="refitatomics">
+      <h2 class="slide-head">Atomics — pressure self-balances</h2>
+      <div class="canvas-row">
+        <div id="atomics-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span class="cap">Local pre-tests are cheap — atomics land where contention is low: 16–26% of tests near the leaves, ~20% overall, ~0.0003% at the root.</span></div>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
@@ -299,11 +478,11 @@
     <section id="slide-refit-numbers">
       <h2 class="slide-head">Refit by geometry — the numbers</h2>
       <div class="num-cards">
-        <div class="num-card fragment"><div class="num-big">~3×</div><div class="num-small">faster than standard SOBB refit</div></div>
-        <div class="num-card fragment"><div class="num-big">4×</div><div class="num-small">less scratch memory (60 → 15 MB)</div></div>
-        <div class="num-card fragment"><div class="num-big">1.47×</div><div class="num-small">an AABB refit (+0.49 ms)</div></div>
-        <div class="num-card fragment"><div class="num-big">1.42–1.49×</div><div class="num-small">trace speedup retained</div></div>
-        <div class="num-card fragment"><div class="num-big num-big-long">&lt;2% / &lt;3% / ~5%</div><div class="num-small">degradation over 64 frames (small/med/large)</div></div>
+        <div class="num-card fragment"><div class="num-big">3×</div><div class="num-small">faster than the original SOBB refit</div></div>
+        <div class="num-card fragment"><div class="num-big">4×</div><div class="num-small">less scratch memory</div></div>
+        <div class="num-card fragment"><div class="num-big">1.5×</div><div class="num-small">slower than an AABB BVH8 refit — down from 4–8× slower</div></div>
+        <div class="num-card fragment"><div class="num-big">1.4×</div><div class="num-small">avg. traversal speed retained thanks to SOBB</div></div>
+        <div class="num-card fragment"><div class="num-big num-big-long">2–5%</div><div class="num-small">degradation over the sequence depending on movement — about the same rate as AABB BVH8</div></div>
       </div>
       <div class="video-row"><div class="video-todo wide">VIDEO TODO — animated Bistro w/ live refit-timing HUD (loop)</div></div>
     </section>
@@ -527,6 +706,158 @@
       <div class="status-row"><span class="cap">Relative trace performance over 64 frames without rebuild (medium movement).</span></div>
     </section>
 
+    <!-- L16. Backup — static scenes results, 56-DOP (appendix variant of the
+         38-DOP Pareto slide; moved out of the main flow). Same axes and
+         mapping; Y range widened 1.00–1.40: Y = 460 - (v-1)*937.5.
+         Sheep (10.15×) clamped at the 10× edge, beam to the right edge. -->
+    <section id="slide-results-56">
+      <h2 class="slide-head">Backup — speed vs build cost (56-DOP)</h2>
+      <div class="results-col">
+        <div class="pareto-fig">
+          <svg viewBox="0 0 1100 560" width="100%" height="100%" role="img" aria-label="Pareto scatter of SOBB8 56-DOP vs AABB8: secondary-ray speed against build time, eight scenes plus Sheep clamped at the 10× axis cap">
+            <title>SOBB8 (56-DOP) vs AABB BVH8 — secondary speed vs build time</title>
+
+            <defs>
+              <clipPath id="tn56-sm"><rect x="82" y="109" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn56-mam"><rect x="191" y="112" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn56-crown"><rect x="336" y="139" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn56-bext"><rect x="492" y="238" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn56-pp"><rect x="570" y="100" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn56-hb"><rect x="630" y="212" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn56-bint"><rect x="702" y="256" width="64" height="64" rx="10"/></clipPath>
+              <clipPath id="tn56-sheep"><rect x="964" y="206" width="64" height="64" rx="10"/></clipPath>
+            </defs>
+
+            <!-- f1: axes, grid, guides, AABB8 reference -->
+            <g class="fragment" data-fragment-index="0">
+              <!-- compressed extension 2×→10×: tinted, grid-free, dashed 2× boundary -->
+              <rect x="820" y="85" width="240" height="387" class="svg-extbg"/>
+
+              <!-- main-region grid -->
+              <line x1="265" y1="85" x2="265" y2="472" class="svg-grid"/>
+              <line x1="440" y1="85" x2="440" y2="472" class="svg-grid"/>
+              <line x1="615" y1="85" x2="615" y2="472" class="svg-grid"/>
+              <line x1="70" y1="85" x2="790" y2="85" class="svg-grid"/>
+              <line x1="70" y1="178.75" x2="790" y2="178.75" class="svg-grid"/>
+              <line x1="70" y1="272.5" x2="790" y2="272.5" class="svg-grid"/>
+              <line x1="70" y1="366.25" x2="790" y2="366.25" class="svg-grid"/>
+
+              <!-- reference guides: X=1 and Y=1 through the AABB8 marker, + 2× boundary -->
+              <line x1="90" y1="85" x2="90" y2="472" class="svg-baseline"/>
+              <line x1="70" y1="460" x2="796" y2="460" class="svg-baseline"/>
+              <line x1="820" y1="460" x2="1060" y2="460" class="svg-baseline"/>
+              <line x1="790" y1="85" x2="790" y2="472" class="svg-baseline"/>
+
+              <!-- axes -->
+              <line x1="70" y1="85" x2="70" y2="472" class="svg-axis"/>
+              <line x1="70" y1="472" x2="796" y2="472" class="svg-axis"/>
+              <line x1="820" y1="472" x2="1060" y2="472" class="svg-axis"/>
+              <text x="808" y="479" text-anchor="middle" class="svg-faint">&#8943;</text>
+
+              <!-- x ticks -->
+              <line x1="90" y1="472" x2="90" y2="477" class="svg-tick"/>
+              <line x1="265" y1="472" x2="265" y2="477" class="svg-tick"/>
+              <line x1="440" y1="472" x2="440" y2="477" class="svg-tick"/>
+              <line x1="615" y1="472" x2="615" y2="477" class="svg-tick"/>
+              <line x1="790" y1="472" x2="790" y2="477" class="svg-tick"/>
+              <line x1="1060" y1="472" x2="1060" y2="477" class="svg-tick"/>
+              <text x="90" y="494" text-anchor="middle" class="svg-val">1.0</text>
+              <text x="265" y="494" text-anchor="middle" class="svg-val">1.25</text>
+              <text x="440" y="494" text-anchor="middle" class="svg-val">1.5</text>
+              <text x="615" y="494" text-anchor="middle" class="svg-val">1.75</text>
+              <text x="790" y="494" text-anchor="middle" class="svg-val">2.0</text>
+              <text x="1060" y="494" text-anchor="middle" class="svg-val">10&#215;</text>
+
+              <!-- y ticks: 1.00–1.40 -->
+              <line x1="65" y1="460" x2="70" y2="460" class="svg-tick"/>
+              <line x1="65" y1="366.25" x2="70" y2="366.25" class="svg-tick"/>
+              <line x1="65" y1="272.5" x2="70" y2="272.5" class="svg-tick"/>
+              <line x1="65" y1="178.75" x2="70" y2="178.75" class="svg-tick"/>
+              <line x1="65" y1="85" x2="70" y2="85" class="svg-tick"/>
+              <text x="58" y="464" text-anchor="end" class="svg-val">1.00</text>
+              <text x="58" y="370" text-anchor="end" class="svg-val">1.10</text>
+              <text x="58" y="276.5" text-anchor="end" class="svg-val">1.20</text>
+              <text x="58" y="183" text-anchor="end" class="svg-val">1.30</text>
+              <text x="58" y="89" text-anchor="end" class="svg-val">1.40</text>
+
+              <!-- axis metric labels -->
+              <text x="433" y="528" text-anchor="middle" class="svg-faint">relative traversal speed</text>
+              <text transform="rotate(-90 25 278)" x="25" y="278" text-anchor="middle" class="svg-faint">relative build time</text>
+
+              <!-- AABB8 reference at (1,1): ink diamond on the guide crossing -->
+              <polygon points="90,451 99,460 90,469 81,460" class="svg-dot-ref"/>
+              <text x="104" y="443" class="svg-val">AABB8 reference (1&#215;, 1&#215;)</text>
+            </g>
+
+            <!-- f2: the 7 in-range SOBB8 dots, staggered via CSS delays -->
+            <g class="fragment px-dots" data-fragment-index="1">
+              <g class="px-pt">
+                <image href="img/tn/tn_sm.png" x="82" y="109" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn56-sm)"/>
+                <rect x="82" y="109" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="160" cy="141" r="5.5" class="svg-dot-sobb"/>
+                <text x="120" y="193" text-anchor="middle" class="svg-scene">San Miguel</text>
+                <text x="120" y="208" text-anchor="middle" class="svg-scene-spd">1.10&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_mammoth.png" x="191" y="112" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn56-mam)"/>
+                <rect x="191" y="112" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="223" cy="188" r="5.5" class="svg-dot-sobb"/>
+                <text x="260" y="143" class="svg-scene">Mammoth</text>
+                <text x="260" y="158" class="svg-scene-spd">1.19&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_crown.png" x="336" y="139" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn56-crown)"/>
+                <rect x="336" y="139" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="412" cy="179" r="5.5" class="svg-dot-sobb"/>
+                <text x="368" y="235" text-anchor="middle" class="svg-scene">Crown</text>
+                <text x="368" y="250" text-anchor="middle" class="svg-scene-spd">1.46&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_bext.png" x="492" y="238" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn56-bext)"/>
+                <rect x="492" y="238" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="524" cy="226" r="5.5" class="svg-dot-sobb"/>
+                <text x="524" y="322" text-anchor="middle" class="svg-scene">Bistro ext.</text>
+                <text x="524" y="337" text-anchor="middle" class="svg-scene-spd">1.62&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_pplant.png" x="570" y="100" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn56-pp)"/>
+                <rect x="570" y="100" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="650" cy="132" r="5.5" class="svg-dot-sobb"/>
+                <text x="602" y="184" text-anchor="middle" class="svg-scene">Powerplant</text>
+                <text x="602" y="199" text-anchor="middle" class="svg-scene-spd">1.80&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_hb.png" x="630" y="212" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn56-hb)"/>
+                <rect x="630" y="212" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="706" cy="244" r="5.5" class="svg-dot-sobb"/>
+                <text x="662" y="296" text-anchor="middle" class="svg-scene">Hairball</text>
+                <text x="662" y="311" text-anchor="middle" class="svg-scene-spd">1.88&#215;</text>
+              </g>
+              <g class="px-pt">
+                <image href="img/tn/tn_bint.png" x="702" y="256" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn56-bint)"/>
+                <rect x="702" y="256" width="64" height="64" rx="10" class="svg-chip"/>
+                <circle cx="734" cy="244" r="5.5" class="svg-dot-sobb"/>
+                <text x="734" y="340" text-anchor="middle" class="svg-scene">Bistro int.</text>
+                <text x="734" y="355" text-anchor="middle" class="svg-scene-spd">1.92&#215;</text>
+              </g>
+            </g>
+
+            <!-- f3: Sheep clamped at the 10× cap, beam to the right edge -->
+            <g class="fragment" data-fragment-index="2">
+              <rect x="1046" y="230" width="14" height="10" class="svg-beam"/>
+              <image href="img/tn/tn_sheep.png" x="964" y="206" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn56-sheep)"/>
+              <rect x="964" y="206" width="64" height="64" rx="10" class="svg-chip"/>
+              <circle cx="1040" cy="235" r="6" class="svg-dot-sheep"/>
+              <text x="996" y="181" text-anchor="middle" class="svg-scene">Sheep</text>
+              <text x="996" y="196" text-anchor="middle" class="svg-scene-num">10.2&#215;</text>
+            </g>
+          </svg>
+        </div>
+        <div class="cost-strip fragment" data-fragment-index="2"><span>+23–35% build</span><span>·</span><span>≤+5% memory</span></div>
+      </div>
+      <div class="status-row"><span class="cap results-note">SOBB8 56-DOP vs AABB BVH8 reference — X: secondary-ray traversal speed, Y: build time; Sheep (dense fur) clamped at the 10× axis cap (10.2× measured).</span></div>
+    </section>
+
   </div>
 </div>
 
@@ -535,12 +866,16 @@
 <script src="js/common.js"></script>
 <script src="js/teaser.js"></script>
 <script src="js/pipeline.js"></script>
+<script src="js/sharedbasis.js"></script>
 <script src="js/widenode.js"></script>
 <script src="js/sobbbasis.js"></script>
 <script src="js/refit.js"></script>
+<script src="js/sobbrefit.js"></script>
 <script src="js/sobbmorph.js"></script>
+<script src="js/kdopintro.js"></script>
 <script src="js/kdopfan.js"></script>
 <script src="js/refitgeo.js"></script>
+<script src="js/refitatomics.js"></script>
 <script src="js/bvhintro.js"></script>
 <script src="js/related.js"></script>
 <script src="js/deck.js"></script>
