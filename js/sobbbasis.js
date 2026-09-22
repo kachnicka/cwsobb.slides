@@ -1,30 +1,40 @@
 /* SOBB basis animator — paper Sec. 3.3: HOW the shared basis is built.
  *
  * Follows slide-quant ("Quantization demands a shared basis"); explains
- * the paper's three candidate strategies for picking the one basis:
+ * the paper's three candidate strategies for picking the one basis.
+ * NO numeric read-outs anywhere — the geometry speaks: candidate progress
+ * is shown by dot rows, per-beat words are one or two tokens, wordy
+ * sentences live only in the footer caption.
  *
  *   f0/base: one wide node, 8 children — each with its own k-DOP
- *            (hexagons, matching the pipeline slide's proxies). No fitting
- *            yet — the question: one basis must fit all eight.
+ *            (hexagons, matching the pipeline slide's proxies).
  *   s1 SUM:  each candidate basis is applied to ALL 8 children at once —
- *            all eight parallelograms simultaneously, 3 candidates
- *            (corner-morph idiom from kdopfan), Σ area ticks down.
- *            Exact, but 3×8 fits — slow.
- *   s2 UNION: the 8 hexagons merge into ONE union k-DOP (per-direction
- *            slab extents merged — visibly fatter than any child). One
- *            fit on the union (short candidate morphs on the right stage),
- *            the basis flows back down: 8 parallelograms on the union's
- *            basis — cheap, but loose.
- *   s3 AVG:  the averaged k-DOP (per-slab mean of the children's extents —
- *            slimmer than the union). One fit, back down: 8 parallelograms
- *            on the deck's shared frame n1=100°/n2=160° (kdopfan/widenode
- *            frame). Marked ✓ — our choice. Three-way summary appears.
- *   s4 closer: avg locks (parallelograms thicken, ✓ summary stays),
- *            slot glyphs tilt onto the shared frame — hand-off to results.
+ *            eight aligned parallelograms morphing together through FOUR
+ *            candidates, slow (corner-morph idiom from kdopfan).
+ *   s2 UNION: fresh baseline, then the 8 children fly one by one into a
+ *            merge point — each arrival GROWS the union k-DOP (running
+ *            per-direction min/max, 6-corner morph-safe). The union
+ *            carries to the right stage, one SOBB fit morphs through
+ *            the candidates — and every child INHERITS that merged fit:
+ *            8 identical fat parallelograms, loose on every child.
+ *   s3 AVG:  fresh baseline again, same fly-in — but the accumulating
+ *            k-DOP does NOT grow: running per-direction mean only nudges
+ *            its shape. One fit on the mean proxy lands on the deck's
+ *            shared frame n1=100°/n2=160°; its BASIS is handed back and
+ *            refit per child: 8 tight BLUE parallelograms, ✓, and the
+ *            three-way summary chips appear.
+ *   s4 closer: avg locks (parallelograms thicken), slot glyphs tilt onto
+ *            the shared frame — hand-off to results.
+ *
+ * Every approach beat re-establishes the SAME clean baseline node at its
+ * start (losing tweens at the section boundary), so backward walks and
+ * deep entries never show residue from the previous strategy.
  *
  * All SOBB parallelograms are genuine 2D SOBBs: intersection of two slab
- * pairs, corners sorted CCW, kdopfan-style morph-safe. GSAP-animated
- * paint props are SVG attributes only. Pure math exported via _test.
+ * pairs, corners sorted CCW, kdopfan-style morph-safe. Union/avg k-DOPs
+ * use a fixed 6-corner slab parametrization (kdop6) so point-counts are
+ * ALWAYS equal for morphs. GSAP-animated paint props are SVG attributes
+ * only. Pure math exported via _test.
  * Host: #sobb-canvas + #sobb-caption. Fragments: 5 (f0 + s1..s4).
  */
 (function () {
@@ -39,17 +49,20 @@
 
   /* ==================== LAYOUT DATA (viewBox 0 0 1120 560) ==================== */
 
-  /* eight children, two rows — hexagon k-DOPs (centre, radius, rotation),
-   * positioned so tight parallelograms never touch; region boxed by FRAME */
+  /* eight children, two rows — ELONGATED hexagon k-DOPs: half-axes a×b,
+   * long-axis direction psi, vertex phase th0. Two orientation families
+   * echo the scene cluster (e1≈10°, e2≈70° — makeCluster): even slots
+   * lean ~10°, odd slots ~70°, amplitudes ascending so the union fly-in
+   * fattens on every arrival. Region boxed by FRAME. */
   var CHILDREN = [
-    { c: [190, 156], r: 46, rot: 0 },
-    { c: [345, 162], r: 52, rot: 8 },
-    { c: [500, 152], r: 43, rot: -9 },
-    { c: [655, 160], r: 49, rot: 5 },
-    { c: [215, 322], r: 50, rot: -6 },
-    { c: [370, 328], r: 44, rot: 12 },
-    { c: [525, 320], r: 52, rot: -4 },
-    { c: [680, 326], r: 45, rot: 10 }
+    { c: [190, 156], a: 42, b: 25.2, psi: 4,  th0: 3 },
+    { c: [345, 162], a: 44, b: 28.2, psi: 63, th0: 3 },
+    { c: [500, 152], a: 46, b: 27.6, psi: 17, th0: 3 },
+    { c: [655, 160], a: 48, b: 30.7, psi: 75, th0: 3 },
+    { c: [215, 322], a: 50, b: 30.0, psi: 7,  th0: 3 },
+    { c: [370, 328], a: 52, b: 33.3, psi: 66, th0: 3 },
+    { c: [525, 320], a: 54, b: 32.4, psi: 15, th0: 3 },
+    { c: [680, 326], a: 56, b: 35.8, psi: 78, th0: 3 }
   ];
   var CENTROID = [435, 242];         // mean of the child centres
   var FRAME = { x: 116, y: 76, w: 660, h: 336 };   // the node's extent
@@ -66,35 +79,50 @@
   var GLYPH_DEG = 10;                // slot glyphs settle on the frame
   var MINI_PTS = '16,5.2 -10,5.2 -16,-5.2 10,-5.2';
 
-  /* k-DOP slab normal directions: 6-DOP = pairs along 0°/60°/120° */
-  var HEX_DIRS = [0, 60, 120].map(function (a) {
+  /* k-DOP slab normal directions: 40°/100°/160° — the children's k-DOPs
+   * share the shared-basis frame's own normals (SOBB = k-DOP on a shared
+   * orientation), which is what lets ONE basis stay tight on all eight */
+  var HEX_DIRS = [40, 100, 160].map(function (a) {
     return [Math.cos(rad(a)), Math.sin(rad(a))];
   });
 
   var PAD_TIGHT = 3;                 // world padding for fitted parallelograms
 
-  /* candidate bases [n1°, n2°] — sorted by cost at build (descending);
-   * SUM and AVG end on the shared frame [100,160]; UNION ends one notch
-   * off ([85,145] wins on the fat union — the union pays slack) */
-  var SUM_BASES_RAW = [[10, 70], [45, 105], [100, 160]];
-  var UNION_BASES_RAW = [[20, 80], [35, 95], [85, 145]];
-  var AVG_BASES_RAW = [[25, 85], [90, 150], [100, 160]];
+  /* the candidate fan: four basis pairs, normals 60° apart on the deck's
+   * fan (10+30k in kdopfan). ALL THREE strategies evaluate these same
+   * four; every approach's winner is honestly the deck's shared frame
+   * [100,160] — the difference is WHAT gets handed back to the children
+   * (sum: per-child refits, union: the one merged fit, avg: per-child
+   * refits on the mean-proxy basis). Sorted by cost descending at build. */
+  var FAN_BASES = [[10, 70], [40, 100], [70, 130], [100, 160]];
+
+  /* summary chips — the closer stays, BIG and readable (viewBox units,
+   * rendered ~1.5× larger than the old 13px chips) */
+  var CHIPS = [
+    { x: 40,  w: 262, t: 'Σ sum · exact · slow',          fill: INK,  win: false },
+    { x: 318, w: 280, t: '∪ union · cheap · loose',       fill: INK,  win: false },
+    { x: 614, w: 366, t: '✓ avg · cheap · tight enough',  fill: BLUE, win: true }
+  ];
+  var CHIP_FS = 21;
 
   var CAPTIONS = [
-    'One wide node — its eight children each carry a k-DOP; a single basis must fit all eight.',
-    'SUM: score every candidate basis on all eight children at once — exact, but 3 × 8 fits are slow.',
-    'UNION: merge the eight k-DOPs into one, fit a single proxy — cheap, but the union is loose.',
-    'AVG: average the slab extents, fit once — cheap and tight enough. Our choice.',
-    'Locked: one averaged-fit basis, eight tight shared-basis SOBBs. On to the numbers.'
+    'One wide node — eight children, eight k-DOPs, and a single basis must fit every child.',
+    'Sum — score every candidate basis on every child at once: exact, but far too slow.',
+    'Union — merge the children into one k-DOP, then fit once: cheap, but the union is loose.',
+    'Average — one mean k-DOP, one fit: cheap and tight enough. Our choice.',
+    'Locked: one stored frame, eight tight shared-basis SOBBs.'
   ];
 
   /* ==================== pure math ==================== */
 
-  function hexagon(c, r, rotDeg) {
+  /* elongated hexagon: vertices on an a×b ellipse, long axis at psi° */
+  function hexagon(ch) {
     var out = [];
+    var cs = Math.cos(rad(ch.psi)), sn = Math.sin(rad(ch.psi));
     for (var i = 0; i < 6; i++) {
-      var a = (rotDeg + i * 60) * Math.PI / 180;
-      out.push([c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]);
+      var a = rad(ch.th0 + i * 60);
+      var lx = ch.a * Math.cos(a), ly = ch.b * Math.sin(a);
+      out.push([ch.c[0] + lx * cs - ly * sn, ch.c[1] + lx * sn + ly * cs]);
     }
     return out;
   }
@@ -157,38 +185,22 @@
     ]);
   }
 
-  /* intersection of 3 slab pairs (exts[i] = [lo,hi] along HEX_DIRS[i]):
-   * candidate corners = all pairwise boundary intersections, keep the
-   * ones inside every slab, dedupe, sort — a (≤)6-gon */
-  function kdopFromExtents(exts) {
-    var dirs = HEX_DIRS;
-    var lines = [];
-    for (var i = 0; i < 3; i++) {
-      lines.push({ n: dirs[i], m: exts[i][0] });
-      lines.push({ n: dirs[i], m: exts[i][1] });
-    }
-    var pts = [];
-    for (var a = 0; a < 6; a++) {
-      for (var b = a + 1; b < 6; b++) {
-        if (lines[a].n === lines[b].n) continue;
-        var p = solveCorner(lines[a].n, lines[b].n, lines[a].m, lines[b].m);
-        var inside = true;
-        for (var k = 0; k < 3 && inside; k++) {
-          var d = p[0] * dirs[k][0] + p[1] * dirs[k][1];
-          if (d < exts[k][0] - 1e-6 || d > exts[k][1] + 1e-6) inside = false;
-        }
-        if (inside) pts.push(p);
-      }
-    }
-    /* dedupe */
-    var tri = [];
-    pts.forEach(function (p) {
-      var dup = tri.some(function (q) {
-        return Math.abs(q[0] - p[0]) < 0.01 && Math.abs(q[1] - p[1]) < 0.01;
-      });
-      if (!dup) tri.push(p);
-    });
-    return sortCorners(tri);
+  /* Fixed 6-corner k-DOP from slab extents (exts[k] = [lo,hi] along
+   * HEX_DIRS[k]). Edges in fixed CCW normal order +n0,+n1,+n2,−n0,−n1,−n2;
+   * corner j = intersection of edges j and j+1. ALWAYS 6 corners (an
+   * absent edge degenerates to a duplicated point, never a missing one),
+   * so unions/averages of these stay morph-safe at every accumulation
+   * step — unlike a dedupe-and-sort intersection, whose count varies. */
+  function kdop6(exts) {
+    var d = HEX_DIRS, e = exts;
+    return [
+      solveCorner(d[0], d[1], e[0][1], e[1][1]),
+      solveCorner(d[1], d[2], e[1][1], e[2][1]),
+      solveCorner(d[2], d[0], e[2][1], e[0][0]),
+      solveCorner(d[0], d[1], e[0][0], e[1][0]),
+      solveCorner(d[1], d[2], e[1][0], e[2][0]),
+      solveCorner(d[2], d[0], e[2][0], e[0][1])
+    ];
   }
 
   function flatVerts(sets) {
@@ -206,35 +218,60 @@
   /* ==================== derived geometry (deterministic) ==================== */
 
   var HEXVERTS = CHILDREN.map(function (ch) {
-    return hexagon(ch.c, ch.r, ch.rot);
+    return hexagon(ch);
   });
-  var ALL_VERTS = flatVerts(HEXVERTS);
 
   /* per-child slab extents along the k-DOP directions */
   var CHILD_EXTS = HEXVERTS.map(function (verts) {
     return HEX_DIRS.map(function (n) { return project(verts, n); });
   });
 
-  /* UNION: per-direction min/max over all children (⊇ every child) */
-  var UNION_EXTS = HEX_DIRS.map(function (n, k) {
-    var lo = Infinity, hi = -Infinity;
-    CHILD_EXTS.forEach(function (e) {
-      if (e[k][0] < lo) lo = e[k][0];
-      if (e[k][1] > hi) hi = e[k][1];
+  /* FLY-IN basis: each child is re-centred on CENTROID (projection shifts
+   * by exactly n·(CENTROID − c)), so the running union/mean k-DOP grows
+   * in place at the merge point — the union of shapes, not of positions. */
+  var SHIFT = CHILDREN.map(function (ch) {
+    return [CENTROID[0] - ch.c[0], CENTROID[1] - ch.c[1]];
+  });
+  var SHIFT_EXTS = CHILD_EXTS.map(function (ext, k) {
+    return ext.map(function (pair, m) {
+      var s = SHIFT[k][0] * HEX_DIRS[m][0] + SHIFT[k][1] * HEX_DIRS[m][1];
+      return [pair[0] + s, pair[1] + s];
     });
-    return [lo, hi];
   });
-  var UNION_VERTS = kdopFromExtents(UNION_EXTS);
 
-  /* AVG: per-direction mean of the child extents (inside [min,max]) */
-  var AVG_EXTS = HEX_DIRS.map(function (n, k) {
-    var lo = 0, hi = 0;
-    CHILD_EXTS.forEach(function (e) { lo += e[k][0]; hi += e[k][1]; });
-    return [lo / 8, hi / 8];
-  });
-  var AVG_VERTS = kdopFromExtents(AVG_EXTS);
+  /* running union: per-direction min/max over the arrived children */
+  var CUMU_EXTS = [];
+  for (var ui = 0; ui < 8; ui++) {
+    CUMU_EXTS.push(HEX_DIRS.map(function (n, m) {
+      var lo = Infinity, hi = -Infinity;
+      for (var k = 0; k <= ui; k++) {
+        if (SHIFT_EXTS[k][m][0] < lo) lo = SHIFT_EXTS[k][m][0];
+        if (SHIFT_EXTS[k][m][1] > hi) hi = SHIFT_EXTS[k][m][1];
+      }
+      return [lo, hi];
+    }));
+  }
+  var CUMU_VERTS = CUMU_EXTS.map(kdop6);
+  var UNION_EXTS = CUMU_EXTS[7];
+  var UNION_VERTS = CUMU_VERTS[7];
 
-  /* right-stage mapping: world → stage, scale fitted to the union fit */
+  /* running mean: per-direction average over the arrived children —
+   * never exceeds the union (means stay inside [min,max]) */
+  var CUMA_EXTS = [];
+  for (var ai = 0; ai < 8; ai++) {
+    CUMA_EXTS.push(HEX_DIRS.map(function (n, m) {
+      var lo = 0, hi = 0;
+      for (var k = 0; k <= ai; k++) {
+        lo += SHIFT_EXTS[k][m][0]; hi += SHIFT_EXTS[k][m][1];
+      }
+      return [lo / (ai + 1), hi / (ai + 1)];
+    }));
+  }
+  var CUMA_VERTS = CUMA_EXTS.map(kdop6);
+  var AVG_EXTS = CUMA_EXTS[7];
+  var AVG_VERTS = CUMA_VERTS[7];
+
+  /* right-stage mapping: world → stage around the merge point */
   function toStageRaw(p, s) {
     return [
       STAGE[0] + s * (p[0] - CENTROID[0]),
@@ -248,11 +285,11 @@
       md = Math.max(md, Math.abs(p[0] - CENTROID[0]));
       nd = Math.max(nd, Math.abs(p[1] - CENTROID[1]));
     });
-    return Math.round(Math.min(0.62, 178 / md, 148 / nd) * 1000) / 1000;
+    return Math.round(Math.min(1.2, 190 / md, 150 / nd) * 1000) / 1000;
   })();
   function toStage(p) { return toStageRaw(p, PROXY_SCALE); }
 
-  /* candidate helper: sort basis list by cost descending, keep corners */
+  /* candidate helper: sort basis list by cost descending */
   function buildCandidates(rawBases, vertsFn) {
     return rawBases.map(function (b) {
       var cornersList = vertsFn(b);
@@ -264,7 +301,7 @@
   }
 
   /* SUM: candidates fitted on EVERY child — corners per child per cand */
-  var SUM_CANDS = buildCandidates(SUM_BASES_RAW, function (b) {
+  var SUM_CANDS = buildCandidates(FAN_BASES, function (b) {
     return HEXVERTS.map(function (verts) {
       return fitSkew(verts, b[0], b[1], PAD_TIGHT);
     });
@@ -281,57 +318,52 @@
       };
     }).sort(function (a, b) { return b.cost - a.cost; });
   }
-  var UNION_CANDS = proxyCandidates(UNION_BASES_RAW, UNION_VERTS);
-  var AVG_CANDS = proxyCandidates(AVG_BASES_RAW, AVG_VERTS);
+  var UNION_CANDS = proxyCandidates(FAN_BASES, UNION_VERTS);
+  var AVG_CANDS = proxyCandidates(FAN_BASES, AVG_VERTS);
 
-  /* settle parallelograms: SUM/AVG land on the shared frame, UNION on
-   * its own winner — exposed for tests */
+  /* settle parallelograms: per-child refits on the shared frame (the
+   * tight, correct answer — what SUM and AVG hand back) */
   var WIN_BASIS = [100, 160];
   var FINAL_PARAS = HEXVERTS.map(function (verts) {
     return fitSkew(verts, WIN_BASIS[0], WIN_BASIS[1], PAD_TIGHT);
   });
-  var UNION_PARAS = HEXVERTS.map(function (verts) {
-    var w = UNION_CANDS[UNION_CANDS.length - 1].basis;
-    return fitSkew(verts, w[0], w[1], PAD_TIGHT);
-  });
 
-  /* read-out strings (numbers deterministic, formatted once) */
-  function kfmt(v) { return Math.round(v / 1000) + 'k'; }
-  var SUM_READS = SUM_CANDS.map(function (c, i) {
-    return 'Σ ' + kfmt(c.cost) + ' — candidate ' + (i + 1) + '/' +
-      SUM_CANDS.length + ' × 8 children';
+  /* UNION hand-back: the union's ONE fit, inherited by every child —
+   * the same fat parallelogram translated onto each centre. Loose on
+   * all eight by construction: union extents ⊇ every re-centred child,
+   * so the translated fit still contains its child (with the pad) but
+   * carries the union's full slack. */
+  var UNION_WIN = UNION_CANDS[UNION_CANDS.length - 1].basis;
+  var UNION_FIT = fitSkew(UNION_VERTS, UNION_WIN[0], UNION_WIN[1], PAD_TIGHT);
+  var UNION_FIT_C = (function () {
+    var x = 0, y = 0;
+    UNION_FIT.forEach(function (p) { x += p[0]; y += p[1]; });
+    return [x / 4, y / 4];
+  })();
+  var UNION_PARAS = CHILDREN.map(function (ch) {
+    var dx = ch.c[0] - UNION_FIT_C[0], dy = ch.c[1] - UNION_FIT_C[1];
+    return UNION_FIT.map(function (p) { return [p[0] + dx, p[1] + dy]; });
   });
-  SUM_READS[SUM_READS.length - 1] =
-    'Σ ' + kfmt(SUM_CANDS[SUM_CANDS.length - 1].cost) +
-    ' — the best · cost: 3 × 8 = 24 fits';
-  var UNION_READS = UNION_CANDS.map(function (c, i) {
-    return '∪ ' + kfmt(c.cost) + ' — candidate ' + (i + 1) + '/' +
-      UNION_CANDS.length + ' on ONE proxy';
-  });
-  UNION_READS[UNION_READS.length - 1] =
-    '∪ ' + kfmt(UNION_CANDS[UNION_CANDS.length - 1].cost) +
-    ' — basis flows back: 8 loose parallelograms';
-  var AVG_READS = AVG_CANDS.map(function (c, i) {
-    return 'avg ' + kfmt(c.cost) + ' — candidate ' + (i + 1) + '/' +
-      AVG_CANDS.length + ' on ONE proxy';
-  });
-  AVG_READS[AVG_READS.length - 1] =
-    'avg ' + kfmt(AVG_CANDS[AVG_CANDS.length - 1].cost) +
-    ' — 8 tight parallelograms · 1 fit total';
 
   var PROXY_BASE_TF = 'translate(0 0) scale(1) translate(0 0)';
   var PROXY_STAGE_TF = 'translate(' + STAGE[0] + ' ' + STAGE[1] + ') scale(' +
     PROXY_SCALE + ') translate(' + (-CENTROID[0]) + ' ' + (-CENTROID[1]) + ')';
+
+  function hexHome(k) { return 'translate(0 0)'; }
+  function hexAtMerge(k) {
+    return 'translate(' + SHIFT[k][0] + ' ' + SHIFT[k][1] + ')';
+  }
 
   /* ==================== build ==================== */
 
   var built = false;
   var svg;
   var slotGlyphs = [];
-  var hexPolys = [], paras = [];
+  var hexGs = [], hexPolys = [], paras = [];
   var proxyG, unionPoly, avgPoly, fitCand;
-  var sumBadge, stageBadge, checkT, sumLabel, fitLabel, avgLabel;
-  var readEl, sumG, closerCue;
+  var sumBadge, stageBadge, closerCue;
+  var sumDotG, stageDotG, sumDots = [], stageDots = [];
+  var sumG;
   var captionEl;
   var tl = null;
 
@@ -341,15 +373,30 @@
     return 'translate(' + gx + ' ' + gy + ') rotate(' + deg + ')';
   }
 
-  function chip(x, w, txt, fill, parent) {
+  /* dot row: wordless candidate-progress indicator (replaces the old
+   * numeric Σ/∪/avg read-outs) */
+  function dotRow(count, cx, cy, parent) {
+    var g = el('g', { opacity: 0 }, parent);
+    var dots = [];
+    for (var k = 0; k < count; k++) {
+      dots.push(el('circle', {
+        cx: cx + (k - (count - 1) / 2) * 22, cy: cy, r: 4.6,
+        fill: '#ffffff', stroke: INK, 'stroke-width': 1.4
+      }, g));
+    }
+    return { g: g, dots: dots };
+  }
+
+  function chip(c, parent) {
     var g = el('g', {}, parent);
     el('rect', {
-      x: x, y: 508, width: w, height: 30, rx: 8,
-      fill: '#ffffff', stroke: EDGE, 'stroke-width': 1.2
+      x: c.x, y: 500, width: c.w, height: 42, rx: 12,
+      fill: '#ffffff', stroke: c.win ? BLUE : EDGE,
+      'stroke-width': c.win ? 2 : 1.4
     }, g);
-    text(txt, {
-      x: x + w / 2, y: 527, 'text-anchor': 'middle',
-      'font-size': 13, fill: fill
+    text(c.t, {
+      x: c.x + c.w / 2, y: 528, 'text-anchor': 'middle',
+      'font-size': CHIP_FS, 'font-weight': 650, fill: c.fill
     }, g);
     return g;
   }
@@ -390,10 +437,6 @@
       }, g);
       slotGlyphs.push(g);
     }
-    text('one wide node · 8 child k-DOPs', {
-      x: WIDE.x + WIDE.w / 2, y: 524, 'text-anchor': 'middle',
-      'font-size': 15, fill: FAINT
-    }, svg);
     /* connector: strip → its extent frame */
     el('line', {
       x1: WIDE.x + WIDE.w / 2, y1: WIDE.y - 4,
@@ -401,14 +444,18 @@
       stroke: EDGE, 'stroke-width': 1.4, 'stroke-dasharray': '4 4'
     }, svg);
 
-    /* ---- children: hexagon k-DOPs + shared-basis parallelograms ---- */
+    /* ---- children: hexagon k-DOPs (wrapped in a <g> so the fly-in is a
+     * translate tween, points untouched) + shared-basis parallelograms ---- */
     HEXVERTS.forEach(function (verts, k) {
+      var hg = el('g', { transform: hexHome(k) }, svg);
+      hexGs.push(hg);
       hexPolys.push(el('polygon', {
         points: pts2str(verts),
         fill: LIGHT, stroke: INK, 'stroke-width': 1.4,
         'stroke-linejoin': 'round', opacity: 1
-      }, svg));
+      }, hg));
     });
+    /* paras start on the WORST candidate — the sum run improves on stage */
     SUM_CANDS[0].cornersList.forEach(function (cs, k) {
       paras.push(el('polygon', {
         points: pts2str(cs),
@@ -420,12 +467,12 @@
     /* ---- right stage: proxy group (union + avg) + candidate fit ---- */
     proxyG = el('g', { transform: PROXY_BASE_TF }, svg);
     unionPoly = el('polygon', {
-      points: pts2str(UNION_VERTS),
+      points: pts2str(CUMU_VERTS[0]),
       fill: 'none', stroke: BLUE, 'stroke-width': 3.4,
       'stroke-dasharray': '7 5', 'stroke-linejoin': 'round', opacity: 0
     }, proxyG);
     avgPoly = el('polygon', {
-      points: pts2str(AVG_VERTS),
+      points: pts2str(CUMA_VERTS[0]),
       fill: '#eaf2fd', stroke: BLUE, 'stroke-width': 2.8,
       'stroke-linejoin': 'round', opacity: 0
     }, proxyG);
@@ -436,43 +483,27 @@
       'stroke-linejoin': 'round', opacity: 0
     }, svg);
 
-    /* ---- badges / labels (all hidden at base) ---- */
-    sumBadge = text('Σ — score every candidate on all eight', {
-      x: 446, y: 398, 'text-anchor': 'middle', 'font-size': 15,
-      fill: INK, opacity: 0
+    /* ---- badges / dots / closer cue (all hidden at base) ---- */
+    sumBadge = text('Σ sum', {
+      x: 446, y: 402, 'text-anchor': 'middle', 'font-size': 17,
+      'font-weight': 650, fill: INK, opacity: 0
     }, svg);
-    stageBadge = text('∪ — merge, then fit ONE proxy', {
-      x: STAGE[0], y: 168, 'text-anchor': 'middle', 'font-size': 15,
-      fill: INK, opacity: 0
+    stageBadge = text('∪ union', {
+      x: STAGE[0], y: 168, 'text-anchor': 'middle', 'font-size': 17,
+      'font-weight': 650, fill: INK, opacity: 0
     }, svg);
-    checkT = text('✓', {
-      x: 1068, y: 169, 'text-anchor': 'middle', 'font-size': 22,
-      'font-weight': 700, fill: BLUE, opacity: 0
+    closerCue = text('one stored frame', {
+      x: 446, y: 100, 'text-anchor': 'middle', 'font-size': 16,
+      'font-weight': 650, fill: INK, opacity: 0
     }, svg);
-    sumLabel = text('all eight parallelograms per candidate — 3 × 8 = 24 fits', {
-      x: 306, y: 470, 'font-size': 13, fill: FAINT, opacity: 0
-    }, svg);
-    fitLabel = text('one candidate SOBB on the proxy, morphing between bases', {
-      x: STAGE[0], y: 470, 'text-anchor': 'middle', 'font-size': 13,
-      fill: FAINT, opacity: 0
-    }, svg);
-    avgLabel = text('avg of the eight slab extents — slimmer than the union', {
-      x: STAGE[0], y: 494, 'text-anchor': 'middle', 'font-size': 12.5,
-      fill: FAINT, opacity: 0
-    }, svg);
-    closerCue = text('one stored frame — eight tight shared-basis SOBBs', {
-      x: 446, y: 64, 'text-anchor': 'middle', 'font-size': 15,
-      fill: INK, opacity: 0
-    }, svg);
-    readEl = text(SUM_READS[0], {
-      x: 56, y: 545, 'font-size': 14, fill: INK, opacity: 0
-    }, svg);
+    var r1 = dotRow(SUM_CANDS.length, 446, 434, svg);
+    sumDotG = r1.g; sumDots = r1.dots;
+    var r2 = dotRow(UNION_CANDS.length, STAGE[0], 196, svg);
+    stageDotG = r2.g; stageDots = r2.dots;
 
     /* ---- three-way summary chips (s3 on) ---- */
     sumG = el('g', { opacity: 0 }, svg);
-    chip(455, 172, 'Σ sum — exact · slow', INK, sumG);
-    chip(645, 172, '∪ union — cheap · loose', INK, sumG);
-    chip(835, 212, '✓ avg — cheap · tight enough', BLUE, sumG);
+    CHIPS.forEach(function (c) { chip(c, sumG); });
 
     captionEl = document.getElementById('sobb-caption');
     built = true;
@@ -481,6 +512,10 @@
   /* ==================== reset ==================== */
 
   function resetDom() {
+    hexGs.forEach(function (g, k) {
+      gsap.killTweensOf(g);
+      g.setAttribute('transform', hexHome(k));
+    });
     hexPolys.forEach(function (p) {
       gsap.killTweensOf(p);
       p.setAttribute('opacity', 1);
@@ -495,22 +530,29 @@
     });
     gsap.killTweensOf(proxyG);
     proxyG.setAttribute('transform', PROXY_BASE_TF);
+    proxyG.setAttribute('opacity', 1);
     gsap.killTweensOf(unionPoly);
+    unionPoly.setAttribute('points', pts2str(CUMU_VERTS[0]));
     unionPoly.setAttribute('opacity', 0);
+    unionPoly.setAttribute('stroke-width', 3.4);
     gsap.killTweensOf(avgPoly);
+    avgPoly.setAttribute('points', pts2str(CUMA_VERTS[0]));
     avgPoly.setAttribute('opacity', 0);
+    avgPoly.setAttribute('stroke-width', 2.8);
     gsap.killTweensOf(fitCand);
     fitCand.setAttribute('points', pts2str(UNION_CANDS[0].corners));
     fitCand.setAttribute('opacity', 0);
     [
-      [sumBadge, 0], [stageBadge, 0], [checkT, 0], [sumLabel, 0],
-      [fitLabel, 0], [avgLabel, 0], [readEl, 0], [sumG, 0], [closerCue, 0]
-    ].forEach(function (pair) {
-      gsap.killTweensOf(pair[0]);
-      pair[0].setAttribute('opacity', pair[1]);
+      sumBadge, stageBadge, closerCue, sumDotG, stageDotG, sumG
+    ].forEach(function (n) {
+      gsap.killTweensOf(n);
+      n.setAttribute('opacity', 0);
     });
-    stageBadge.textContent = '∪ — merge, then fit ONE proxy';
-    readEl.textContent = SUM_READS[0];
+    stageBadge.textContent = '∪ union';
+    sumDots.concat(stageDots).forEach(function (d) {
+      gsap.killTweensOf(d);
+      d.setAttribute('fill', '#ffffff');
+    });
     slotGlyphs.forEach(function (g, k) {
       gsap.killTweensOf(g);
       g.setAttribute('opacity', 0);
@@ -520,147 +562,186 @@
 
   /* ==================== timeline ====================
    * Numeric/'>' positions only; labels sit at true section ends where
-   * every scheduled tween completes — seek-safe in both directions. */
+   * every scheduled tween completes — seek-safe in both directions.
+   * The cursor T is the source of truth: real GSAP does NOT extend
+   * duration() when a label sits past the last tween, so a running
+   * tl.duration() would drift behind the labels. */
 
   var SECTIONS = 4;
-  var MORPH = 0.8, HOLD = 0.4;        // SUM corner-morph pacing (kdopfan idiom)
-  var FMORPH = 0.65, FHOLD = 0.3;     // proxy fit pacing
+  /* SUM: slow candidate exploration (four candidates);
+   * FLY: one child arrival per 0.42s, 0.5s flight, morph on landing;
+   * FIT: single-proxy candidate morph pacing */
+  var MORPH = 1.05, HOLD = 0.4;
+  var FLY_STEP = 0.42, FLY_DUR = 0.5, FLY_MORPH = 0.35;
+  var FMORPH = 0.7, FHOLD = 0.35;
+
+  /* one arrival per child: hex glides to the merge point and ghosts,
+   * the accumulating k-DOP morphs to its new extents with a pulse
+   * (baseW keeps the pulse centred on each proxy's own stroke width) */
+  function scheduleFlyIn(t0, poly, vertsSeq, baseW) {
+    for (var k = 0; k < 8; k++) {
+      var t = t0 + k * FLY_STEP;
+      (function (i, at) {
+        tl.to(hexGs[i], {
+          attr: { transform: hexAtMerge(i) },
+          duration: FLY_DUR, ease: 'power2.in'
+        }, at);
+        tl.to(hexPolys[i], { attr: { opacity: 0.14 }, duration: 0.35 }, at + 0.15);
+        if (i === 0) {
+          /* first landed child defines the k-DOP; instant swap, then show */
+          tl.set(poly, { attr: { points: pts2str(vertsSeq[0]) } }, at + 0.36);
+          tl.to(poly, { attr: { opacity: 0.92 }, duration: 0.25 }, at + 0.38);
+        } else {
+          tl.to(poly, {
+            attr: { points: pts2str(vertsSeq[i]) },
+            duration: FLY_MORPH, ease: 'power2.out'
+          }, at + 0.36);
+        }
+        tl.to(poly, { attr: { 'stroke-width': baseW + 1.4 }, duration: 0.15 }, at + 0.38);
+        tl.to(poly, { attr: { 'stroke-width': baseW }, duration: 0.35 }, at + 0.55);
+      })(k, t);
+    }
+    return t0 + 7 * FLY_STEP + FLY_DUR + 0.55;
+  }
+
+  function distribute(t0, paraFn, color, stagger) {
+    for (var k = 0; k < 8; k++) {
+      var at = t0 + k * stagger;
+      (function (i, at2) {
+        tl.to(paras[i], {
+          attr: { points: pts2str(paraFn(i)), opacity: 1, stroke: color },
+          duration: 0.55, ease: 'power2.inOut'
+        }, at2);
+        tl.to(hexGs[i], {
+          attr: { transform: hexHome(i) }, duration: 0.55, ease: 'power2.out'
+        }, at2);
+        tl.to(hexPolys[i], { attr: { opacity: 1 }, duration: 0.4 }, at2 + 0.12);
+      })(k, at);
+    }
+    return t0 + 7 * stagger + 0.55;
+  }
+
+  function scheduleFits(t0, cands, dots) {
+    tl.to(fitCand, { attr: { opacity: 1 }, duration: 0.3 }, t0);
+    tl.set(dots[0], { attr: { fill: INK } }, t0);
+    var T = t0 + 0.3 + 0.3;
+    for (var i = 1; i < cands.length; i++) {
+      var at = T + (i - 1) * (FMORPH + FHOLD);
+      (function (ci, k, at2) {
+        tl.to(fitCand, {
+          attr: { points: pts2str(ci.corners) },
+          duration: FMORPH, ease: 'power2.inOut'
+        }, at2);
+        tl.set(dots[k - 1], { attr: { fill: '#ffffff' } }, at2);
+        tl.set(dots[k], { attr: { fill: INK } }, at2);
+      })(cands[i], i, at);
+    }
+    return T + (cands.length - 2) * (FMORPH + FHOLD) + FMORPH + FHOLD + 0.1;
+  }
 
   function buildTimeline() {
-    /* Cursor-driven, absolute numeric positions only — real GSAP does NOT
-     * extend duration() when a label sits beyond the last tween, so a
-     * running tl.duration() would drift behind the labels. The cursor T
-     * is the source of truth; every section starts exactly at the previous
-     * label, every label sits at a fixed offset after its content. */
     tl = gsap.timeline({ paused: true });
-    var T, i;
+    var i;
 
     /* ---- s1 — SUM: every candidate on all eight children at once ---- */
-    T = 0.15;
-    tl.to(sumBadge, { attr: { opacity: 1 }, duration: 0.4 }, T);
-    tl.to(sumLabel, { attr: { opacity: 1 }, duration: 0.4 }, T + 0.1);
-    tl.to(readEl, { attr: { opacity: 1 }, duration: 0.35 }, T + 0.15);
-    /* candidate 0 fades in (its corners are already set from reset) */
+    var T = 0.15;
+    tl.to(sumBadge, { attr: { opacity: 1 }, duration: 0.35 }, T);
+    tl.to(sumDotG, { attr: { opacity: 1 }, duration: 0.35 }, T + 0.1);
+    /* worst candidate’s baselines are set at reset; fade its 8 fits in */
     tl.to(paras, {
-      attr: { opacity: 1 }, duration: 0.5, stagger: 0.03, ease: 'power1.out'
-    }, T + 0.5);
-    tl.set(readEl, { textContent: SUM_READS[0] }, T + 1.0);
+      attr: { opacity: 1 }, duration: 0.65, stagger: 0.05, ease: 'power1.out'
+    }, T + 0.45);
+    tl.set(sumDots[0], { attr: { fill: INK } }, T + 0.45);
+    var mBase = T + 0.45 + 0.65 + 0.45;   /* first candidate lands, holds */
     for (i = 1; i < SUM_CANDS.length; i++) {
-      var mSum = T + 0.5 + 0.5 + (i - 1) * (MORPH + HOLD) + HOLD;
-      (function (ci, at) {
-        HEXVERTS.forEach(function (v, k) {
-          tl.to(paras[k], {
-            attr: { points: pts2str(ci.cornersList[k]) },
+      var mSum = mBase + (i - 1) * (MORPH + HOLD);
+      (function (ci, k, at) {
+        HEXVERTS.forEach(function (v, j) {
+          tl.to(paras[j], {
+            attr: { points: pts2str(ci.cornersList[j]) },
             duration: MORPH, ease: 'power2.inOut'
           }, at);
         });
-      })(SUM_CANDS[i], mSum);
-      tl.set(readEl, { textContent: SUM_READS[i] }, mSum + MORPH);
+        tl.set(sumDots[k - 1], { attr: { fill: '#ffffff' } }, at);
+        tl.set(sumDots[k], { attr: { fill: INK } }, at);
+      })(SUM_CANDS[i], i, mSum);
     }
-    T += 0.5 + 0.5 + (SUM_CANDS.length - 2) * (MORPH + HOLD) + HOLD + MORPH + 0.75;
-    tl.addLabel('s1', T);   /* T = 4.30: 3 morphs landed, short settle */
+    T = mBase + (SUM_CANDS.length - 2) * (MORPH + HOLD) + MORPH + 0.8;
+    tl.addLabel('s1', T);   /* best-of-four settled on the children */
 
-    /* ---- s2 — UNION: merge to one k-DOP, fit once, flow back down ---- */
-    tl.to(sumBadge, { attr: { opacity: 0 }, duration: 0.4 }, T);
-    tl.to(sumLabel, { attr: { opacity: 0 }, duration: 0.4 }, T);
-    tl.to(paras, { attr: { opacity: 0 }, duration: 0.35, stagger: 0.02 }, T);
-    tl.set(readEl, { textContent: UNION_READS[0] }, T + 0.3);
-    /* merge: children ghost, the union outline appears around them */
-    tl.to(hexPolys, { attr: { opacity: 0.2 }, duration: 0.5, stagger: 0.03 }, T + 0.15);
-    tl.to(unionPoly, { attr: { opacity: 0.9 }, duration: 0.6, ease: 'power1.inOut' }, T + 0.35);
-    /* carry the union to the right stage; fit candidates morph over it */
-    var mMove = T + 1.15;
+    /* ---- s2 — UNION ---- */
+    /* clean baseline first: sum badge/dots + every parallelogram leave
+     * BEFORE the first child takes off — nothing from the sum run remains */
+    tl.to(sumBadge, { attr: { opacity: 0 }, duration: 0.3 }, T);
+    tl.to(sumDotG, { attr: { opacity: 0 }, duration: 0.3 }, T);
+    tl.to(paras, { attr: { opacity: 0 }, duration: 0.3, stagger: 0.025 }, T + 0.02);
+    var tFly = T + 0.55;
+    var tFlyEnd = scheduleFlyIn(tFly, unionPoly, CUMU_VERTS, 3.4);
+    /* the fattened union carries to the right stage */
     tl.to(proxyG, {
       attr: { transform: PROXY_STAGE_TF }, duration: 0.75, ease: 'power2.inOut'
-    }, mMove);
-    tl.to(stageBadge, { attr: { opacity: 1 }, duration: 0.4 }, mMove + 0.2);
-    tl.to(fitLabel, { attr: { opacity: 1 }, duration: 0.4 }, mMove + 0.3);
-    tl.to(fitCand, { attr: { opacity: 1 }, duration: 0.35 }, mMove + 0.55);
-    for (i = 1; i < UNION_CANDS.length; i++) {
-      var mU = mMove + 0.55 + 0.35 + (i - 1) * (FMORPH + FHOLD) + FHOLD;
-      (function (ci, at) {
-        tl.to(fitCand, {
-          attr: { points: pts2str(ci.corners) },
-          duration: FMORPH, ease: 'power2.inOut'
-        }, at);
-      })(UNION_CANDS[i], mU);
-      tl.set(readEl, { textContent: UNION_READS[i] }, mU + FMORPH);
-    }
-    /* the basis flows back down: children form loose parallelograms */
-    var mDist = mMove + 0.55 + 0.35 +
-      (UNION_CANDS.length - 2) * (FMORPH + FHOLD) + FHOLD + FMORPH + 0.3;
-    var winU = UNION_CANDS[UNION_CANDS.length - 1];
-    HEXVERTS.forEach(function (v, k) {
-      tl.to(paras[k], {
-        attr: {
-          points: pts2str(fitSkew(v, winU.basis[0], winU.basis[1], PAD_TIGHT)),
-          opacity: 1
-        },
-        duration: 0.55, ease: 'power2.inOut'
-      }, mDist + k * 0.04);
-    });
-    tl.to(hexPolys, { attr: { opacity: 1 }, duration: 0.4 }, mDist + 0.1);
-    tl.to(unionPoly, { attr: { opacity: 0.7 }, duration: 0.5 }, mDist + 0.2);
-    tl.to(fitCand, { attr: { opacity: 0.65 }, duration: 0.4 }, mDist + 0.3);
-    tl.set(readEl, { textContent: UNION_READS[UNION_READS.length - 1] }, mDist + 0.3);
-    T = mDist + 0.55 + 0.3;
+    }, tFlyEnd);
+    tl.to(stageBadge, { attr: { opacity: 1 }, duration: 0.35 }, tFlyEnd + 0.3);
+    tl.to(stageDotG, { attr: { opacity: 1 }, duration: 0.3 }, tFlyEnd + 0.4);
+    var tFitsEnd = scheduleFits(tFlyEnd + 0.75 + 0.15, UNION_CANDS, stageDots);
+    /* the basis flows back down: children spring home with loose fits */
+    /* every child inherits the one merged fit — same fat parallelogram,
+     * loose on all eight */
+    var tDistEnd = distribute(tFitsEnd + 0.1, function (j) {
+      return UNION_PARAS[j];
+    }, INK, 0.05);
+    tl.to(unionPoly, { attr: { opacity: 0.7 }, duration: 0.4 }, tDistEnd - 0.3);
+    tl.to(fitCand, { attr: { opacity: 0.6 }, duration: 0.4 }, tDistEnd - 0.2);
+    T = tDistEnd + 0.25;
     tl.addLabel('s2', T);   /* distributed loose fit settled */
 
-    /* ---- s3 — AVG: slimmer proxy, one fit, tight enough ✓ ---- */
-    /* boundary sets sit an epsilon PAST the s2 label: zero-duration sets
-     * render when the playhead lands exactly on them — seeking to the s2
-     * stop must not fire AVG text yet */
-    tl.set(readEl, { textContent: AVG_READS[0] }, T + 0.05);
-    tl.set(stageBadge, { textContent: 'avg — fit ONE slimmer proxy' }, T + 0.05);
-    tl.to(unionPoly, { attr: { opacity: 0 }, duration: 0.5 }, T + 0.1);
-    tl.to(avgPoly, { attr: { opacity: 0.9 }, duration: 0.55, ease: 'power1.out' }, T + 0.15);
-    tl.to(fitCand, {
-      attr: { points: pts2str(AVG_CANDS[0].corners), opacity: 1 },
-      duration: 0.6, ease: 'power2.inOut'
-    }, T + 0.25);
-    for (i = 1; i < AVG_CANDS.length; i++) {
-      var mA = T + 0.25 + 0.6 + (i - 1) * (FMORPH + FHOLD) + FHOLD;
-      (function (ci, at) {
-        tl.to(fitCand, {
-          attr: { points: pts2str(ci.corners) },
-          duration: FMORPH, ease: 'power2.inOut'
-        }, at);
-      })(AVG_CANDS[i], mA);
-      tl.set(readEl, { textContent: AVG_READS[i] }, mA + FMORPH);
-    }
-    var mAvgDist = T + 0.25 + 0.6 +
-      (AVG_CANDS.length - 2) * (FMORPH + FHOLD) + FHOLD + FMORPH + 0.25;
-    var winA = AVG_CANDS[AVG_CANDS.length - 1];
-    HEXVERTS.forEach(function (v, k) {
-      tl.to(paras[k], {
-        attr: {
-          points: pts2str(fitSkew(v, winA.basis[0], winA.basis[1], PAD_TIGHT)),
-          stroke: BLUE
-        },
-        duration: 0.6, ease: 'power2.inOut'
-      }, mAvgDist + k * 0.035);
-    });
-    tl.set(readEl, { textContent: AVG_READS[AVG_READS.length - 1] }, mAvgDist + 0.3);
-    tl.to(checkT, { attr: { opacity: 1 }, duration: 0.35 }, mAvgDist + 0.45);
-    tl.to(sumG, { attr: { opacity: 1 }, duration: 0.45 }, mAvgDist + 0.55);
-    tl.to(avgLabel, { attr: { opacity: 1 }, duration: 0.35 }, mAvgDist + 0.6);
-    tl.to(avgPoly, { attr: { opacity: 0.55 }, duration: 0.5 }, mAvgDist + 0.5);
-    tl.to(fitCand, { attr: { opacity: 0.4 }, duration: 0.45 }, mAvgDist + 0.5);
-    T = mAvgDist + 0.6 + 0.45;
+    /* ---- s3 — AVG ---- */
+    /* boundary swaps sit past the s2 label AND past the fade-out below:
+     * seeking to the s2 stop must not fire them, and playing forward
+     * must never swap shapes while still visible */
+    tl.set(fitCand, { attr: { points: pts2str(AVG_CANDS[0].corners) } }, T + 0.5);
+    tl.set(stageBadge, { textContent: '✓ avg' }, T + 0.5);
+    /* clean baseline again: union proxy + fit + loose fits leave BEFORE
+     * the avg fly-in; the stage transform resets while nothing proxy-
+     * shaped is visible (union faded, avg not yet shown) */
+    tl.to(unionPoly, { attr: { opacity: 0 }, duration: 0.4 }, T + 0.1);
+    tl.to(fitCand, { attr: { opacity: 0 }, duration: 0.35 }, T + 0.1);
+    tl.to(stageBadge, { attr: { opacity: 0 }, duration: 0.3 }, T + 0.1);
+    tl.to(stageDotG, { attr: { opacity: 0 }, duration: 0.3 }, T + 0.1);
+    tl.to(paras, { attr: { opacity: 0 }, duration: 0.3, stagger: 0.025 }, T + 0.02);
+    tl.set(proxyG, { attr: { transform: PROXY_BASE_TF } }, T + 0.62);
+    var tFlyA = T + 0.75;
+    /* same fly-in — but the mean k-DOP only nudges shape, never grows */
+    var tFlyAEnd = scheduleFlyIn(tFlyA, avgPoly, CUMA_VERTS, 2.8);
+    tl.to(proxyG, {
+      attr: { transform: PROXY_STAGE_TF }, duration: 0.75, ease: 'power2.inOut'
+    }, tFlyAEnd);
+    tl.to(stageBadge, { attr: { opacity: 1 }, duration: 0.35 }, tFlyAEnd + 0.3);
+    tl.to(stageDotG, { attr: { opacity: 1 }, duration: 0.3 }, tFlyAEnd + 0.4);
+    var tFitsAEnd = scheduleFits(tFlyAEnd + 0.75 + 0.15, AVG_CANDS, stageDots);
+    /* distribute: children spring home, fits go tight BLUE on the frame */
+    var tDistAEnd = distribute(tFitsAEnd + 0.1, function (j) {
+      return FINAL_PARAS[j];
+    }, BLUE, 0.04);
+    tl.to(avgPoly, { attr: { opacity: 0.55 }, duration: 0.4 }, tDistAEnd - 0.3);
+    tl.to(fitCand, { attr: { opacity: 0.4 }, duration: 0.4 }, tDistAEnd - 0.2);
+    tl.to(sumG, { attr: { opacity: 1 }, duration: 0.45 }, tDistAEnd + 0.15);
+    T = tDistAEnd + 0.7;
     tl.addLabel('s3', T);   /* avg distributed, marked, summary up */
 
     /* ---- s4 — closer: the avg winner locks ---- */
-    [readEl, stageBadge, fitLabel, avgLabel, checkT, avgPoly, fitCand].forEach(function (e) {
-      tl.to(e, { attr: { opacity: 0 }, duration: 0.4 }, T);
-    });
+    tl.to(proxyG, { attr: { opacity: 0 }, duration: 0.4 }, T);
+    tl.to(fitCand, { attr: { opacity: 0 }, duration: 0.35 }, T);
+    tl.to(stageBadge, { attr: { opacity: 0 }, duration: 0.3 }, T);
+    tl.to(stageDotG, { attr: { opacity: 0 }, duration: 0.3 }, T);
     tl.to(paras, {
       attr: { 'stroke-width': 2.4 }, duration: 0.55, ease: 'power2.inOut'
-    }, T + 0.15);
-    tl.to(closerCue, { attr: { opacity: 1 }, duration: 0.45 }, T + 0.3);
+    }, T + 0.2);
+    tl.to(closerCue, { attr: { opacity: 1 }, duration: 0.4 }, T + 0.3);
     tl.to(slotGlyphs, {
       attr: { opacity: 1 }, duration: 0.35, stagger: 0.04
-    }, T + 0.45);
-    T += 0.45 + 0.35 + 0.35;
+    }, T + 0.5);
+    T += 0.5 + 0.35 + 0.4;
     tl.addLabel('s4', T);
   }
 
@@ -698,7 +779,7 @@
     project: project,
     solveCorner: solveCorner,
     fitSkew: fitSkew,
-    kdopFromExtents: kdopFromExtents,
+    kdop6: kdop6,
     sortCorners: sortCorners,
     polyArea: polyArea,
     pts2str: pts2str,
@@ -707,6 +788,11 @@
     CENTROID: CENTROID,
     HEXVERTS: HEXVERTS,
     CHILD_EXTS: CHILD_EXTS,
+    SHIFT_EXTS: SHIFT_EXTS,
+    CUMU_EXTS: CUMU_EXTS,
+    CUMU_VERTS: CUMU_VERTS,
+    CUMA_EXTS: CUMA_EXTS,
+    CUMA_VERTS: CUMA_VERTS,
     UNION_EXTS: UNION_EXTS,
     UNION_VERTS: UNION_VERTS,
     AVG_EXTS: AVG_EXTS,
@@ -715,19 +801,26 @@
     UNION_CANDS: UNION_CANDS,
     AVG_CANDS: AVG_CANDS,
     UNION_PARAS: UNION_PARAS,
+    UNION_FIT: UNION_FIT,
+    UNION_WIN: UNION_WIN,
     FINAL_PARAS: FINAL_PARAS,
     WIN_BASIS: WIN_BASIS,
+    FAN_BASES: FAN_BASES,
     PROXY_SCALE: PROXY_SCALE,
     PROXY_STAGE_TF: PROXY_STAGE_TF,
-    SUM_READS: SUM_READS,
-    UNION_READS: UNION_READS,
-    AVG_READS: AVG_READS,
     N1: N1, N2: N2,
     HEX_DIRS: HEX_DIRS,
     WIDE: WIDE, FRAME: FRAME, STAGE: STAGE,
     GLYPH_DEG: GLYPH_DEG,
+    CHIPS: CHIPS,
+    CHIP_FS: CHIP_FS,
     CAPTIONS: CAPTIONS,
-    sections: SECTIONS
+    sections: SECTIONS,
+    pacing: {
+      MORPH: MORPH, HOLD: HOLD,
+      FLY_STEP: FLY_STEP, FLY_DUR: FLY_DUR, FLY_MORPH: FLY_MORPH,
+      FMORPH: FMORPH, FHOLD: FHOLD
+    }
   };
 
   window.DeckAnimators = window.DeckAnimators || {};

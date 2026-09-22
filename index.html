@@ -202,22 +202,46 @@
       <span class="fragment"></span>
     </section>
 
-    <!-- L4. Build pipeline (reused animator) -->
-    <section id="slide-pipeline" data-animator="pipeline">
-      <h2 class="slide-head">Build pipeline — binary to wide SOBB</h2>
+    <!-- L4a. Pipeline 1 of 3: SOBB construction, the old paper's chain -->
+    <section id="slide-pipeline-sobb2" data-animator="pipesobb2">
+      <h2 class="slide-head">SOBB construction — per-node fitting</h2>
       <div class="canvas-row">
-        <div id="pipe-canvas" class="panel"></div>
+        <div id="pipe-sobb2-canvas" class="panel"></div>
       </div>
-      <div class="status-row"><span id="pipe-caption" class="cap"></span></div>
+      <div class="status-row"><span id="pipe-sobb2-caption" class="cap"></span></div>
       <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L4b. Pipeline 2 of 3: state-of-the-art AABB BVH₈ -->
+    <section id="slide-pipeline-aabb8" data-animator="pipeaabb8">
+      <h2 class="slide-head">AABB BVH₈ — state of the art</h2>
+      <div class="canvas-row">
+        <div id="pipe-aabb8-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="pipe-aabb8-caption" class="cap"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L4c. Pipeline 3 of 3: our SOBB BVH₈ chain (quantization lead-in,
+         hands off to the shared-basis slide) -->
+    <section id="slide-pipeline-sobb8" data-animator="pipesobb8">
+      <h2 class="slide-head">SOBB BVH₈ — our pipeline</h2>
+      <div class="canvas-row">
+        <div id="pipe-sobb8-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="pipe-sobb8-caption" class="cap"></span></div>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
     </section>
 
-    <!-- L4.5. Shared basis insertion (new animator) -->
-    <section id="slide-sharedbasis" data-animator="sharedbasis">
+    <!-- L4.5. Shared basis insertion -->
+    <section id="slide-sharedbasis" data-animator="sharedbasis" data-transition="none">
       <h2 class="slide-head">Insert: wide nodes take a shared basis</h2>
       <div class="canvas-row">
         <div id="sb-canvas" class="panel"></div>

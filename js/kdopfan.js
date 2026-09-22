@@ -22,26 +22,23 @@
  *   s2:     the search: the parallelogram morphs through the remaining
  *           candidates in descending area order (10/160 → 10/70 →
  *           AABB → 10/100 → 100/160), brightening each candidate's slab
- *           pairs as it goes. Every candidate carries a small tag —
- *           fan pairs by their slab angles ("10°/40°" …), the
- *           axis-aligned pair "AABB", the orthogonal pair "OBB", the
- *           final pair "SOBB" — that lands with its morph and then
- *           PERSISTS at full opacity until the next candidate's tag
- *           replaces it (the AABB beat's tag holds through its full
- *           beat too), so a paused frame never loses the candidate's
- *           identity. The axis slabs' 4 ink boundary lines (L2's AABB
- *           color) fade in only for the AABB beat, since axis slabs
- *           are not in the fan and the base must keep kdopintro parity.
- *           The chain's final "SOBB" tag persists through the s2 rest
- *           and crossfades into the winner beat's "SOBB" label at s3 —
- *           a clean hand-off, never a double image.
+ *           pairs as it goes. Only the two named beats carry a tag —
+ *           the axis-aligned pair "AABB" and the orthogonal pair
+ *           "OBB" — landing with their morph and PERSISTING at full
+ *           opacity until the next tag replaces them (AABB → OBB
+ *           hand-off; OBB goes out as the final SOBB morph lands, no
+ *           successor). The fan candidates and the final SOBB carry no
+ *           text: morph + slab highlights carry those beats. The axis
+ *           slabs' 4 ink boundary lines (L2's AABB color) fade in only
+ *           for the AABB beat, since axis slabs are not in the fan and
+ *           the base must keep kdopintro parity.
  *           1.2s morphs with 0.5–1.0s holds: s1→s2 ≈ 9.5s. Ends on the
  *           minimum-area pair = the SOBB (100°/160°, teal/amber)
  *   s3:     SOBB settles: teal + amber strip fills fade in (plus-lighter
  *           blend inside an isolated group — the blend overlap IS the
  *           SOBB), the solid SOBB outline sweeps on via
- *           stroke-dashoffset, "SOBB" label appears; fan lines and
- *           k-DOP recede
+ *           stroke-dashoffset; fan lines and k-DOP recede. The settled
+ *           SOBB is intentionally unlabeled.
  *   s4:     promise beat — fills #kdop-promise and fades it in
  *
  * Geometry is fixed and precomputed: slab extents measured on all
@@ -82,11 +79,10 @@
  *     solid. Dash lengths stay in local units so the SOBB
  *     stroke-dashoffset sweep math is untouched.
  *
- * Text labels (side label, SOBB, OBB, AABB) live OUTSIDE the world
- * group at screen coordinates — they never scale, so their 20/15px
- * sizes stay in deck range regardless of Z; candidate mini-tags are
- * placed at the scaled screen position of their world anchor
- * (toScreen uses ZOOM).
+ * Text labels (side label, OBB, AABB) live OUTSIDE the world group at
+ * screen coordinates — they never scale, so their px sizes stay in
+ * deck range regardless of Z; candidate tags are placed at the scaled
+ * screen position of their world anchor (toScreen uses ZOOM).
  * Host: #kdop-canvas. Fragments: 4 (s1..s4).
  */
 (function () {
@@ -264,7 +260,7 @@
   /* ==================== animator ==================== */
 
   var built = false;
-  var svg, worldG, kdopEl, candEl, sobbEl, sobbLabelEl, candTagEls, stripsG;
+  var svg, worldG, kdopEl, candEl, sobbEl, candTagEls, candTagAt, stripsG;
   var labelOldEl, labelNewG, promiseEl;
   var allLines, linesByAng, aabbLines;
   var sobbPathLen = 0;
@@ -509,29 +505,18 @@
       'class': 'svg-side-label', x: 748, y: 108
     }, labelNewG);
 
-    // "SOBB" + "OBB" tags: anchored to world-space corners, placed at
-    // their scaled screen positions at normal font sizes
-    var sobbTop = toScreen(topmost(candidates[SOBB_INDEX].corners));
-    sobbLabelEl = D.text('SOBB', {
-      x: sobbTop[0], y: sobbTop[1] - 14, 'text-anchor': 'middle',
-      fill: D.INK, 'font-size': 20, 'font-weight': 600, opacity: 0
-    }, svg);
-
-    // per-candidate tags: one per candidate, anchored above its shape,
-    // screen-space (toScreen) so they never scale with the world zoom.
-    // Fan candidates are tagged by their slab angles ("10°/40°" …); the
-    // named beats keep their names ("AABB", "OBB", "SOBB"). Timeline
-    // behaviour: each tag lands with its candidate's morph, then PERSISTS
-    // at full opacity until the next candidate's tag replaces it; the
-    // final "SOBB" tag persists through the s2 rest and hands off to
-    // the winner label at s3.
-    var CAND_TAG_TEXT = CANDIDATES.map(function (pair, i) {
-      if (i === AABB_INDEX) return 'AABB';
-      if (i === OBB_INDEX) return 'OBB';
-      if (i === SOBB_INDEX) return 'SOBB';
-      return pair[0] + '°/' + pair[1] + '°';
-    });
-    candTagEls = candidates.map(function (ci, i) {
+    // candidate tags: ONLY the two named beats carry text — the axis
+    // pair "AABB", the orthogonal pair "OBB". The fan candidates and
+    // the final SOBB get no label (morph + slab highlights carry the
+    // beat). Tags anchor above their shape, screen-space (toScreen) so
+    // they never scale with the world zoom. Timeline behaviour: each
+    // tag lands with its candidate's morph, then PERSISTS at full
+    // opacity until the next tag replaces it (AABB → OBB hand-off;
+    // OBB goes out as the SOBB morph lands, with no successor).
+    candTagEls = [];
+    candTagAt = {};
+    [AABB_INDEX, OBB_INDEX].forEach(function (i) {
+      var ci = candidates[i];
       var anchor;
       if (i === AABB_INDEX) {
         // AABB is a rectangle: anchor above the midpoint of the top
@@ -546,11 +531,13 @@
         anchor = topmost(ci.corners);
       }
       var s = toScreen(anchor);
-      return D.text(CAND_TAG_TEXT[i], {
+      var el = D.text(i === AABB_INDEX ? 'AABB' : 'OBB', {
         x: s[0], y: s[1] - 12, 'text-anchor': 'middle',
         fill: i === OBB_INDEX ? D.BLUE : D.INK,
         'font-size': 15, 'font-weight': 600, opacity: 0
       }, svg);
+      candTagEls.push(el);
+      candTagAt[i] = el;
     });
 
     promiseEl = document.getElementById('kdop-promise');
@@ -567,8 +554,7 @@
 
   function resetState() {
     gsap.killTweensOf(allLines);
-    gsap.killTweensOf([kdopEl, candEl, sobbEl, sobbLabelEl,
-                       stripsG, promiseEl]);
+    gsap.killTweensOf([kdopEl, candEl, sobbEl, stripsG, promiseEl]);
     gsap.killTweensOf(candTagEls);
     // entrance tweens: kill before re-armering any start() path
     gsap.killTweensOf(proxy);
@@ -587,7 +573,6 @@
     candEl.setAttribute('opacity', 0);
     sobbEl.setAttribute('opacity', 0);
     sobbEl.setAttribute('stroke-dashoffset', sobbPathLen);
-    sobbLabelEl.setAttribute('opacity', 0);
     candTagEls.forEach(function (t) { t.setAttribute('opacity', 0); });
     stripsG.setAttribute('opacity', 0);
     promiseEl.textContent = PROMISE_TEXT;
@@ -617,17 +602,14 @@
     tweenPairStates(c0.a, c0.b, 0, 0.7);
     tl.to(kdopEl, { attr: { opacity: 0.35 }, duration: 0.7 }, 0);
     tl.to(candEl, { attr: { opacity: 1 }, duration: 0.7, ease: 'power1.out' }, 0.15);
-    // its tag lands with the settle and persists (replaced by the next
-    // candidate's tag into the chain) — the s1 rest keeps candidate
-    // identity visible
-    tl.to(candTagEls[0], { attr: { opacity: 1 }, duration: 0.3 }, 0.65);
+    // no tag: the first candidate is a fan pair, unlabeled by design
     tl.addLabel('s1', 1.0);
 
     // ---- section 2 (s1 → s2): the search over the remaining
     // candidates, descending area — deliberately slow: 1.2s morphs,
     // 0.5s holds (~1.5-2x the previous 0.7/0.3), an 0.8s hold on the
     // AABB (its ink lines fade in/out around the beat) and a 1.0s hold
-    // on the OBB so every candidate's tag lands and holds at rest.
+    // on the OBB so both tags land and hold at rest.
     // 5 morphs + 5 holds: s1→s2 = 9.5s. ----
     var MORPH = 1.2, HOLD = 0.5, AABB_HOLD = 0.8, OBB_HOLD = 1.0;
     tau = 1.0 + 0.2;                     // first morph shortly after s1
@@ -650,17 +632,21 @@
         attr: { points: pts2str(ci.corners) },
         duration: MORPH, ease: 'power2.inOut'
       }, tau);
-      // tags: crossfade at the morph land — the previous candidate's
-      // tag holds full opacity through the morph (it persists at every
-      // rest) and is replaced exactly as this candidate's tag lands.
-      // The final candidate's tag has no successor here: it persists
-      // past s2 and hands off to the winner label at s3.
-      tl.to(candTagEls[i - 1], {
-        attr: { opacity: 0 }, duration: 0.3
-      }, tau + MORPH - 0.1);
-      tl.to(candTagEls[i], {
-        attr: { opacity: 1 }, duration: 0.3
-      }, tau + MORPH - 0.1);
+      // tags: only AABB (i=3) and OBB (i=4) have elements. A tag fades
+      // out exactly as the next candidate's morph lands — the AABB →
+      // OBB hand-off, and the OBB tag going out as the final SOBB morph
+      // lands (no successor: the SOBB stays unlabeled). Fan candidates
+      // add no tweens at all, so nothing dead/orphaned is left behind.
+      if (candTagAt[i - 1]) {
+        tl.to(candTagAt[i - 1], {
+          attr: { opacity: 0 }, duration: 0.3
+        }, tau + MORPH - 0.1);
+      }
+      if (candTagAt[i]) {
+        tl.to(candTagAt[i], {
+          attr: { opacity: 1 }, duration: 0.3
+        }, tau + MORPH - 0.1);
+      }
       tau += MORPH +
         (i === OBB_INDEX ? OBB_HOLD : i === AABB_INDEX ? AABB_HOLD : HOLD);
     }
@@ -678,15 +664,7 @@
       attr: { opacity: 1, 'stroke-dashoffset': 0 },
       duration: 1.1, ease: 'power2.inOut'
     }, 's2+=0.45');
-    // hand-off: the chain's "SOBB" tag (15px, y-12) crossfades into the
-    // winner label (20px, y-14) — same anchor corner, one "SOBB" reads
-    // throughout, the tag simply grows into the label
-    tl.to(candTagEls[SOBB_INDEX], {
-      attr: { opacity: 0 }, duration: 0.3
-    }, 's2+=1.25');
-    tl.to(sobbLabelEl, {
-      attr: { opacity: 1 }, duration: 0.35, ease: 'power1.out'
-    }, 's2+=1.25');
+    // no label: the settled SOBB (strips + outline) reads on its own
     tl.addLabel('s3', 's2+=1.65');
 
     // ---- section 4 (s3 → s4): promise beat (HTML caption element) ----
@@ -747,8 +725,7 @@
     sobbCorners: function () { return candidates[SOBB_INDEX].corners; },
     candidates: function () { return candidates; },
     zoom: function () { return ZOOM; },
-    tags: function () { return candTagEls; },
-    sobbLabel: function () { return sobbLabelEl; },
+    tags: function () { return candTagEls; },   // [AABB, OBB] only
     tl: function () { return tl; }
   };
 

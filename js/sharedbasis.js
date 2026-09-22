@@ -1,15 +1,16 @@
 /* Shared-basis insertion animator — paper Sec. 3.3, first half.
  *
- * Returns to the build pipeline one slide after it finished and INSERTS
- * the stage the quantized wide node actually needs: all 8 children of a
- * wide node take ONE shared SOBB basis.
+ * Picks the SOBB BVH₈ pipeline up exactly where pipesobb8 left it (chip
+ * row pixel-identical, quantization chip ACTIVE) and INSERTS the stage
+ * the quantized wide node actually needs: all 8 children of a wide node
+ * take ONE shared SOBB basis.
  *
- * s1: return to the pipeline — chip strip in its end state, and ONE
- *     8-wide node below (root box + slots + bounds region): the children
- *     are parallelogram SOBBs at independent orientations, big enough to
+ * s1: the pipeline so far — chip strip as handed over, and ONE 8-wide
+ *     node below (root box + slots + bounds region): the children are
+ *     parallelogram SOBBs at independent orientations, big enough to
  *     spill over each other — a tangle of skewed boxes covering the node
  * s2: THE INSERTION — the chip row re-spaces and a new "shared basis"
- *     chip slots in between "form SOBB" and "quantization"
+ *     chip slots in between "SOBB BVH₈" and "quantization"
  * s3: THE CONVERSION — all 8 parallelograms re-tilt in one deliberate
  *     sweep onto the shared basis (normals n1=100°/n2=160°, edges
  *     E1=10°/E2=70°); hand-off to the next slide (skewed quantization)
@@ -31,25 +32,26 @@
 
   /* ==================== LAYOUT DATA (viewBox 0 0 1120 560) ==================== */
 
-  /* stage chips — the pipeline slide's end-state strip (all done as
-   * context), plus the inserted stage parked at its final gap.
+  /* stage chips — the SOBB BVH₈ pipeline slide's end-state strip (first
+   * three done, quantization ACTIVE, exactly as pipesobb8 left it), plus
+   * the inserted stage parked at its final gap.
    * Chip idiom mirrors js/pipeline.js (CHIP_STYLE, parked insert,
    * style flips as reverse-safe timeline sets). */
-  var CHIP_TXT = ['binary build', 'interior collapse', 'fit k-DOP', 'form SOBB', 'quantization', 'shared basis'];
-  /* base row = the pipeline slide's exact end-state geometry (js/pipeline.js
-   * CHIP_X/CHIP_W/ARROW_X, mirrored for a pixel-continuous return) */
-  var CHIP_W = [150, 170, 110, 120, 140, 140];
+  var CHIP_TXT = ['AABB BVH₂', 'AABB BVH₈', 'SOBB BVH₈', 'quantization', 'shared basis'];
+  /* base row = pipesobb8's exact chip geometry (js/pipeline.js CFG_SOBB8
+   * chips, mirrored for a pixel-continuous hand-off) */
+  var CHIP_W = [150, 150, 160, 140, 140];
   var CHIP_H = 34, CHIP_Y = 24;
-  var BASE_X = [155, 335, 535, 675, 825];
-  /* final row: 6 chips, 36px gaps, centered (sum 1010, margins 55).
-   * "shared basis" (idx 5) sits between "form SOBB" (idx 3) and
-   * "quantization" (idx 4). */
-  var FINAL_X = [55, 241, 447, 593, 749, 925];
-  var INSERT_IDX = 5;                 // DOM index of the "shared basis" chip
-  var INSERT_AT = 4;                  // row position it occupies in FINAL_X
-  var QUANT_IDX = 4;                  // "quantization" chip
-  var BASE_ARROW_X = [320, 520, 660, 810];
-  var FINAL_ARROW_X = [223, 429, 575, 731, 907];
+  var BASE_X = [206, 392, 578, 774];
+  /* final row: 5 chips, 36px gaps, centered (sum 884, margins 118).
+   * "shared basis" (idx 4) sits between "SOBB BVH₈" (idx 2) and
+   * "quantization" (idx 3). */
+  var FINAL_X = [118, 304, 490, 686, 862];
+  var INSERT_IDX = 4;                 // DOM index of the "shared basis" chip
+  var INSERT_AT = 3;                  // row position it occupies in FINAL_X
+  var QUANT_IDX = 3;                  // "quantization" chip
+  var BASE_ARROW_X = [374, 560, 756];
+  var FINAL_ARROW_X = [286, 472, 668, 844];
 
   var CHIP_STYLE = {
     todo:   { fill: '#ffffff', stroke: EDGE, txt: FAINT },
@@ -94,9 +96,9 @@
   var BIG_SCALE = [1.30, 1.16, 1.34, 1.22, 1.26, 1.14, 1.32, 1.20];
 
   var CAPTIONS = [
-    'Return to the pipeline — its end state hides one more necessary stage.',
-    'The transform left a tangle: 8 children, 8 independent SOBB bases, bounds spilling over the whole wide node.',
-    'Insert one stage — “shared basis” slots in between “form SOBB” and “quantization”.',
+    'The SOBB BVH₈ chain reaches quantization — but the wide node needs one more stage first.',
+    'Eight children, eight independent SOBB bases — bounds spilling over the whole wide node.',
+    'Insert one stage — “shared basis” slots in between “SOBB BVH₈” and “quantization”.',
     'All eight children re-tilt in one sweep onto the shared basis — next: quantize the skewed space.'
   ];
 
@@ -211,9 +213,9 @@
     svg = el('svg', { viewBox: '0 0 1120 560', width: '100%', height: '100%' }, host);
     var i;
 
-    /* stage chips: idx 0..4 at base row; the insert (idx 5) parks at its
+    /* stage chips: idx 0..3 at base row; the insert (idx 4) parks at its
      * final gap, lifted and invisible (pipeline idiom) */
-    for (i = 0; i < 6; i++) {
+    for (i = 0; i < 5; i++) {
       var x = i === INSERT_IDX ? FINAL_X[INSERT_AT] : BASE_X[i];
       var g = el('g', {
         transform: i === INSERT_IDX ? 'translate(0 -8)' : 'translate(0 0)',
@@ -312,8 +314,9 @@
   }
 
   /* ==================== reset ====================
-   * Base state = the pipeline slide's END state as context: chip strip
-   * all done + the wide node scaffold; tangle/glyphs/insert hidden. */
+   * Base state = the SOBB BVH₈ pipeline slide's END state, pixel-for-pixel:
+   * first three chips DONE, quantization ACTIVE + the wide node scaffold;
+   * tangle/glyphs/insert hidden. */
 
   function resetDom() {
     chipGs.forEach(function (g, i) {
@@ -321,7 +324,8 @@
       g.setAttribute('transform', i === INSERT_IDX ? 'translate(0 -8)' : 'translate(0 0)');
       g.setAttribute('opacity', i === INSERT_IDX ? 0 : 1);
     });
-    for (var i = 0; i < 6; i++) setChip(i, 'done');
+    for (var i = 0; i < 3; i++) setChip(i, 'done');
+    setChip(QUANT_IDX, 'active');
     baseArrows.forEach(function (a) {
       gsap.killTweensOf(a);
       a.setAttribute('opacity', 1);
@@ -373,13 +377,13 @@
     tl.addLabel('s1', tl.duration());
 
     /* s2 — THE INSERTION: the chip row visibly re-spaces apart and
-     * "shared basis" slots in between "form SOBB" and "quantization" */
+     * "shared basis" slots in between "SOBB BVH₈" and "quantization" */
     tl.to({}, { duration: 0.25 }, '>');
     at = tl.duration();
-    /* quantization is no longer "done" — the story rewinds one step */
+    /* quantization is no longer pending — the story rewinds one step */
     tlChip(tl, QUANT_IDX, 'todo', at);
     tl.to(baseArrows, { attr: { opacity: 0 }, duration: 0.25 }, at);
-    [0, 1, 2, 3, 4].forEach(function (i) {
+    [0, 1, 2, 3].forEach(function (i) {
       tl.to(chipGs[i], {
         attr: { transform: 'translate(' + chipDelta(i) + ' 0)' },
         duration: 0.6, ease: 'power2.inOut'
