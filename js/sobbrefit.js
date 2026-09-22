@@ -4,17 +4,19 @@
  * parallelogram; slab normals are perpendicular to them).
  *
  * Timeline sections (one per reveal.js fragment step):
- *   s1: leaves re-fit     -> geometry moves; every leaf re-derives its own
- *                            (new-skew) SOBB from its triangles; the
- *                            triangles fade — leaves are self-sufficient
- *   s2: the problem       -> parent M0: its children now have DIFFERENT
+ *   s1: invalidation      -> geometry moves; every SOBB bound goes stale
+ *                            (red dashed) — the hierarchy is invalid
+ *   s2: leaves re-fit     -> each leaf re-derives its own (new-skew)
+ *                            SOBB from its triangles; the triangles fade
+ *                            — leaves are self-sufficient
+ *   s3: the problem       -> parent M0: its children now have DIFFERENT
  *                            bases (basis arrows + colored glyphs); the
  *                            dashed "?" parallelogram shows the parent can
  *                            not pick a basis from its children's bounds
- *   s3: EG25 fix, level 2 -> the full k-DOP travels child -> parent; M0 and
+ *   s4: EG25 fix, level 2 -> the full k-DOP travels child -> parent; M0 and
  *                            M1 each do a complete k-DOP -> SOBB refit
- *   s4: EG25 at the root  -> same again: every node, bottom-up, every frame
- *   s5: cost              -> red badge: 4.4-4.7x an AABB refit, ~60 MB
+ *   s5: EG25 at the root  -> same again: every node, bottom-up, every frame
+ *   s6: cost              -> red badge: 4.4-4.7x an AABB refit, ~60 MB
  */
 (function () {
   'use strict';
@@ -105,14 +107,14 @@
    * (Bases + rotations chosen so every rest/moved parallelogram clears the
    * viewBox edge by >= 24 units — checked by the geometry smoke test.) */
   var MOVED_ROT = { M0: 12, M1: 8, R: 4 };
-  /* s2: the parent's imagined new basis — matches neither child. */
+  /* s3: the parent's imagined new basis — matches neither child. */
   var Q_BASIS = { e1: 3, e2: 74 };
 
   /* k-DOP fan the EG25 refit propagates (same 12 directions as the kdop
    * slides: slab normals at 10 + 30k degrees). */
   var FAN_OFF = 10, FAN_N = 12;
 
-  var TRI_FADE = 0.15;   // triangles stay faintly visible after s1
+  var TRI_FADE = 0.15;   // triangles stay faintly visible after s2
   var GLYPH_LEN = 7;     // tree basis-glyph half-length (px)
   var ARROW_LEN = 22;    // scene basis-arrow half-length (px)
 
@@ -124,12 +126,13 @@
     R:  { x: 280, y: 52,  anchor: 'middle' }
   };
 
-  /* s5: red cost badge beside the root. */
+  /* s6: red cost badge beside the root. */
   var COST_BADGE = { x: 322, y: 74, w: 148, h: 26, text: '4.4–4.7× · ~60 MB' };
 
   var CAPTIONS = [
     'SOBBs — every node wraps its geometry in its own skew basis.',
-    'Geometry moved — leaves refit from their triangles. New skew: fine.',
+    'Geometry moved — every SOBB is stale; the hierarchy is invalid.',
+    'Leaves re-fit from their triangles — new skew: fine; above them, still stale.',
     'The parent’s turn: its children have different bases — no cheap union.',
     'EG25: hand the full k-DOP up — refit each parent k-DOP → SOBB.',
     'Same again at the root — every node, bottom-up, every frame.',
@@ -310,7 +313,7 @@
     return shapes;
   }
 
-  /* s2: the parent's attempted new bound over its children's (moved)
+  /* s3: the parent's attempted new bound over its children's (moved)
    * bounds in the foreign Q_BASIS — contains them, visibly wrong-skewed. */
   function computeQ(shapes) {
     return paraCorners(shapes.A.moved.concat(shapes.B.moved), Q_BASIS.e1, Q_BASIS.e2);
@@ -353,7 +356,7 @@
   var pingEls = {};          // A..D -> tree k-DOP ping group
   var overlayEls = {};       // A/B -> scene emphasis polygon
   var arrowGs = {};          // A/B -> scene basis-arrow group
-  var qPoly, qAux, qLen = 0; // s2 "?" parallelogram + its arrows/tag
+  var qPoly, qAux, qLen = 0; // s3 "?" parallelogram + its arrows/tag
   var costBadgeG;
   var captionEl;
   var SHAPES = null, KDOPS = null, Q = null;
@@ -429,7 +432,7 @@
       kdopSceneEls[id] = p;
     });
 
-    // s2 emphasis overlays on the quarreling children (A blue, B rose)
+    // s3 emphasis overlays on the quarreling children (A blue, B rose)
     ['A', 'B'].forEach(function (id) {
       overlayEls[id] = el('polygon', {
         points: pts2str(SHAPES[id].moved),
@@ -438,7 +441,7 @@
       }, sceneSvg);
     });
 
-    // s2 "?" parallelogram: the parent's attempted new bound, third basis
+    // s3 "?" parallelogram: the parent's attempted new bound, third basis
     qPoly = el('polygon', {
       points: pts2str(Q),
       fill: 'none', stroke: INK, 'stroke-width': 1.6,
@@ -448,7 +451,7 @@
     qPoly.setAttribute('stroke-dasharray', qLen);
     qPoly.setAttribute('stroke-dashoffset', qLen);
 
-    // s2 basis arrows: children in their colors, the "?" in dashed ink
+    // s3 basis arrows: children in their colors, the "?" in dashed ink
     function arrows(center, basis, color, marker, dash) {
       var g = el('g', { opacity: 0 }, sceneSvg);
       [bvec(basis.e1), bvec(basis.e2)].forEach(function (v) {
@@ -563,7 +566,7 @@
       kdopEls[id] = g;
     });
 
-    // s5: red cost badge beside the root
+    // s6: red cost badge beside the root
     costBadgeG = el('g', { opacity: 0 }, treeSvg);
     el('rect', {
       x: COST_BADGE.x, y: COST_BADGE.y,
@@ -697,9 +700,9 @@
   function buildTimeline() {
     tl = gsap.timeline({ paused: true });
 
-    // s1: geometry deforms, all SOBBs go stale (red dashed), leaves
-    // re-fit in NEW skews (basis glyphs rotate with them); the triangles
-    // fade — leaves are self-sufficient, their parents are not.
+    // s1: geometry deforms — every SOBB in the hierarchy is now stale
+    // (red dashed). The invalid state is the end point of this step;
+    // nothing re-fits yet.
     polyEls.forEach(function (p, i) {
       tl.to(p.el, {
         attr: { points: pts2str(p.moved) },
@@ -708,6 +711,13 @@
     });
     var allParas = NODES.map(function (id) { return paraEls[id].el; });
     tl.set(allParas, { attr: { stroke: RED, 'stroke-dasharray': '7 5' } }, '>');
+    tl.addLabel('s1', tl.duration());
+
+    // s2: leaves re-fit in their NEW skews (basis glyphs rotate with
+    // them); the triangles fade — leaves are self-sufficient, their
+    // parents are not. The spacer keeps the s1 label clear of the
+    // refit stroke .set.
+    tl.to({}, { duration: 0.3 }, '>');
     tl.add(function () { pulseNodes(LEAVES); }, '>');
     var leafAt = tl.duration();
     addParaRefit(LEAVES, '>', 0.9);
@@ -716,32 +726,32 @@
       attr: { opacity: TRI_FADE },
       duration: 0.8, ease: 'power1.inOut'
     }, leafAt + 0.6);
-    tl.addLabel('s1', tl.duration());
+    tl.addLabel('s2', tl.duration());
 
-    // s2: the problem — parent M0's children have different bases.
+    // s3: the problem — parent M0's children have different bases.
     // Emphasis overlays + basis arrows A (blue) vs B (rose); the dashed
     // "?" parallelogram sweeps on in a third, wrong basis.
     tl.to({}, { duration: 0.35 }, '>');
-    var s2a = tl.duration();
+    var s3a = tl.duration();
     tl.fromTo([overlayEls.A, overlayEls.B],
       { attr: { opacity: 0 } },
-      { attr: { opacity: 1 }, duration: 0.35, ease: 'power1.out' }, s2a);
+      { attr: { opacity: 1 }, duration: 0.35, ease: 'power1.out' }, s3a);
     tl.fromTo([arrowGs.A, arrowGs.B],
       { attr: { opacity: 0 } },
-      { attr: { opacity: 1 }, duration: 0.3, ease: 'power1.out', stagger: 0.12 }, s2a + 0.15);
-    tl.to(glyphLines.A, { attr: { stroke: BLUE, 'stroke-width': 2.2 }, duration: 0.3 }, s2a + 0.15);
-    tl.to(glyphLines.B, { attr: { stroke: ROSE, 'stroke-width': 2.2 }, duration: 0.3 }, s2a + 0.15);
-    tl.set(qPoly, { attr: { opacity: 1 } }, s2a + 0.5);
+      { attr: { opacity: 1 }, duration: 0.3, ease: 'power1.out', stagger: 0.12 }, s3a + 0.15);
+    tl.to(glyphLines.A, { attr: { stroke: BLUE, 'stroke-width': 2.2 }, duration: 0.3 }, s3a + 0.15);
+    tl.to(glyphLines.B, { attr: { stroke: ROSE, 'stroke-width': 2.2 }, duration: 0.3 }, s3a + 0.15);
+    tl.set(qPoly, { attr: { opacity: 1 } }, s3a + 0.5);
     tl.fromTo(qPoly,
       { attr: { 'stroke-dashoffset': qLen } },
-      { attr: { 'stroke-dashoffset': 0 }, duration: 0.9, ease: 'power1.inOut' }, s2a + 0.5);
-    tl.to(glyphLines.M0, { attr: { 'stroke-dasharray': '3 2' }, duration: 0.2 }, s2a + 0.5);
+      { attr: { 'stroke-dashoffset': 0 }, duration: 0.9, ease: 'power1.inOut' }, s3a + 0.5);
+    tl.to(glyphLines.M0, { attr: { 'stroke-dasharray': '3 2' }, duration: 0.2 }, s3a + 0.5);
     tl.fromTo(qAux,
       { attr: { opacity: 0 } },
-      { attr: { opacity: 1 }, duration: 0.3, ease: 'power1.out' }, s2a + 1.15);
-    tl.addLabel('s2', tl.duration());
+      { attr: { opacity: 1 }, duration: 0.3, ease: 'power1.out' }, s3a + 1.15);
+    tl.addLabel('s3', tl.duration());
 
-    // s3: the EG25 fix at the internal level — full k-DOPs travel up to
+    // s4: the EG25 fix at the internal level — full k-DOPs travel up to
     // M0, then M1; each parent re-fits its SOBB from the k-DOP.
     tl.to({}, { duration: 0.3 }, '>');
     tl.to([overlayEls.A, overlayEls.B, arrowGs.A, arrowGs.B, qAux, qPoly],
@@ -751,20 +761,20 @@
     tl.to(glyphLines.M0, { attr: { 'stroke-dasharray': 'none' }, duration: 0.2 }, '<');
     addKdopRefit('M0', ['A', 'B'], tl.duration());
     addKdopRefit('M1', ['C', 'D'], tl.duration());
-    tl.addLabel('s3', tl.duration());
+    tl.addLabel('s4', tl.duration());
 
-    // s4: same again at the root — every node, bottom-up, every frame.
+    // s5: same again at the root — every node, bottom-up, every frame.
     tl.to({}, { duration: 0.3 }, '>');
     addKdopRefit('R', [], tl.duration());
     tl.add(function () { pulseNodes(['R']); }, '>');
-    tl.addLabel('s4', tl.duration());
+    tl.addLabel('s5', tl.duration());
 
-    // s5: cost — 4.4–4.7× an AABB refit, ~60 MB scratch.
+    // s6: cost — 4.4–4.7× an AABB refit, ~60 MB scratch.
     tl.to({}, { duration: 0.25 }, '>');
     tl.fromTo(costBadgeG,
       { attr: { opacity: 0 } },
       { attr: { opacity: 1 }, duration: 0.4, ease: 'power1.out' }, '>');
-    tl.addLabel('s5', tl.duration());
+    tl.addLabel('s6', tl.duration());
   }
 
   var animator = {
@@ -786,7 +796,7 @@
 
       captionEl.textContent = CAPTIONS[fragStep] || CAPTIONS[0];
       if (fragStep > 0) {
-        tl.seek(D.stopsFor(tl, 5)[fragStep], true); // no callbacks fired
+        tl.seek(D.stopsFor(tl, 6)[fragStep], true); // no callbacks fired
       }
 
       // gentle entrance of both panels
@@ -798,7 +808,7 @@
     step: function (fragStep) {
       if (!tl) return;
       captionEl.textContent = CAPTIONS[fragStep] || CAPTIONS[0];
-      tl.tweenTo(D.stopsFor(tl, 5)[fragStep], { ease: 'none' });
+      tl.tweenTo(D.stopsFor(tl, 6)[fragStep], { ease: 'none' });
     },
 
     stop: function () {

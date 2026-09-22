@@ -428,6 +428,7 @@
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
+      <span class="fragment"></span>
     </section>
 
     <!-- L8b. SOBB refit — the problem -->
@@ -441,6 +442,7 @@
         <span class="legend"><span class="sw sw-stale"></span>stale bound&emsp;<span class="sw sw-refit"></span>re-fitted bound</span>
         <span id="sobbrefit-caption" class="refit-caption"></span>
       </div>
+      <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
@@ -467,7 +469,7 @@
       <div class="canvas-row">
         <div id="atomics-canvas" class="panel"></div>
       </div>
-      <div class="status-row"><span class="cap">Local pre-tests are cheap — atomics land where contention is low: 16–26% of tests near the leaves, ~20% overall, ~0.0003% at the root.</span></div>
+      <div class="status-row"><span class="cap">The root filters with cheap local tests; the leaves split writes across thousands of nodes — pressure self-balances.</span></div>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>

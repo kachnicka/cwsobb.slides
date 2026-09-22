@@ -6,11 +6,13 @@
  * timeline consume those structures generically.
  *
  * Timeline sections (one per reveal.js fragment step):
- *   s1: leaves re-fit        -> geometry moves, stale leaf boxes shrink-wrap;
+ *   s1: invalidation         -> geometry moves, every bound goes stale
+ *                               (red dashed) — the hierarchy is invalid
+ *   s2: leaves re-fit        -> stale leaf boxes shrink-wrap their triangles;
  *                               then the triangles fade — above the leaves
  *                               only the boundary carries information
- *   s2: bounds propagate     -> internal boxes union their (faded) children
- *   s3: tree settles         -> root re-fits, hierarchy valid again
+ *   s3: bounds propagate     -> internal boxes union their (faded) children
+ *   s4: tree settles         -> root re-fits, hierarchy valid again
  */
 (function () {
   'use strict';
@@ -83,14 +85,15 @@
 
   var BOX_PAD = 12; // visual padding around each bound
 
-  /* s1: after the leaf refit, the triangles fade to this opacity —
+  /* s2: after the leaf refit, the triangles fade to this opacity —
    * faintly visible, but the message is that their information is
    * spent; only the boundary propagates upward. */
   var TRI_FADE = 0.15;
 
   var CAPTIONS = [
     'Static scene — every box tightly bounds its geometry.',
-    'Geometry moved — leaves refit; above them, only the boundary matters.',
+    'Geometry moved — every bound is stale; the hierarchy is invalid.',
+    'Leaves re-fit from their triangles; above them, only the boundary matters.',
     'Bounds propagate — each internal box unions its children.',
     'Root refit — the hierarchy is valid again.'
   ];
@@ -312,7 +315,7 @@
 
   function stopTimes() {
     var times = [0];
-    for (var i = 1; i <= 3; i++) times.push(tl.labels['s' + i]);
+    for (var i = 1; i <= 4; i++) times.push(tl.labels['s' + i]);
     return times;
   }
 
@@ -343,9 +346,9 @@
   function buildTimeline() {
     tl = gsap.timeline({ paused: true });
 
-    // s1: geometry deforms, all boxes go stale (red dashed), the leaves
-    // re-fit — shrink-wrapping their own triangles again — and then the
-    // triangles fade: above the leaves, only the boundary is needed.
+    // s1: geometry deforms — every box in the hierarchy is now stale
+    // (red dashed). The invalid state is the end point of this step;
+    // nothing re-fits yet.
     polyEls.forEach(function (p, i) {
       tl.to(p.el, {
         attr: { points: pts2str(p.moved) },
@@ -354,6 +357,12 @@
     });
     var allRects = Object.keys(boxEls).map(function (id) { return boxEls[id]; });
     tl.set(allRects, { attr: { stroke: RED, 'stroke-dasharray': '7 5' } }, '>');
+    tl.addLabel('s1', tl.duration());
+
+    // s2: leaves re-fit — shrink-wrapping their own triangles again — and
+    // then the triangles fade: above the leaves, only the boundary is
+    // needed. The spacer keeps the label clear of the refit stroke .set.
+    tl.to({}, { duration: 0.3 }, '>');
     tl.add(function () { pulseNodes(LEAVES); }, '>');
     var leafAt = tl.duration();
     addBoxRefit(tl, LEAVES, '>');
@@ -362,19 +371,19 @@
       attr: { opacity: TRI_FADE },
       duration: 0.8, ease: 'power1.inOut'
     }, leafAt + 0.6);
-    tl.addLabel('s1', tl.duration());
+    tl.addLabel('s2', tl.duration());
 
-    // s2: bounds propagate — internal level re-fits (parents union children).
+    // s3: bounds propagate — internal level re-fits (parents union children).
     tl.to({}, { duration: 0.3 }, '>');
     tl.add(function () { pulseNodes(['M0', 'M1']); }, '>');
     addBoxRefit(tl, ['M0', 'M1'], '>');
-    tl.addLabel('s2', tl.duration());
+    tl.addLabel('s3', tl.duration());
 
-    // s3: root re-fits — the tree settles, hierarchy valid again.
+    // s4: root re-fits — the tree settles, hierarchy valid again.
     tl.to({}, { duration: 0.3 }, '>');
     tl.add(function () { pulseNodes(['R']); }, '>');
     addBoxRefit(tl, ['R'], '>');
-    tl.addLabel('s3', tl.duration());
+    tl.addLabel('s4', tl.duration());
   }
 
   var animator = {
