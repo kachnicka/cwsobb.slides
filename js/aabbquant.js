@@ -169,13 +169,13 @@
       chipTexts.push(text(CHIP_TXT[i], {
         'class': 'chip-text',
         x: CHIP_X[i] + CHIP_W[i] / 2, y: CHIP_Y + 22,
-        'text-anchor': 'middle', 'font-size': 15, fill: s.txt
+        'text-anchor': 'middle', 'font-size': 20, fill: s.txt
       }, svg));
     }
     CHIP_ARROW_X.forEach(function (x) {
       text('→', {
         'class': 'chip-arrow',
-        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 16, fill: FAINT
+        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 21, fill: FAINT
       }, svg);
     });
 
@@ -204,7 +204,7 @@
     }
     miniCapEl = text('one wide node · eight child AABBs', {
       x: WIDE.x + WIDE.w / 2, y: WIDE.y + WIDE.h + 34,
-      'text-anchor': 'middle', 'font-size': 15, fill: FAINT
+      'text-anchor': 'middle', 'font-size': 20, fill: FAINT
     }, svg);
 
     /* connector: wide node → its bounds box */
@@ -262,7 +262,7 @@
     /* closer under the panel (s3) — terse, no numeric readouts */
     quantCapEl = text('snapped outward — conservative by construction', {
       x: P.x + P.w / 2, y: P.y + P.h + 34,
-      'text-anchor': 'middle', 'font-size': 15, fill: BLUE, opacity: 0
+      'text-anchor': 'middle', 'font-size': 20, fill: BLUE, opacity: 0
     }, svg);
 
     captionEl = document.getElementById('aabbquant-caption');

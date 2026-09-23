@@ -224,7 +224,7 @@
       var b = D.aabb(t.pts);
       badgeEls.push(text('', {
         x: b.x + b.w / 2, y: b.y - 10, 'text-anchor': 'middle',
-        'font-size': 14, fill: BLUE, 'font-weight': 650, opacity: 0
+        'font-size': 18, fill: BLUE, 'font-weight': 650, opacity: 0
       }, svg));
     });
 
@@ -265,12 +265,12 @@
     }, svg);
     checkEl = text('✓', {
       x: HIT_MARK[0] + 20, y: HIT_MARK[1] - 8,
-      'font-size': 18, fill: RED, 'font-weight': 700, opacity: 0
+      'font-size': 22, fill: RED, 'font-weight': 700, opacity: 0
     }, svg);
 
     /* in-canvas test tally (top-right, content via timeline callbacks) */
     tallyEl = text('', {
-      x: 1090, y: 30, 'text-anchor': 'end', 'font-size': 16,
+      x: 1090, y: 30, 'text-anchor': 'end', 'font-size': 21,
       fill: INK, 'font-weight': 600, opacity: 0
     }, svg);
 

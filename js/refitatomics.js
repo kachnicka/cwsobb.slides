@@ -97,8 +97,8 @@
     for (var d = 0; d < N; d++) {
       el('line', { x1: X(d), y1: YBASE, x2: X(d), y2: YBASE + 5, stroke: FAINT, 'stroke-width': 1 }, scaffoldG);
     }
-    text('depth 0 = root', { x: 60, y: 364, 'font-size': 18, fill: FAINT }, scaffoldG);
-    text('depth 14 = leaves', { x: 1026, y: 364, 'text-anchor': 'end', 'font-size': 18, fill: FAINT }, scaffoldG);
+    text('depth 0 = root', { x: 60, y: 364, 'font-size': 22, fill: FAINT }, scaffoldG);
+    text('depth 14 = leaves', { x: 1026, y: 364, 'text-anchor': 'end', 'font-size': 22, fill: FAINT }, scaffoldG);
 
     /* ---- data lines: drawn with dashoffset sweeps (attrs, GSAP-safe).
      * Point order is leaves->root, so offset->0 paints right-to-left.
@@ -129,10 +129,10 @@
      * atomics bell peaks around y~281 — this corner is always empty) ---- */
     legendGreen = el('g', { opacity: 0 }, svg);
     el('line', { x1: 700, y1: 42, x2: 736, y2: 42, stroke: GREEN, 'stroke-width': 3 }, legendGreen);
-    text('local boundary tests', { x: 746, y: 50, 'font-size': 18, fill: INK }, legendGreen);
+    text('local boundary tests', { x: 746, y: 50, 'font-size': 22, fill: INK }, legendGreen);
     legendRed = el('g', { opacity: 0 }, svg);
     el('line', { x1: 700, y1: 78, x2: 736, y2: 78, stroke: ATOMIC_RED, 'stroke-width': 3 }, legendRed);
-    text('atomic min/max writes', { x: 746, y: 86, 'font-size': 18, fill: INK }, legendRed);
+    text('atomic min/max writes', { x: 746, y: 86, 'font-size': 22, fill: INK }, legendRed);
 
     /* ---- why cards (s4): bordered cards, two lines each. They sit in
      * a dedicated band below the axis (y386-478): the chart is squashed
@@ -140,13 +140,13 @@
      * bottoms out at y~336, depth captions end ~366, 20px clear. ---- */
     function whyCard(x, l1, l2) {
       var gEl = el('g', { opacity: 0 }, svg);
-      el('rect', { x: x, y: 386, width: 450, height: 92, rx: 8, fill: '#ffffff', stroke: EDGE, 'stroke-width': 1.5 }, gEl);
-      text(l1, { x: x + 225, y: 424, 'text-anchor': 'middle', 'font-size': 18, fill: INK }, gEl);
-      text(l2, { x: x + 225, y: 455, 'text-anchor': 'middle', 'font-size': 17, fill: SOFT }, gEl);
+      el('rect', { x: x, y: 386, width: 510, height: 92, rx: 8, fill: '#ffffff', stroke: EDGE, 'stroke-width': 1.5 }, gEl);
+      text(l1, { x: x + 255, y: 424, 'text-anchor': 'middle', 'font-size': 20, fill: INK }, gEl);
+      text(l2, { x: x + 255, y: 455, 'text-anchor': 'middle', 'font-size': 20, fill: SOFT }, gEl);
       return gEl;
     }
-    why1 = whyCard(80, WHY1A, WHY1B);
-    why2 = whyCard(590, WHY2A, WHY2B);
+    why1 = whyCard(40, WHY1A, WHY1B);
+    why2 = whyCard(585, WHY2A, WHY2B);
 
     built = true;
   }

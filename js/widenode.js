@@ -258,13 +258,13 @@
       chipTexts.push(text(CHIP_TXT[i], {
         'class': 'chip-text',
         x: CHIP_X[i] + CHIP_W[i] / 2, y: CHIP_Y + 22,
-        'text-anchor': 'middle', 'font-size': 15, fill: s.txt
+        'text-anchor': 'middle', 'font-size': 20, fill: s.txt
       }, svg));
     }
     CHIP_ARROW_X.forEach(function (x) {
       text('→', {
         'class': 'chip-arrow',
-        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 16, fill: FAINT
+        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 21, fill: FAINT
       }, svg);
     });
 
@@ -294,7 +294,7 @@
     }
     miniCapEl = text('one wide node · 8 child SOBBs', {
       x: WIDE.x + WIDE.w / 2, y: WIDE.y + WIDE.h + 34,
-      'text-anchor': 'middle', 'font-size': 15, fill: FAINT
+      'text-anchor': 'middle', 'font-size': 20, fill: FAINT
     }, svg);
 
     /* connector: wide node → its bounds box */
@@ -366,7 +366,7 @@
     /* closer read-out under the panel (s4) */
     quantCapEl = text('8 bounds · one shared frame · snapped outward', {
       x: P.x + P.w / 2, y: P.y + P.h + 34,
-      'text-anchor': 'middle', 'font-size': 15, fill: BLUE, opacity: 0
+      'text-anchor': 'middle', 'font-size': 20, fill: BLUE, opacity: 0
     }, svg);
 
     captionEl = document.getElementById('wide-caption');

@@ -502,15 +502,15 @@
 
     /* ---- badges / dots / closer cue (all hidden at base) ---- */
     sumBadge = text('Σ sum', {
-      x: 446, y: 402, 'text-anchor': 'middle', 'font-size': 17,
+      x: 446, y: 402, 'text-anchor': 'middle', 'font-size': 22,
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
     stageBadge = text('∪ union', {
-      x: STAGE[0], y: 144, 'text-anchor': 'middle', 'font-size': 17,
+      x: STAGE[0], y: 144, 'text-anchor': 'middle', 'font-size': 22,
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
     closerCue = text('one stored frame', {
-      x: 446, y: 100, 'text-anchor': 'middle', 'font-size': 16,
+      x: 446, y: 100, 'text-anchor': 'middle', 'font-size': 21,
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
     var r1 = dotRow(SUM_CANDS.length, 446, 434, svg);

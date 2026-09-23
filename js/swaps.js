@@ -102,7 +102,7 @@
       slotEls.push(r);
       text('slot ' + s, {
         x: slotX(s) + SLOT_W / 2, y: ROW_Y + SLOT_H + 28,
-        'text-anchor': 'middle', 'font-size': 13, fill: FAINT
+        'text-anchor': 'middle', 'font-size': 18, fill: FAINT
       }, svg);
     }
 
@@ -122,7 +122,7 @@
 
     /* cost readout */
     text('total order cost', {
-      x: 560, y: 330, 'text-anchor': 'middle', 'font-size': 16, fill: FAINT
+      x: 560, y: 330, 'text-anchor': 'middle', 'font-size': 21, fill: FAINT
     }, svg);
     costText = text(String(COSTS[0]), {
       x: 560, y: 392, 'text-anchor': 'middle', 'font-size': 52, fill: INK,
@@ -132,10 +132,10 @@
       x: 660, y: 392, 'text-anchor': 'start', 'font-size': 24, fill: BLUE
     }, svg);
     iterText = text('', {
-      x: 560, y: 96, 'text-anchor': 'middle', 'font-size': 18, fill: BLUE
+      x: 560, y: 96, 'text-anchor': 'middle', 'font-size': 22, fill: BLUE
     }, svg);
     convText = text('', {
-      x: 560, y: 432, 'text-anchor': 'middle', 'font-size': 16, fill: BLUE
+      x: 560, y: 432, 'text-anchor': 'middle', 'font-size': 21, fill: BLUE
     }, svg);
 
     captionEl = document.getElementById('swap-caption');

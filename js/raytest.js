@@ -111,7 +111,7 @@
       fill: 'none', stroke: INK, 'stroke-width': 1.8
     }, svg);
     text('wide node', {
-      x: PARENT.x + 6, y: PARENT.y - 14, 'font-size': 14, fill: FAINT
+      x: PARENT.x + 6, y: PARENT.y - 14, 'font-size': 18, fill: FAINT
     }, svg);
 
     /* child boxes */
@@ -123,7 +123,7 @@
       boxEls.push(r);
       idTexts.push(text('id ' + id, {
         x: b.x + b.w / 2, y: b.y + 24, 'text-anchor': 'middle',
-        'font-size': 14, fill: FAINT
+        'font-size': 18, fill: FAINT
       }, svg));
       /* tiny triangle glyph inside each child */
       var cx = b.x + b.w / 2, cy = b.y + b.h / 2 + 18;
@@ -137,11 +137,11 @@
     BOXES.forEach(function (b, id) {
       badgeEls.push(text('', {
         x: b.x + b.w / 2, y: b.y - 12, 'text-anchor': 'middle',
-        'font-size': 15, fill: BLUE, opacity: 0, 'font-weight': 650
+        'font-size': 20, fill: BLUE, opacity: 0, 'font-weight': 650
       }, svg));
       badgeTexts.push(text('', {
         x: b.x + b.w / 2, y: b.y + b.h + 24, 'text-anchor': 'middle',
-        'font-size': 13, fill: INK, opacity: 0
+        'font-size': 18, fill: INK, opacity: 0
       }, svg));
     });
 
@@ -159,7 +159,7 @@
     }, svg);
 
     orderCap = text('', {
-      x: 330, y: 552, 'text-anchor': 'middle', 'font-size': 14, fill: FAINT, opacity: 0
+      x: 330, y: 552, 'text-anchor': 'middle', 'font-size': 18, fill: FAINT, opacity: 0
     }, svg);
 
     /* hit marker — placed slightly PAST box entry (HIT_T is exactly on
@@ -174,7 +174,7 @@
     }, svg);
 
     cullCap = text('4 of 8 children culled — no box test, no traversal', {
-      x: 330, y: 552, 'text-anchor': 'middle', 'font-size': 15, fill: RED, opacity: 0
+      x: 330, y: 552, 'text-anchor': 'middle', 'font-size': 20, fill: RED, opacity: 0
     }, svg);
 
     captionEl = document.getElementById('ray-caption');

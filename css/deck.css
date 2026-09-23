@@ -149,7 +149,7 @@
      (~1185) also stays clear of the bottom-right slide number */
   margin: 8px 95px 0;
   min-height: 26px;
-  font-size: 18px;
+  font-size: 21px;
   flex: none;
 }
 
@@ -280,7 +280,7 @@
 }
 
 .cap {
-  font-size: 18px;
+  font-size: 21px;
   color: var(--ink);
   font-weight: 550;
 }
@@ -303,12 +303,12 @@
   justify-content: center;
   gap: 12px;
   flex: none;
-  width: 252px;
+  width: 300px;
   min-height: 0;
 }
 
 .bv-col-label {
-  font-size: 12px;
+  font-size: 16px;
   letter-spacing: 0.08em;
   color: var(--ink-faint);
 }
@@ -355,7 +355,7 @@
 .svg-box-root  { stroke-width: 2.2; }
 .svg-edge      { stroke: var(--hairline); stroke-width: 1.6; }
 .svg-node      { fill: #ffffff; stroke: var(--ink); stroke-width: 1.6; }
-.svg-node-text { fill: var(--ink); font-size: 15px; }
+.svg-node-text { fill: var(--ink); font-size: 20px; }
 .svg-side-label{ fill: var(--ink-faint); font-size: 20px; letter-spacing: 0.08em; }
 .svg-dot       { fill: var(--ink); }
 .svg-cloud-box { fill: none; stroke-width: 1.6; }
@@ -364,12 +364,12 @@
    paint props are safe (the attribute-only rule applies to animated
    slides). viewBox units map roughly 1:1 onto the logical space at 1280. */
 
-.svg-lbl         { fill: var(--ink); font-size: 15px; }
+.svg-lbl         { fill: var(--ink); font-size: 20px; }
 .svg-lbl-strong  { font-weight: 650; }
 .svg-lbl-soft    { fill: var(--ink-soft); }
-.svg-val         { fill: var(--ink-soft); font-size: 13px; font-variant-numeric: tabular-nums; }
-.svg-faint       { fill: var(--ink-faint); font-size: 12px; }
-.svg-panel-title { fill: var(--ink); font-size: 18px; font-weight: 650; }
+.svg-val         { fill: var(--ink-soft); font-size: 18px; font-variant-numeric: tabular-nums; }
+.svg-faint       { fill: var(--ink-faint); font-size: 17px; }
+.svg-panel-title { fill: var(--ink); font-size: 22px; font-weight: 650; }
 
 /* L13 ordering chart */
 .svg-bar-build { fill: #b9bfca; }
@@ -391,20 +391,20 @@
 .svg-line-sobb { fill: none; stroke: var(--blue); stroke-width: 3; stroke-linejoin: round; }
 .svg-dot-aabb  { fill: var(--ink-soft); }
 .svg-dot-sobb  { fill: var(--blue); }
-.svg-end-aabb  { fill: var(--ink-soft); font-size: 13px; font-variant-numeric: tabular-nums; }
-.svg-end-sobb  { fill: var(--blue); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.svg-end-aabb  { fill: var(--ink-soft); font-size: 18px; font-variant-numeric: tabular-nums; }
+.svg-end-sobb  { fill: var(--blue); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* ---------- Related work timeline (L1.5, static SVG) ---------- */
 
 /* Scaffold: year gridlines + lane labels, always visible. */
 .svg-rw-grid  { stroke: var(--hairline); stroke-width: 1; stroke-dasharray: 3 5; }
-.svg-rw-year  { fill: var(--ink); font-size: 15px; font-weight: 650; }
-.svg-rw-lane  { fill: var(--ink-soft); font-size: 15px; font-weight: 650; letter-spacing: 0.05em; }
+.svg-rw-year  { fill: var(--ink); font-size: 20px; font-weight: 650; }
+.svg-rw-lane  { fill: var(--ink-soft); font-size: 20px; font-weight: 650; letter-spacing: 0.05em; }
 
 /* Work pills; the "this work" pill carries the accent. */
 .svg-rw-node       { fill: #ffffff; stroke: var(--ink); stroke-width: 1.6; }
 .svg-rw-this       { fill: #e7effd; stroke: var(--blue); stroke-width: 2.2; }
-.svg-rw-title      { fill: var(--ink); font-size: 15px; font-weight: 650; }
+.svg-rw-title      { fill: var(--ink); font-size: 20px; font-weight: 650; }
 .svg-rw-title-this { fill: var(--blue); }
 
 /* Secondary work sharing a year×lane cell: same pill, quieter ink. */
@@ -421,8 +421,8 @@
 .svg-rw-link-main  { fill: none; stroke: var(--blue); stroke-width: 2; }
 .svg-rw-head       { fill: var(--ink-faint); }
 .svg-rw-head-blue  { fill: var(--blue); }
-.svg-rw-rellbl     { fill: var(--ink-soft); font-size: 13px; }
-.svg-rw-rellbl-hl  { fill: var(--blue); font-size: 13px; }
+.svg-rw-rellbl     { fill: var(--ink-soft); font-size: 18px; }
+.svg-rw-rellbl-hl  { fill: var(--blue); font-size: 18px; }
 
 /* ---------- Title slide logos ---------- */
 
@@ -462,7 +462,7 @@
   border: 1.5px dashed var(--hairline);
   background: #fbfcfe;
   color: var(--ink-faint);
-  font-size: 18px;
+  font-size: 21px;
   text-align: center;
   padding: 0 64px;
   line-height: 1.55;
@@ -522,9 +522,9 @@
 .svg-beam      { fill: var(--red); opacity: 0.15; }
 .svg-dot-ref   { fill: var(--ink); }
 
-.svg-scene     { fill: var(--ink); font-size: 16px; }
-.svg-scene-spd { fill: var(--blue); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.svg-scene-num { fill: var(--red); font-size: 17px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.svg-scene     { fill: var(--ink); font-size: 21px; }
+.svg-scene-spd { fill: var(--blue); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.svg-scene-num { fill: var(--red); font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
 
 /* Thumbnail chip: hairline border over the clipped <image>. */
 .svg-chip      { fill: none; stroke: var(--hairline); stroke-width: 1; }
@@ -547,7 +547,7 @@
   display: flex;
   justify-content: center;
   gap: 14px;
-  font-size: 15px;
+  font-size: 18px;
   color: var(--ink-faint);
   font-variant-numeric: tabular-nums;
 }
@@ -555,7 +555,7 @@
 /* Specificity lifted over white.css `.reveal p`-adjacent caption styling:
    small gray footnote in the shared status-row footer slot. */
 .reveal .slides .results-note {
-  font-size: 14px;
+  font-size: 17px;
   color: var(--ink-faint);
   font-weight: 400;
 }
@@ -573,15 +573,16 @@
   gap: 16px;
 }
 
-/* Climax slide: five 176px stat cards (px on content chrome is fine — the
-   no-px rule covers canvas hosts). Height fits the 3-line-label worst case
-   (24 pad + 43 number + 14 gap + 61 label + 18 pad = 160) with slack; the
-   freed vertical budget goes to the video below. Number + label anchor to
-   the shared top horizon, so mixed 1–3-line captions never shift. */
+/* Climax slide: five 200px stat cards (px on content chrome is fine — the
+   no-px rule covers canvas hosts). Height fits the 4-line-label worst case
+   at 18px (24 pad + 43 number + 14 gap + 97 label + 18 pad = 196) inside
+   the 239px cards region; the freed vertical budget goes to the video
+   below. Number + label anchor to the shared top horizon, so mixed 1–4-line
+   captions never shift. */
 .num-card {
   flex: 1;
   min-width: 0;
-  height: 176px;
+  height: 200px;
   border: 1px solid var(--hairline);
   border-top: 3px solid var(--blue);
   box-sizing: border-box;
@@ -611,7 +612,7 @@
 }
 
 .num-small {
-  font-size: 15px;
+  font-size: 18px;
   color: var(--ink-soft);
   line-height: 1.35;
   margin-top: 14px;
@@ -692,7 +693,7 @@
    text-align must be explicit: reveal.css centers all slide text by
    viewport inheritance, and a footer blob of centered prose looks lost. */
 .reveal .slides .concl-notes p {
-  font-size: 15px;
+  font-size: 18px;
   margin: 4px 0;
   line-height: 1.45;
   text-align: left;

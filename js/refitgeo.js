@@ -343,11 +343,11 @@
     }
 
     /* tags + stamps */
-    tagInitEl = text(TAG_INIT, { x: 1105, y: 470, 'text-anchor': 'end', 'font-size': 13, fill: FAINT, opacity: 0 }, svg);
-    tagAtomicEl = text(TAG_ATOMIC, { x: 1010, y: 178, 'text-anchor': 'end', 'font-size': 13, fill: ATOMIC_RED, opacity: 0 }, svg);
-    tagPassEl = text(TAG_PASS, { x: 795, y: 70, 'text-anchor': 'start', 'font-size': 13, fill: FAINT, opacity: 0 }, svg);
-    stampNumEl = text(STAMP_NUM, { x: 560, y: 492, 'text-anchor': 'middle', 'font-size': 15, fill: FAINT, opacity: 0 }, svg);
-    stampMeanEl = text(STAMP_MEAN, { x: 560, y: 464, 'text-anchor': 'middle', 'font-size': 15, fill: INK, opacity: 0 }, svg);
+    tagInitEl = text(TAG_INIT, { x: 1105, y: 470, 'text-anchor': 'end', 'font-size': 18, fill: FAINT, opacity: 0 }, svg);
+    tagAtomicEl = text(TAG_ATOMIC, { x: 1010, y: 178, 'text-anchor': 'end', 'font-size': 18, fill: ATOMIC_RED, opacity: 0 }, svg);
+    tagPassEl = text(TAG_PASS, { x: 795, y: 70, 'text-anchor': 'start', 'font-size': 18, fill: FAINT, opacity: 0 }, svg);
+    stampNumEl = text(STAMP_NUM, { x: 560, y: 492, 'text-anchor': 'middle', 'font-size': 20, fill: FAINT, opacity: 0 }, svg);
+    stampMeanEl = text(STAMP_MEAN, { x: 560, y: 464, 'text-anchor': 'middle', 'font-size': 20, fill: INK, opacity: 0 }, svg);
 
     built = true;
   }

@@ -377,13 +377,13 @@
         chipTexts.push(text(cfg.chips.TXT[i], {
           'class': 'chip-text',
           x: cfg.chips.X[i] + cfg.chips.W[i] / 2, y: CHIP_Y + 22,
-          'text-anchor': 'middle', 'font-size': 15
+          'text-anchor': 'middle', 'font-size': 20
         }, svg));
       }
       cfg.chips.ARROW_X.forEach(function (x) {
         text('→', {
           'class': 'chip-arrow',
-          x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 16, fill: FAINT
+          x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 21, fill: FAINT
         }, svg);
       });
 
@@ -492,7 +492,7 @@
         handMinicap = text(HANDOFF.MINICAP, {
           'class': 'hand-minicap',
           x: HS.x + HS.w / 2, y: HS.y + HS.h + 34,
-          'text-anchor': 'middle', 'font-size': 15, fill: FAINT, opacity: 0
+          'text-anchor': 'middle', 'font-size': 20, fill: FAINT, opacity: 0
         }, svg);
         handConn = el('line', {
           'class': 'hand-conn',
