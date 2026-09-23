@@ -26,7 +26,7 @@
   var D = window.DeckSVG;
   var el = D.el, text = D.text;
   var BLUE = D.BLUE, INK = D.INK, EDGE = D.EDGE,
-      FAINT = D.FAINT, LIGHT = D.LIGHT;
+      FAINT = D.FAINT;
 
   function rad(d) { return d * Math.PI / 180; }
 
@@ -72,7 +72,8 @@
   var P = { x: 560, y: 90, w: 440, h: 380 };
   var BOX_PAD = 4;
 
-  /* 8 child triangles inside P — identical to widenode.js so the settled
+  /* 8 child source triangles inside P — geometry only (tight-box
+   * derivation), never rendered; identical to widenode.js so the settled
    * parallelograms this slide ends on are the ones the next slide opens with */
   var CHILD_TRIS = [
     [[604, 168], [680, 158], [642, 234]],
@@ -181,7 +182,7 @@
   var wideRect, wideSlots = [], slotDots = [], slotGlyphs = [];
   var miniCapEl, connLine, connHead;
   var parentRect;
-  var childTris = [], paras = [];
+  var paras = [];
   var CHILD = null;
   var captionEl;
   var tl = null;
@@ -295,13 +296,9 @@
     /* children: fixed geometry, parallelogram SOBBs on private bases —
      * oversized on purpose so they overlap into a tangle covering the
      * whole node region (deliberately NOT clipped: spilling past the
-     * axis-aligned extent is the point) */
+     * axis-aligned extent is the point). Source triangles are not drawn —
+     * the settled end state (widenode's entry frame) is bounds only. */
     CHILD.forEach(function (c, i) {
-      childTris.push(el('polygon', {
-        points: pts2str(CHILD_TRIS[i]),
-        fill: LIGHT, stroke: INK, 'stroke-width': 1.2,
-        'stroke-linejoin': 'round', opacity: 0
-      }, svg));
       paras.push(el('polygon', {
         points: pts2str(c.big),
         fill: 'none', stroke: INK, 'stroke-width': 1.4,
@@ -340,8 +337,6 @@
       g.setAttribute('transform', glyphTransform(k, FAIL_ROT[k]));
     });
     CHILD.forEach(function (c, k) {
-      gsap.killTweensOf(childTris[k]);
-      childTris[k].setAttribute('opacity', 0);
       gsap.killTweensOf(paras[k]);
       paras[k].setAttribute('opacity', 0);
       paras[k].setAttribute('points', pts2str(c.big));
@@ -371,7 +366,6 @@
     tl.to(slotGlyphs, { attr: { opacity: 1 }, duration: 0.3, stagger: 0.03 }, at + 0.2);
     CHILD.forEach(function (c, i) {
       var w = at + 0.4 + i * 0.06;
-      tl.to(childTris[i], { attr: { opacity: 1 }, duration: 0.3 }, w);
       tl.to(paras[i], { attr: { opacity: 1 }, duration: 0.35 }, w + 0.1);
     });
     tl.addLabel('s1', tl.duration());

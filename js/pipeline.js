@@ -46,7 +46,7 @@
 
   var D = window.DeckSVG;
   var el = D.el, text = D.text;
-  var BLUE = D.BLUE, INK = D.INK, EDGE = D.EDGE, FAINT = D.FAINT, LIGHT = D.LIGHT;
+  var BLUE = D.BLUE, INK = D.INK, EDGE = D.EDGE, FAINT = D.FAINT;
 
   /* deterministic proxy randomness — stable seed, same picture every session */
   function mulberry32(seed) {
@@ -339,7 +339,7 @@
     var parWWraps = {}, parWPolys = {}; // slide C: per wide node
     /* slide B hand-off gear (aabbquant entry frame, mirrored exactly) */
     var handDots = [], handGlyphs = [], handMinicap, handConn, handHead;
-    var handPanel, handTris = [], handTights = [];
+    var handPanel, handTights = [];
     var chipRects = [], chipTexts = [];
     var captionEl;
     var tl = null;
@@ -510,12 +510,8 @@
           fill: 'none', stroke: INK, 'stroke-width': 1.8, opacity: 0
         }, svg);
         HANDOFF.TRIS.forEach(function (tri) {
-          handTris.push(el('polygon', {
-            'class': 'hand-tri',
-            points: ptsStr(tri),
-            fill: LIGHT, stroke: INK, 'stroke-width': 1.2,
-            'stroke-linejoin': 'round', opacity: 0
-          }, svg));
+          /* source triangles are not drawn — parity with aabbquant, which
+           * renders bounds only; the tight AABB below derives from tri */
           var tb = D.inflate(D.aabb(tri), HANDOFF.BOX_PAD);
           handTights.push(el('rect', {
             'class': 'hand-tight',
@@ -603,7 +599,7 @@
       [handMinicap, handConn, handHead, handPanel].forEach(function (n) {
         if (n) { gsap.killTweensOf(n); n.setAttribute('opacity', 0); }
       });
-      handDots.concat(handGlyphs, handTris, handTights).forEach(function (n) {
+      handDots.concat(handGlyphs, handTights).forEach(function (n) {
         gsap.killTweensOf(n); n.setAttribute('opacity', 0);
       });
       for (var i = 0; i < NCH; i++) setChip(i, 'todo');
@@ -773,7 +769,6 @@
       /* and the eight tight child AABBs the next slide quantizes */
       HANDOFF.TRIS.forEach(function (tri, i) {
         var w = at + 1.0 + i * 0.05;
-        tl.to(handTris[i], { attr: { opacity: 1 }, duration: 0.3 }, w);
         tl.to(handTights[i], { attr: { opacity: 1 }, duration: 0.3 }, w + 0.05);
       });
       /* quantization chip stays ACTIVE — the next slide continues here */

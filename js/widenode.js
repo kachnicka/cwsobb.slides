@@ -35,7 +35,7 @@
   var D = window.DeckSVG;
   var el = D.el, text = D.text;
   var BLUE = D.BLUE, INK = D.INK, EDGE = D.EDGE,
-      FAINT = D.FAINT, LIGHT = D.LIGHT;
+      FAINT = D.FAINT;
 
   function rad(d) { return d * Math.PI / 180; }
 
@@ -71,7 +71,8 @@
   var P = { x: 560, y: 90, w: 440, h: 380 };
   var BOX_PAD = 4;
 
-  /* 8 child triangles inside P — sized ~80x75 so a ~10-cell skewed grid
+  /* 8 child source triangles inside P — geometry only (tight-box
+   * derivation), never rendered; sized ~80x75 so a ~10-cell skewed grid
    * reads as *refining* each bound, not swallowing it; positioned with
    * margin so snapped parallelograms stay inside the node bounds */
   var CHILD_TRIS = [
@@ -97,10 +98,10 @@
   var GLYPH_DEG = 10;           // slot glyphs sit on the shared basis
 
   var CAPTIONS = [
-    'Hand-off: eight children on one shared basis, tight in the skewed space — now quantize the wide node.',
-    'One skewed slab grid per wide node — a single shared frame serves all eight children.',
-    'Quantize: every bound snaps OUTWARD onto the skewed cells — conservative, never inward.',
-    'Eight tight quantized bounds on one stored frame — this is what the shared basis enables.'
+    'With shared basis, quantization is as efficient as with AABBs.',
+    'Local skewed grid: anchor + integer coordinates.',
+    'Quantize: every bound snaps onto the grid cells conservatively.',
+    'Bounds are slightly inflated, memory footprint is down.'
   ];
 
   /* ==================== pure math (exported for tests) ==================== */
@@ -228,7 +229,7 @@
   var chipRects = [], chipTexts = [];
   var wideRect, wideSlots = [], slotDots = [], slotGlyphs = [];
   var miniCapEl, connLine, connHead, quantCapEl;
-  var parentRect, skewLines1 = [], skewLines2 = [];  var childTris = [], ghostParas = [], quantParas = [];
+  var parentRect, skewLines1 = [], skewLines2 = [];  var ghostParas = [], quantParas = [];
   var CHILD = null;
   var captionEl;
   var tl = null;
@@ -346,14 +347,10 @@
       }, stageG));
     }
 
-    /* children: tris + tight shared-basis parallelograms + blue
-     * quantized parallelograms (start superimposed on tight, snap out) */
+    /* children: tight shared-basis parallelograms + blue quantized
+     * parallelograms (start superimposed on tight, snap out). Source
+     * triangles are not drawn — the bounds alone carry the concept. */
     CHILD.forEach(function (c, i) {
-      childTris.push(el('polygon', {
-        points: pts2str(CHILD_TRIS[i]),
-        fill: LIGHT, stroke: INK, 'stroke-width': 1.2,
-        'stroke-linejoin': 'round'
-      }, stageG));
       ghostParas.push(el('polygon', {
         points: pts2str(c.tight),
         fill: 'none', stroke: INK, 'stroke-width': 1.4,
@@ -379,7 +376,7 @@
   /* ==================== reset ====================
    * Base state = #slide-sharedbasis's SETTLED state, pixel-for-pixel:
    * chips final row (quantization ACTIVE), strip + glyphs on the shared
-   * tilt, tris + tight shared-basis parallelograms crisp; grids/legend/
+   * tilt, tight shared-basis parallelograms crisp; grids/legend/
    * quantized bounds hidden. The entry is a continuation, not a rebuild. */
 
   function resetDom() {
@@ -403,8 +400,6 @@
       l.setAttribute('opacity', 0);
     });
     CHILD.forEach(function (c, i) {
-      gsap.killTweensOf(childTris[i]);
-      childTris[i].setAttribute('opacity', 1);
       gsap.killTweensOf(ghostParas[i]);
       ghostParas[i].setAttribute('opacity', 1);
       ghostParas[i].setAttribute('stroke', INK);
@@ -453,7 +448,6 @@
     at = tl.duration();
     tl.to(skewLines1.concat(skewLines2), { attr: { opacity: 0.18 }, duration: 0.5 }, at);
     tl.to(ghostParas, { attr: { opacity: 0.55 }, duration: 0.4 }, at);
-    tl.to(childTris, { attr: { opacity: 0.75 }, duration: 0.4 }, at);
     tl.to([wideRect, parentRect], { attr: { stroke: BLUE }, duration: 0.5 }, at + 0.25);
     tl.to(quantCapEl, { attr: { opacity: 1 }, duration: 0.45 }, at + 0.45);
     tl.addLabel('s3', tl.duration());

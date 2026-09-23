@@ -42,7 +42,7 @@
   var D = window.DeckSVG;
   var el = D.el, text = D.text;
   var BLUE = D.BLUE, INK = D.INK, EDGE = D.EDGE,
-      FAINT = D.FAINT, LIGHT = D.LIGHT;
+      FAINT = D.FAINT;
 
   /* ==================== LAYOUT DATA (viewBox 0 0 1120 520 — pipeline.js match) ==================== */
 
@@ -69,7 +69,8 @@
   var P = { x: 560, y: 90, w: 440, h: 380 };
   var BOX_PAD = 4;
 
-  /* 8 child triangles inside P — identical to widenode.js/grid mirror */
+  /* 8 child source triangles inside P — geometry only (tight-box
+   * derivation), never rendered; identical to widenode.js/grid mirror */
   var CHILD_TRIS = [
     [[604, 168], [680, 158], [642, 234]],
     [[710, 170], [784, 162], [750, 238]],
@@ -145,7 +146,7 @@
   var wideRect, wideSlots = [], slotDots = [], slotGlyphs = [];
   var miniCapEl, connLine, connHead, quantCapEl;
   var parentRect, gridV = [], gridH = [];
-  var childTris = [], tightRects = [], quantRects = [];
+  var tightRects = [], quantRects = [];
   var CHILD = null;
   var captionEl;
   var tl = null;
@@ -241,14 +242,10 @@
       }, svg));
     }
 
-    /* children: tris + tight AABBs + blue quantized AABBs (start
-     * superimposed on tight, snap out) */
+    /* children: tight AABBs + blue quantized AABBs (start superimposed
+     * on tight, snap out). Source-triangle geometry is not drawn — the
+     * bounds alone carry the concept. */
     CHILD.forEach(function (c, i) {
-      childTris.push(el('polygon', {
-        points: pts2str(CHILD_TRIS[i]),
-        fill: LIGHT, stroke: INK, 'stroke-width': 1.2,
-        'stroke-linejoin': 'round'
-      }, svg));
       var ta = rectAttrs(c.exact);
       tightRects.push(el('rect', {
         'class': 'aabb-tight',
@@ -301,8 +298,6 @@
     });
     CHILD.forEach(function (c, i) {
       var ta = rectAttrs(c.exact);
-      gsap.killTweensOf(childTris[i]);
-      childTris[i].setAttribute('opacity', 1);
       gsap.killTweensOf(tightRects[i]);
       tightRects[i].setAttribute('opacity', 1);
       tightRects[i].setAttribute('stroke', INK);
@@ -358,7 +353,6 @@
     at = tl.duration();
     tl.to(gridV.concat(gridH), { attr: { opacity: 0.18 }, duration: 0.5 }, at);
     tl.to(tightRects, { attr: { opacity: 0.55 }, duration: 0.4 }, at);
-    tl.to(childTris, { attr: { opacity: 0.75 }, duration: 0.4 }, at);
     tl.to([wideRect, parentRect], { attr: { stroke: BLUE }, duration: 0.5 }, at + 0.25);
     tl.to(quantCapEl, { attr: { opacity: 1 }, duration: 0.45 }, at + 0.45);
     tl.addLabel('s3', tl.duration());

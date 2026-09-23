@@ -12,11 +12,14 @@
  *            eight aligned parallelograms morphing together through FOUR
  *            candidates, slow (corner-morph idiom from kdopfan).
  *   s2 UNION: fresh baseline, then the 8 children fly one by one into a
- *            merge point — each arrival GROWS the union k-DOP (running
- *            per-direction min/max, 6-corner morph-safe). The union
- *            carries to the right stage, one SOBB fit morphs through
- *            the candidates — and every child INHERITS that merged fit:
- *            8 identical fat parallelograms, loose on every child.
+ *            merge point — KEEPING their spatial arrangement (compacted
+ *            toward the merge point), so every child lands on the
+ *            actual border of the growing union k-DOP (running
+ *            per-direction min/max, 6-corner morph-safe): a genuinely
+ *            fat merged proxy. The union carries to the right stage,
+ *            one SOBB fit morphs through the candidates — and the union
+ *            fit's BASIS is handed back and refit per child: 8 tight
+ *            parallelograms, each hugging its own k-DOP.
  *   s3 AVG:  fresh baseline again, same fly-in — but the accumulating
  *            k-DOP does NOT grow: running per-direction mean only nudges
  *            its shape. One fit on the mean proxy lands on the deck's
@@ -106,8 +109,8 @@
   var CHIP_FS = 21;
 
   var CAPTIONS = [
-    'One wide node — eight children, eight k-DOPs, and a single basis must fit every child.',
-    'Sum — score every candidate basis on every child at once: exact, but far too slow.',
+    'One wide node — eight children must be tightly bounded with a single basis.',
+    'Sum — score every candidate basis on every child at once: exact, but slow.',
     'Union — merge the children into one k-DOP, then fit once: cheap, but the union is loose.',
     'Average — one mean k-DOP, one fit: cheap and tight enough. Our choice.',
     'Locked: one stored frame, eight tight shared-basis SOBBs.'
@@ -226,11 +229,17 @@
     return HEX_DIRS.map(function (n) { return project(verts, n); });
   });
 
-  /* FLY-IN basis: each child is re-centred on CENTROID (projection shifts
-   * by exactly n·(CENTROID − c)), so the running union/mean k-DOP grows
-   * in place at the merge point — the union of shapes, not of positions. */
+  /* FLY-IN basis: children KEEP their spatial arrangement, compacted
+   * toward the merge point — each centre lands at CENTROID + SHRINK·
+   * (c − CENTROID), i.e. a translate of (1−SHRINK)·(CENTROID − c). The
+   * landed children imitate their real positions, so the accumulating
+   * union k-DOP is the honest union of the POSITIONED children: every
+   * child ends on the actual border of the merged k-DOP, and the merged
+   * proxy is naturally much fatter than any single child. */
+  var SHRINK = 0.4;
   var SHIFT = CHILDREN.map(function (ch) {
-    return [CENTROID[0] - ch.c[0], CENTROID[1] - ch.c[1]];
+    return [(1 - SHRINK) * (CENTROID[0] - ch.c[0]),
+            (1 - SHRINK) * (CENTROID[1] - ch.c[1])];
   });
   var SHIFT_EXTS = CHILD_EXTS.map(function (ext, k) {
     return ext.map(function (pair, m) {
@@ -239,7 +248,9 @@
     });
   });
 
-  /* running union: per-direction min/max over the arrived children */
+  /* running union: per-direction min/max over the arrived children —
+   * the tight union of the landed (positioned) children, so its border
+   * is formed by the children themselves */
   var CUMU_EXTS = [];
   for (var ui = 0; ui < 8; ui++) {
     CUMU_EXTS.push(HEX_DIRS.map(function (n, m) {
@@ -271,23 +282,34 @@
   var AVG_EXTS = CUMA_EXTS[7];
   var AVG_VERTS = CUMA_VERTS[7];
 
-  /* right-stage mapping: world → stage around the merge point */
+  /* right-stage mapping: world → stage around the merge point; each
+   * proxy gets its OWN scale — the inflated union needs tighter stage
+   * budgets to fit, the mean k-DOP keeps the classic 1.2 cap. The
+   * scale is measured over the proxy AND every candidate fit: the
+   * stage morph passes through the worst (biggest) candidate too. */
   function toStageRaw(p, s) {
     return [
       STAGE[0] + s * (p[0] - CENTROID[0]),
       STAGE[1] + s * (p[1] - CENTROID[1])
     ];
   }
-  var PROXY_SCALE = (function () {
-    var fitU = fitSkew(UNION_VERTS, 85, 145, PAD_TIGHT);
+  function fanFits(rawBases, proxyVerts) {
+    return rawBases.map(function (b) {
+      return fitSkew(proxyVerts, b[0], b[1], PAD_TIGHT);
+    });
+  }
+  function stageScaleFor(proxyVerts, fits, capH, capV) {
     var md = 0, nd = 0;
-    UNION_VERTS.concat(fitU).forEach(function (p) {
+    proxyVerts.concat(flatVerts(fits)).forEach(function (p) {
       md = Math.max(md, Math.abs(p[0] - CENTROID[0]));
       nd = Math.max(nd, Math.abs(p[1] - CENTROID[1]));
     });
-    return Math.round(Math.min(1.2, 190 / md, 150 / nd) * 1000) / 1000;
-  })();
-  function toStage(p) { return toStageRaw(p, PROXY_SCALE); }
+    return Math.round(Math.min(capH / md, capV / nd) * 1000) / 1000;
+  }
+  var PROXY_SCALE_U = stageScaleFor(UNION_VERTS, fanFits(FAN_BASES, UNION_VERTS), 150, 116);
+  var PROXY_SCALE_A = Math.min(1.2, stageScaleFor(AVG_VERTS, fanFits(FAN_BASES, AVG_VERTS), 190, 150));
+  function toStage(p) { return toStageRaw(p, PROXY_SCALE_A); }
+  function toStageU(p) { return toStageRaw(p, PROXY_SCALE_U); }
 
   /* candidate helper: sort basis list by cost descending */
   function buildCandidates(rawBases, vertsFn) {
@@ -308,18 +330,18 @@
   });
 
   /* UNION / AVG: candidates fitted on the single proxy (staged coords) */
-  function proxyCandidates(rawBases, proxyVerts) {
+  function proxyCandidates(rawBases, proxyVerts, toStg) {
     return rawBases.map(function (b) {
       var corners = fitSkew(proxyVerts, b[0], b[1], PAD_TIGHT);
       return {
         basis: b,
-        corners: corners.map(toStage),
+        corners: corners.map(toStg),
         cost: polyArea(corners)
       };
     }).sort(function (a, b) { return b.cost - a.cost; });
   }
-  var UNION_CANDS = proxyCandidates(FAN_BASES, UNION_VERTS);
-  var AVG_CANDS = proxyCandidates(FAN_BASES, AVG_VERTS);
+  var UNION_CANDS = proxyCandidates(FAN_BASES, UNION_VERTS, toStageU);
+  var AVG_CANDS = proxyCandidates(FAN_BASES, AVG_VERTS, toStage);
 
   /* settle parallelograms: per-child refits on the shared frame (the
    * tight, correct answer — what SUM and AVG hand back) */
@@ -328,26 +350,21 @@
     return fitSkew(verts, WIN_BASIS[0], WIN_BASIS[1], PAD_TIGHT);
   });
 
-  /* UNION hand-back: the union's ONE fit, inherited by every child —
-   * the same fat parallelogram translated onto each centre. Loose on
-   * all eight by construction: union extents ⊇ every re-centred child,
-   * so the translated fit still contains its child (with the pad) but
-   * carries the union's full slack. */
+  /* UNION hand-back: the union fit only picks the BASIS — every child
+   * is then refit TIGHTLY on its own k-DOP with that basis, so the
+   * bounds propagated back hug each child. The looseness of the union
+   * strategy lives in the inflated merged k-DOP the basis was fitted
+   * on, not in the child bounds. */
   var UNION_WIN = UNION_CANDS[UNION_CANDS.length - 1].basis;
-  var UNION_FIT = fitSkew(UNION_VERTS, UNION_WIN[0], UNION_WIN[1], PAD_TIGHT);
-  var UNION_FIT_C = (function () {
-    var x = 0, y = 0;
-    UNION_FIT.forEach(function (p) { x += p[0]; y += p[1]; });
-    return [x / 4, y / 4];
-  })();
-  var UNION_PARAS = CHILDREN.map(function (ch) {
-    var dx = ch.c[0] - UNION_FIT_C[0], dy = ch.c[1] - UNION_FIT_C[1];
-    return UNION_FIT.map(function (p) { return [p[0] + dx, p[1] + dy]; });
+  var UNION_PARAS = HEXVERTS.map(function (verts) {
+    return fitSkew(verts, UNION_WIN[0], UNION_WIN[1], PAD_TIGHT);
   });
 
   var PROXY_BASE_TF = 'translate(0 0) scale(1) translate(0 0)';
-  var PROXY_STAGE_TF = 'translate(' + STAGE[0] + ' ' + STAGE[1] + ') scale(' +
-    PROXY_SCALE + ') translate(' + (-CENTROID[0]) + ' ' + (-CENTROID[1]) + ')';
+  function stageTf(s) {
+    return 'translate(' + STAGE[0] + ' ' + STAGE[1] + ') scale(' + s +
+      ') translate(' + (-CENTROID[0]) + ' ' + (-CENTROID[1]) + ')';
+  }
 
   function hexHome(k) { return 'translate(0 0)'; }
   function hexAtMerge(k) {
@@ -489,7 +506,7 @@
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
     stageBadge = text('∪ union', {
-      x: STAGE[0], y: 168, 'text-anchor': 'middle', 'font-size': 17,
+      x: STAGE[0], y: 144, 'text-anchor': 'middle', 'font-size': 17,
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
     closerCue = text('one stored frame', {
@@ -498,7 +515,7 @@
     }, svg);
     var r1 = dotRow(SUM_CANDS.length, 446, 434, svg);
     sumDotG = r1.g; sumDots = r1.dots;
-    var r2 = dotRow(UNION_CANDS.length, STAGE[0], 196, svg);
+    var r2 = dotRow(UNION_CANDS.length, STAGE[0], 172, svg);
     stageDotG = r2.g; stageDots = r2.dots;
 
     /* ---- three-way summary chips (s3 on) ---- */
@@ -677,23 +694,22 @@
     tl.to(paras, { attr: { opacity: 0 }, duration: 0.3, stagger: 0.025 }, T + 0.02);
     var tFly = T + 0.55;
     var tFlyEnd = scheduleFlyIn(tFly, unionPoly, CUMU_VERTS, 3.4);
-    /* the fattened union carries to the right stage */
+    /* the positional union (border formed by the children) carries right */
     tl.to(proxyG, {
-      attr: { transform: PROXY_STAGE_TF }, duration: 0.75, ease: 'power2.inOut'
+      attr: { transform: stageTf(PROXY_SCALE_U) }, duration: 0.75, ease: 'power2.inOut'
     }, tFlyEnd);
     tl.to(stageBadge, { attr: { opacity: 1 }, duration: 0.35 }, tFlyEnd + 0.3);
     tl.to(stageDotG, { attr: { opacity: 1 }, duration: 0.3 }, tFlyEnd + 0.4);
     var tFitsEnd = scheduleFits(tFlyEnd + 0.75 + 0.15, UNION_CANDS, stageDots);
-    /* the basis flows back down: children spring home with loose fits */
-    /* every child inherits the one merged fit — same fat parallelogram,
-     * loose on all eight */
+    /* the basis flows back down: children spring home, and every child
+     * is refit TIGHTLY on its own k-DOP with the union fit's basis */
     var tDistEnd = distribute(tFitsEnd + 0.1, function (j) {
       return UNION_PARAS[j];
     }, INK, 0.05);
     tl.to(unionPoly, { attr: { opacity: 0.7 }, duration: 0.4 }, tDistEnd - 0.3);
     tl.to(fitCand, { attr: { opacity: 0.6 }, duration: 0.4 }, tDistEnd - 0.2);
     T = tDistEnd + 0.25;
-    tl.addLabel('s2', T);   /* distributed loose fit settled */
+    tl.addLabel('s2', T);   /* tight refits on the union basis settled */
 
     /* ---- s3 — AVG ---- */
     /* boundary swaps sit past the s2 label AND past the fade-out below:
@@ -701,9 +717,9 @@
      * must never swap shapes while still visible */
     tl.set(fitCand, { attr: { points: pts2str(AVG_CANDS[0].corners) } }, T + 0.5);
     tl.set(stageBadge, { textContent: '✓ avg' }, T + 0.5);
-    /* clean baseline again: union proxy + fit + loose fits leave BEFORE
-     * the avg fly-in; the stage transform resets while nothing proxy-
-     * shaped is visible (union faded, avg not yet shown) */
+    /* clean baseline again: union proxy + fit + the handed-back refits
+     * leave BEFORE the avg fly-in; the stage transform resets while
+     * nothing proxy-shaped is visible (union faded, avg not yet shown) */
     tl.to(unionPoly, { attr: { opacity: 0 }, duration: 0.4 }, T + 0.1);
     tl.to(fitCand, { attr: { opacity: 0 }, duration: 0.35 }, T + 0.1);
     tl.to(stageBadge, { attr: { opacity: 0 }, duration: 0.3 }, T + 0.1);
@@ -714,7 +730,7 @@
     /* same fly-in — but the mean k-DOP only nudges shape, never grows */
     var tFlyAEnd = scheduleFlyIn(tFlyA, avgPoly, CUMA_VERTS, 2.8);
     tl.to(proxyG, {
-      attr: { transform: PROXY_STAGE_TF }, duration: 0.75, ease: 'power2.inOut'
+      attr: { transform: stageTf(PROXY_SCALE_A) }, duration: 0.75, ease: 'power2.inOut'
     }, tFlyAEnd);
     tl.to(stageBadge, { attr: { opacity: 1 }, duration: 0.35 }, tFlyAEnd + 0.3);
     tl.to(stageDotG, { attr: { opacity: 1 }, duration: 0.3 }, tFlyAEnd + 0.4);
@@ -784,6 +800,7 @@
     polyArea: polyArea,
     pts2str: pts2str,
     toStage: toStage,
+    toStageU: toStageU,
     CHILDREN: CHILDREN,
     CENTROID: CENTROID,
     HEXVERTS: HEXVERTS,
@@ -801,13 +818,14 @@
     UNION_CANDS: UNION_CANDS,
     AVG_CANDS: AVG_CANDS,
     UNION_PARAS: UNION_PARAS,
-    UNION_FIT: UNION_FIT,
     UNION_WIN: UNION_WIN,
     FINAL_PARAS: FINAL_PARAS,
     WIN_BASIS: WIN_BASIS,
     FAN_BASES: FAN_BASES,
-    PROXY_SCALE: PROXY_SCALE,
-    PROXY_STAGE_TF: PROXY_STAGE_TF,
+    PROXY_SCALE_U: PROXY_SCALE_U,
+    PROXY_SCALE_A: PROXY_SCALE_A,
+    stageTf: stageTf,
+    SHRINK: SHRINK,
     N1: N1, N2: N2,
     HEX_DIRS: HEX_DIRS,
     WIDE: WIDE, FRAME: FRAME, STAGE: STAGE,

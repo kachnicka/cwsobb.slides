@@ -356,7 +356,7 @@
 .svg-edge      { stroke: var(--hairline); stroke-width: 1.6; }
 .svg-node      { fill: #ffffff; stroke: var(--ink); stroke-width: 1.6; }
 .svg-node-text { fill: var(--ink); font-size: 15px; }
-.svg-side-label{ fill: var(--ink-faint); font-size: 25px; letter-spacing: 0.08em; }
+.svg-side-label{ fill: var(--ink-faint); font-size: 20px; letter-spacing: 0.08em; }
 .svg-dot       { fill: var(--ink); }
 .svg-cloud-box { fill: none; stroke-width: 1.6; }
 
