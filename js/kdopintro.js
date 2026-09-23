@@ -263,7 +263,8 @@
   function resetState() {
     gsap.killTweensOf(allLines);
     gsap.killTweensOf(fillEls);
-    gsap.killTweensOf([kdopEl, kdopSideLabelEl, geoLabelEl]);
+    gsap.killTweensOf([kdopEl, geoLabelEl]);
+    // gsap.killTweensOf([kdopEl, kdopSideLabelEl, geoLabelEl]);
     lineEls.forEach(function (pair, i) {
       pair.forEach(function (line, j) {
         line.setAttribute('stroke-dashoffset', lineLens[i][j]);
@@ -329,9 +330,9 @@
       attr: { opacity: RECEDE, 'stroke-width': 1.3 },
       duration: 0.6, ease: 'power1.inOut'
     }, 's2+=0.35');
-    tl.to(kdopSideLabelEl, {
-      attr: { opacity: 1 }, duration: 0.35, ease: 'power1.out'
-    }, 's2+=0.8');
+    // tl.to(kdopSideLabelEl, {
+    //   attr: { opacity: 1 }, duration: 0.35, ease: 'power1.out'
+    // }, 's2+=0.8');
     tl.addLabel('s3', 's2+=1.35');
   }
 

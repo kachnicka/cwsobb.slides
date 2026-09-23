@@ -21,7 +21,7 @@
  *
  * s0: hand-off — one wide node · eight tight axis-aligned child bounds
  * s1: the orthogonal slab grid appears — one wire family per axis
- *     (violet = x-normal, slate = y-normal), tiling the node bounds
+ *     (black, slightly transparent), tiling the node bounds
  * s2: quantization — every bound snaps OUTWARD onto the grid cells,
  *     conservative by construction (axis-space floor/ceil)
  * s3: closer — the grid falls quiet; eight crisp quantized AABBs remain;
@@ -42,7 +42,7 @@
   var D = window.DeckSVG;
   var el = D.el, text = D.text;
   var BLUE = D.BLUE, INK = D.INK, EDGE = D.EDGE,
-      FAINT = D.FAINT, LIGHT = D.LIGHT, VIOLET = D.VIOLET, SLATE = D.SLATE;
+      FAINT = D.FAINT, LIGHT = D.LIGHT;
 
   /* ==================== LAYOUT DATA (viewBox 0 0 1120 520 — pipeline.js match) ==================== */
 
@@ -87,10 +87,10 @@
   var GRIDSPEC = { ox: P.x, oy: P.y, sx: P.w / CELLS, sy: P.h / CELLS };
 
   var CAPTIONS = [
-    'Hand-off: the AABB BVH₈ stage is done — the wide node holds eight tight axis-aligned child bounds.',
-    'The aligned slab grid — orthogonal wires inside the node bounds, one family per axis.',
-    'Quantize: every bound snaps OUTWARD onto the grid cells — conservative, never inward.',
-    'Eight quantized bounds, axis-aligned — all the state of the art stores per wide node.'
+    'Quantization: the eight child bounds snap onto the local orthogonal grid.',
+    'Local orthogonal grid: anchor + integer coordinates.',
+    'Quantize: every bound snaps onto the grid cells conservatively.',
+    'Bounds are slightly inflated, memory footprint is down.'
   ];
 
   /* ==================== pure math (exported for tests) ==================== */
@@ -143,7 +143,7 @@
   var svg;
   var chipRects = [], chipTexts = [];
   var wideRect, wideSlots = [], slotDots = [], slotGlyphs = [];
-  var miniCapEl, connLine, connHead, legendG, quantCapEl;
+  var miniCapEl, connLine, connHead, quantCapEl;
   var parentRect, gridV = [], gridH = [];
   var childTris = [], tightRects = [], quantRects = [];
   var CHILD = null;
@@ -222,21 +222,22 @@
       fill: 'none', stroke: INK, 'stroke-width': 1.8
     }, svg);
 
-    /* orthogonal slab grid (s1): family V = vertical wires (normal = x,
-     * violet), family H = horizontal wires (normal = y, slate). Axis-
-     * aligned, so the wires land exactly on the panel — no clip needed. */
+    /* orthogonal slab grid (s1): family V = vertical wires (normal = x),
+     * family H = horizontal wires (normal = y). Axis-aligned, so the wires
+     * land exactly on the panel — no clip needed. Black and slightly
+     * transparent: subordinate to the blue quantized bounds. */
     for (i = 0; i <= CELLS; i++) {
       gridV.push(el('line', {
         'class': 'aabb-grid-v',
         x1: P.x + P.w * i / CELLS, y1: P.y,
         x2: P.x + P.w * i / CELLS, y2: P.y + P.h,
-        stroke: VIOLET, 'stroke-width': 1.3, opacity: 0
+        stroke: INK, 'stroke-width': 1.3, opacity: 0
       }, svg));
       gridH.push(el('line', {
         'class': 'aabb-grid-h',
         x1: P.x, y1: P.y + P.h * i / CELLS,
         x2: P.x + P.w, y2: P.y + P.h * i / CELLS,
-        stroke: SLATE, 'stroke-width': 1.3, opacity: 0
+        stroke: INK, 'stroke-width': 1.3, opacity: 0
       }, svg));
     }
 
@@ -260,22 +261,6 @@
         fill: 'none', stroke: BLUE, 'stroke-width': 2.4, opacity: 0
       }, svg));
     });
-
-    /* slab-frame legend (s1), same idiom as the quant slide's legend */
-    legendG = el('g', { opacity: 0 }, svg);
-    text('aligned slab frame', {
-      x: 130, y: 356, 'font-size': 12.5, fill: FAINT
-    }, legendG);
-    el('line', {
-      x1: 146, y1: 344, x2: 146, y2: 396,
-      stroke: VIOLET, 'stroke-width': 2.4
-    }, legendG);
-    text('slab normal x', { x: 162, y: 374, 'font-size': 14, fill: VIOLET }, legendG);
-    el('line', {
-      x1: 130, y1: 470, x2: 182, y2: 470,
-      stroke: SLATE, 'stroke-width': 2.4
-    }, legendG);
-    text('slab normal y', { x: 196, y: 474, 'font-size': 14, fill: SLATE }, legendG);
 
     /* closer under the panel (s3) — terse, no numeric readouts */
     quantCapEl = text('snapped outward — conservative by construction', {
@@ -332,8 +317,6 @@
       quantRects[i].setAttribute('width', ta.width);
       quantRects[i].setAttribute('height', ta.height);
     });
-    gsap.killTweensOf(legendG);
-    legendG.setAttribute('opacity', 0);
     gsap.killTweensOf(quantCapEl);
     quantCapEl.setAttribute('opacity', 0);
   }
@@ -349,9 +332,8 @@
     /* s1 — the orthogonal slab grid: one wire family per axis */
     tl.to({}, { duration: 0.2 }, '>');
     at = tl.duration();
-    tl.to(gridV, { attr: { opacity: 0.85 }, duration: 0.45, stagger: 0.03 }, at);
-    tl.to(gridH, { attr: { opacity: 0.85 }, duration: 0.45, stagger: 0.03 }, at + 0.25);
-    tl.to(legendG, { attr: { opacity: 1 }, duration: 0.4 }, at + 0.35);
+    tl.to(gridV, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at);
+    tl.to(gridH, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at + 0.25);
     tl.addLabel('s1', tl.duration());
 
     /* s2 — quantization: bounds snap OUTWARD onto the grid cells */
@@ -374,7 +356,7 @@
      * the node + its bounds go blue (the stored representation) */
     tl.to({}, { duration: 0.2 }, '>');
     at = tl.duration();
-    tl.to(gridV.concat(gridH), { attr: { opacity: 0.3 }, duration: 0.5 }, at);
+    tl.to(gridV.concat(gridH), { attr: { opacity: 0.18 }, duration: 0.5 }, at);
     tl.to(tightRects, { attr: { opacity: 0.55 }, duration: 0.4 }, at);
     tl.to(childTris, { attr: { opacity: 0.75 }, duration: 0.4 }, at);
     tl.to([wideRect, parentRect], { attr: { stroke: BLUE }, duration: 0.5 }, at + 0.25);

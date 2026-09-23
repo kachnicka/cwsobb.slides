@@ -252,10 +252,10 @@
     },
     beats: ['build', 'hexbin', 'parbin'],
     captions: [
-      'The original SOBB construction — every node fitted on its own, nothing shared.',
-      'Binary AABB BVH from SAH splits — deep chains one side, shallow subtrees the other.',
-      'Fit a temporary k-DOP per node — shared slab directions, per-node extents.',
-      'Form the SOBB per node — its own basis, its own orientation, independent of every neighbour.'
+      'Binary SOBB BVH construction.',
+      'Start with a pre-existing binary AABB BVH (any builder).',
+      'Fit a temporary k-DOP per node.',
+      'Form the SOBB per node — its own basis, its own orientation.'
     ]
   };
 
@@ -270,10 +270,10 @@
     },
     beats: ['build', 'collapse', 'quantleadabb'],
     captions: [
-      'The state of the art: an AABB BVH₂ widened to AABB BVH₈, then quantized.',
-      'The same binary AABB BVH from SAH splits.',
-      'Interiors collapse to 8-ary wide nodes — the 8-wide layout here is approximate.',
-      'Quantization is the one remaining step: the wide node packs into its slot strip — the eight child bounds snap onto the orthogonal grid next.'
+      'Ylitie et al. 2017: AABB BVH₂ widened to AABB BVH₈, compressed by quantization.',
+      'Start with a pre-existing binary AABB BVH (any builder).',
+      'Interior nodes collapse to 8-ary wide nodes (approximate visualization).',
+      'Quantization: the eight child bounds snap onto the local orthogonal grid.'
     ]
   };
 
@@ -310,11 +310,11 @@
     },
     beats: ['build', 'collapse', 'parwide', 'quantlead'],
     captions: [
-      'Our chain: widen as usual, then overlay SOBBs — quantization comes after.',
-      'The same binary AABB BVH from SAH splits.',
-      'Interiors collapse to 8-ary wide nodes — same as the state of the art.',
-      'Overlay every wide node with its own SOBB — skewed, independently oriented.',
-      'Quantization is the one step that needs more: inside the wide node, bounds must snap in the SKEWED space — the next two slides.'
+      'Wide SOBB BVH construction.',
+      'Start with a pre-existing binary AABB BVH (any builder).',
+      'Interior nodes collapse to 8-ary wide nodes (approximate visualization).',
+      'Form the SOBB per wide node — its own basis, its own orientation.',
+      'Quantization: the eight child bounds snap onto the local grid.'
     ]
   };
 

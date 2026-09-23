@@ -310,8 +310,8 @@
   /* ==================== scene (pure, DOM-free) ==================== */
 
   var CAPTIONS = [
-    'One point cloud, axis-aligned box first.',
-    'Rotate into the minimum-area oriented box — both bounds visible.',
+    'Minimal axis-aligned bounding box.',
+    'Minimal oriented bounding box.',
     'A ray can hit the loose box and miss the tight one — smaller bounds, lower hit probability.'
   ];
 
@@ -334,7 +334,7 @@
     /* miss badge starts below the OBB's bottom edge, then gets nudged
      * perpendicular off the ray line so the ray never strikes through
      * the text */
-    var badge = edgeOffset(obbPoly, 3, 2, 0.30, 36);
+    var badge = edgeOffset(obbPoly, 3, 2, 0.30, 66);
     if (ray) {
       var rd = ray.dir, rl = Math.sqrt(rd[0] * rd[0] + rd[1] * rd[1]);
       var rn = [-rd[1] / rl, rd[0] / rl];
@@ -476,13 +476,13 @@
     aabbLabelEl = setText(el('text', {
       x: scene.labels.aabb[0], y: scene.labels.aabb[1],
       'text-anchor': 'end',
-      'font-size': 15, fill: INK, opacity: 0
+      'font-size': 25, fill: INK, opacity: 0
     }, g), 'SA(AABB) = N');
     obbLabelEl = setText(el('text', {
       x: scene.labels.obb[0], y: scene.labels.obb[1],
       transform: 'rotate(' + scene.labels.obbAngle.toFixed(2) + ' ' +
         scene.labels.obb[0] + ' ' + scene.labels.obb[1] + ')',
-      'font-size': 15, fill: BLUE, 'font-weight': 650, opacity: 0
+      'font-size': 25, fill: BLUE, 'font-weight': 650, opacity: 0
     }, g), 'SA(OBB) ≤ N');
 
     // s2 hit tick + label at the AABB entry point
@@ -494,14 +494,14 @@
     }, g);
     hitTextEl = setText(el('text', {
       x: scene.labels.hit[0], y: scene.labels.hit[1],
-      'text-anchor': 'middle', 'font-size': 14, fill: RED,
+      'text-anchor': 'middle', 'font-size': 20, fill: RED,
       'font-weight': 650, opacity: 0
     }, g), 'hit');
 
     // s2 miss badge near the OBB's bottom edge
     missBadgeEl = setText(el('text', {
       x: scene.labels.badge[0], y: scene.labels.badge[1],
-      'text-anchor': 'middle', 'font-size': 14, fill: BLUE,
+      'text-anchor': 'middle', 'font-size': 20, fill: BLUE,
       'font-weight': 650, opacity: 0
     }, g), '✗ miss');
 

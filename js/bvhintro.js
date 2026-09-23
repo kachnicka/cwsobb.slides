@@ -6,13 +6,14 @@
  *         sweep order (12 tests, no early-out); the true hit flashes red
  *         and keeps a red hit-ring + check
  *   s2:   the flat scene fades out and the BVH replaces it: the ROOT box
- *         fades in as a faded, untested container, and its two children
- *         A (miss) and B (hit) grow out of it and are tested right away
- *         — a miss culls A's whole subtree
- *   s3:   the hit child B unpacks into leaves L1 (miss) and L0 (hit);
+ *         fades in as a faded, untested container (the step stops here —
+ *         the user advances to unpack the root)
+ *   s3:   the root's two children A (miss) and B (hit) grow out of it and
+ *         are tested right away — a miss culls A's whole subtree
+ *   s4:   the hit child B unpacks into leaves L1 (miss) and L0 (hit);
  *         each leaf's triangles reappear inside it — L1's faded, L0's
  *         at full strength. A's triangles stay hidden (culled subtree)
- *   s4:   only the hit leaf's two triangles are tested — 4 box + 2
+ *   s5:   only the hit leaf's two triangles are tested — 4 box + 2
  *         triangle tests total (the root itself is never tested)
  *
  * Every box hit/miss comes from a real slab ray–box test on the computed
@@ -23,7 +24,7 @@
  *
  * Colors: root D.BLUE (faded container only), children GREEN, leaves
  * AMBER (the one extra accent for this slide). Host: #bvh-canvas.
- * Fragments: 4 (s1..s4).
+ * Fragments: 5 (s1..s5).
  */
 (function () {
   'use strict';
@@ -70,11 +71,12 @@
   ];
 
   var CAPTIONS = [
-    'A ray is traced by testing it against every triangle — until it hits.',
-    'No structure: 12 ray–triangle tests for one ray.',
-    'A binary BVH: traversal starts at the root\u2019s children — a miss culls the whole subtree.',
-    'The hit child unpacks to leaves — triangles reappear only inside them.',
-    'Four box tests and two triangle tests — instead of twelve.'
+    'Naively, a ray is traced by testing it against every triangle.',
+    'Naively, a ray is traced by testing it against every triangle.',
+    'With BVH, a ray is traced by testing it against the boxes, starting at the root — a miss culls the whole subtree.',
+    'With BVH, a ray is traced by testing it against the boxes, starting at the root — a miss culls the whole subtree.',
+    'If the hit node is a leaf, we test the triangles.',
+    'If the hit node is a leaf, we test the triangles.',
   ];
 
   /* ==================== pure math (exported) ==================== */
@@ -319,7 +321,7 @@
 
   /* ==================== timeline ==================== */
 
-  var SECTIONS = 4;
+  var SECTIONS = 5;
   var SWEEP = 1.7;
 
   function buildTimeline() {
@@ -377,13 +379,20 @@
     triEls.forEach(function (p) {
       tl.to(p, { attr: { opacity: 0 }, duration: 0.45 }, at);
     });
+    tl.to(hitRing, { attr: { opacity: 0 }, duration: 0.45 }, at);
+    tl.to(checkEl, { attr: { opacity: 0 }, duration: 0.45 }, at);
     badgeEls.forEach(function (b) {
       tl.to(b, { attr: { opacity: 0 }, duration: 0.3 }, at);
     });
     /* the root is a visual container only — faded from its first
      * appearance, never flashed, never counted */
     tl.to(rootRect, { attr: { opacity: 0.35 }, duration: 0.6 }, at + 0.15);
-    /* children grow out of the root rect */
+    tl.to({}, { duration: 0.25 }, '>');
+    tl.addLabel('s2', tl.duration());
+
+    /* s3 — the root unpacks: children grow out of it and are tested */
+    tl.to({}, { duration: 0.25 }, '>');
+    at = tl.duration();
     CHILDREN.forEach(function (c, i) {
       tl.fromTo(childRects[i],
         { attr: { x: ROOT.x, y: ROOT.y, width: ROOT.w, height: ROOT.h, opacity: 0 } },
@@ -404,9 +413,9 @@
       tl.add(function () { tallyEl.textContent = 'box tests: ' + (i + 1); }, when);
     });
     tl.to({}, { duration: 0.25 }, '>');
-    tl.addLabel('s2', tl.duration());
+    tl.addLabel('s3', tl.duration());
 
-    /* s3 — the hit child unpacks into leaves */
+    /* s4 — the hit child unpacks into leaves */
     tl.to({}, { duration: 0.25 }, '>');
     at = tl.duration();
     tl.to(childRects[HIT_CHILD_I], { attr: { 'stroke-width': 1.6 }, duration: 0.4 }, at);
@@ -443,9 +452,9 @@
       tl.add(function () { tallyEl.textContent = 'box tests: ' + (2 + i + 1); }, when);
     });
     tl.to({}, { duration: 0.25 }, '>');
-    tl.addLabel('s3', tl.duration());
+    tl.addLabel('s4', tl.duration());
 
-    /* s4 — only the hit leaf's triangles are actually tested */
+    /* s5 — only the hit leaf's triangles are actually tested */
     tl.to({}, { duration: 0.25 }, '>');
     at = tl.duration();
     var tw = at + 0.35;
@@ -455,7 +464,8 @@
       if (ti === HIT_TRI) {
         tl.to(triEls[ti], { attr: { 'stroke-width': 2.2 }, duration: 0.4 }, w2 + 0.55);
         tl.to(hitRing, { attr: { r: 9 }, duration: 0.08 }, w2 + 0.2);
-        tl.to(hitRing, { attr: { r: 16 }, duration: 0.55, ease: 'power1.out' }, w2 + 0.28);
+        tl.to(hitRing, { attr: { opacity: 1, r: 16 }, duration: 0.55, ease: 'power1.out' }, w2 + 0.28);
+        tl.to(checkEl, { attr: { opacity: 1 }, duration: 0.55 }, w2 + 0.28);
       } else {
         tl.to(triEls[ti], { attr: { 'stroke-width': 2.0 }, duration: 0.4 }, w2 + 0.55);
       }
@@ -466,7 +476,7 @@
       tallyEl.setAttribute('fill', RED);
     }, tw + 1.3);
     tl.to({}, { duration: 0.3 }, '>');
-    tl.addLabel('s4', tl.duration());
+    tl.addLabel('s5', tl.duration());
   }
 
   /* ==================== animator ==================== */

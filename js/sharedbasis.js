@@ -96,10 +96,10 @@
   var BIG_SCALE = [1.30, 1.16, 1.34, 1.22, 1.26, 1.14, 1.32, 1.20];
 
   var CAPTIONS = [
-    'The SOBB BVH₈ chain reaches quantization — but the wide node needs one more stage first.',
-    'Eight children, eight independent SOBB bases — bounds spilling over the whole wide node.',
-    'Insert one stage — “shared basis” slots in between “SOBB BVH₈” and “quantization”.',
-    'All eight children re-tilt in one sweep onto the shared basis — next: quantize the skewed space.'
+    'Quantization: the eight child bounds snap onto the local grid.',
+    'Eight children, eight independent SOBB bases — inefficient to quantize.',
+    'Similar to DOBB (Kern et al. 2025), we form a shared node basis.',
+    'Similar to DOBB (Kern et al. 2025), we form a shared node basis.',
   ];
 
   /* ==================== pure math (exported for tests) ==================== */

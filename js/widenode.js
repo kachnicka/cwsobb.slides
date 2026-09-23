@@ -8,7 +8,7 @@
  * The story then focuses purely on quantization of the skewed space.
  *
  * s0: hand-off — the wide node with its 8 child SOBBs already on the
- *     shared basis (frame normals n1=100° teal, n2=160° amber), tight
+ *     shared basis, tight
  * s1: the skewed slab grid appears — two wire families of parallel slab
  *     lines tile the node bounds (the shared basis makes ONE grid serve
  *     the whole node)
@@ -35,7 +35,7 @@
   var D = window.DeckSVG;
   var el = D.el, text = D.text;
   var BLUE = D.BLUE, INK = D.INK, EDGE = D.EDGE,
-      FAINT = D.FAINT, LIGHT = D.LIGHT, TEAL = D.TEAL, AMBER = D.AMBER;
+      FAINT = D.FAINT, LIGHT = D.LIGHT;
 
   function rad(d) { return d * Math.PI / 180; }
 
@@ -85,9 +85,10 @@
     [[884, 326], [952, 318], [922, 386]]
   ];
 
-  /* shared slab frame — the deck's SOBB normal pair (100° teal / 160°
-   * amber in kdopfan + sobbmorph). Grid line directions are the perps.
-   * Children arrive already on this basis (settled one slide earlier). */
+  /* shared slab frame — the deck's SOBB normal pair (100° / 160° in
+   * kdopfan + sobbmorph). Grid line directions are the perps; grid wires
+   * are drawn in black ink, slightly transparent. Children arrive already
+   * on this basis (settled one slide earlier). */
   var N1 = [Math.cos(rad(100)), Math.sin(rad(100))];
   var N2 = [Math.cos(rad(160)), Math.sin(rad(160))];
   var E1 = [N1[1], -N1[0]];
@@ -97,7 +98,7 @@
 
   var CAPTIONS = [
     'Hand-off: eight children on one shared basis, tight in the skewed space — now quantize the wide node.',
-    'One skewed slab grid per wide node — slab normals n1 (teal) and n2 (amber).',
+    'One skewed slab grid per wide node — a single shared frame serves all eight children.',
     'Quantize: every bound snaps OUTWARD onto the skewed cells — conservative, never inward.',
     'Eight tight quantized bounds on one stored frame — this is what the shared basis enables.'
   ];
@@ -226,9 +227,8 @@
   var svg;
   var chipRects = [], chipTexts = [];
   var wideRect, wideSlots = [], slotDots = [], slotGlyphs = [];
-  var miniCapEl, connLine, connHead, legendG, quantCapEl;
-  var parentRect, skewLines1 = [], skewLines2 = [];
-  var childTris = [], ghostParas = [], quantParas = [];
+  var miniCapEl, connLine, connHead, quantCapEl;
+  var parentRect, skewLines1 = [], skewLines2 = [];  var childTris = [], ghostParas = [], quantParas = [];
   var CHILD = null;
   var captionEl;
   var tl = null;
@@ -320,8 +320,9 @@
       fill: 'none', stroke: INK, 'stroke-width': 1.8
     }, svg);
 
-    /* skewed slab grid (s2): family 1 along E1 (normal n1, teal),
-     * family 2 along E2 (normal n2, amber), wire-thin, clipped to P */
+    /* skewed slab grid (s2): family 1 along E1 (normal n1), family 2
+     * along E2 (normal n2), wire-thin, clipped to P. Black and slightly
+     * transparent: subordinate to the blue quantized bounds. */
     for (var k1 = 0; k1 <= CELLS; k1++) {
       var m1 = GRIDSPEC.o1 + GRIDSPEC.s1 * k1;
       var a1 = [N1[0] * m1 - 1500 * E1[0], N1[1] * m1 - 1500 * E1[1]];
@@ -330,7 +331,7 @@
       if (!s1) continue;
       skewLines1.push(el('line', {
         x1: s1[0][0], y1: s1[0][1], x2: s1[1][0], y2: s1[1][1],
-        stroke: TEAL, 'stroke-width': 1.3, opacity: 0
+        stroke: INK, 'stroke-width': 1.3, opacity: 0
       }, stageG));
     }
     for (var k2 = 0; k2 <= CELLS; k2++) {
@@ -341,7 +342,7 @@
       if (!s2) continue;
       skewLines2.push(el('line', {
         x1: s2[0][0], y1: s2[0][1], x2: s2[1][0], y2: s2[1][1],
-        stroke: AMBER, 'stroke-width': 1.3, opacity: 0
+        stroke: INK, 'stroke-width': 1.3, opacity: 0
       }, stageG));
     }
 
@@ -364,22 +365,6 @@
         'stroke-linejoin': 'round', opacity: 0
       }, stageG));
     });
-
-    /* slab-frame legend (s2): tie the wire colors to the deck's slab ids */
-    legendG = el('g', { opacity: 0 }, svg);
-    text('shared slab frame', {
-      x: 130, y: 356, 'font-size': 12.5, fill: FAINT
-    }, legendG);
-    el('line', {
-      x1: 130, y1: 392, x2: 130 + E1[0] * 62, y2: 392 + E1[1] * 62,
-      stroke: TEAL, 'stroke-width': 2.4
-    }, legendG);
-    text('n1 · 100°', { x: 210, y: 396, 'font-size': 14, fill: TEAL }, legendG);
-    el('line', {
-      x1: 148, y1: 492, x2: 148 - E2[0] * 52, y2: 492 - E2[1] * 52,
-      stroke: AMBER, 'stroke-width': 2.4
-    }, legendG);
-    text('n2 · 160°', { x: 170, y: 468, 'font-size': 14, fill: AMBER }, legendG);
 
     /* closer read-out under the panel (s4) */
     quantCapEl = text('8 bounds · one shared frame · snapped outward', {
@@ -428,8 +413,6 @@
       quantParas[i].setAttribute('opacity', 0);
       quantParas[i].setAttribute('points', pts2str(c.tight));
     });
-    gsap.killTweensOf(legendG);
-    legendG.setAttribute('opacity', 0);
     gsap.killTweensOf(quantCapEl);
     quantCapEl.setAttribute('opacity', 0);
   }
@@ -445,9 +428,8 @@
     /* s1 — the skewed slab grid: one shared basis → ONE grid per node */
     tl.to({}, { duration: 0.2 }, '>');
     at = tl.duration();
-    tl.to(skewLines1, { attr: { opacity: 0.85 }, duration: 0.45, stagger: 0.03 }, at);
-    tl.to(skewLines2, { attr: { opacity: 0.85 }, duration: 0.45, stagger: 0.03 }, at + 0.25);
-    tl.to(legendG, { attr: { opacity: 1 }, duration: 0.4 }, at + 0.35);
+    tl.to(skewLines1, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at);
+    tl.to(skewLines2, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at + 0.25);
     tl.addLabel('s1', tl.duration());
 
     /* s2 — quantization: bounds snap OUTWARD onto the skewed cells */
@@ -469,7 +451,7 @@
      * bounds remain; the node + its bounds go blue (one stored frame) */
     tl.to({}, { duration: 0.2 }, '>');
     at = tl.duration();
-    tl.to(skewLines1.concat(skewLines2), { attr: { opacity: 0.3 }, duration: 0.5 }, at);
+    tl.to(skewLines1.concat(skewLines2), { attr: { opacity: 0.18 }, duration: 0.5 }, at);
     tl.to(ghostParas, { attr: { opacity: 0.55 }, duration: 0.4 }, at);
     tl.to(childTris, { attr: { opacity: 0.75 }, duration: 0.4 }, at);
     tl.to([wideRect, parentRect], { attr: { stroke: BLUE }, duration: 0.5 }, at + 0.25);

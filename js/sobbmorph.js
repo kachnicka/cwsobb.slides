@@ -140,7 +140,7 @@
     }, svg);
     D.text('AABB', {
       x: 156, y: 112,
-      fill: D.INK, 'font-size': 16, 'font-weight': 600
+      fill: D.INK, 'font-size': 22, 'font-weight': 600
     }, svg);
 
     // OBB: blue, swept on at s1 (stroke-dashoffset draw, kdopfan pattern)
@@ -153,9 +153,9 @@
     obbLen = obbEl.getTotalLength();
     obbEl.setAttribute('stroke-dasharray', obbLen);
     obbEl.setAttribute('stroke-dashoffset', obbLen);
-    obbLabelEl = D.text('SA(OBB)', {
+    obbLabelEl = D.text('OBB', {
       x: 666, y: 218,
-      fill: D.BLUE, 'font-size': 18, 'font-weight': 600, opacity: 0
+      fill: D.BLUE, 'font-size': 22, 'font-weight': 600, opacity: 0
     }, svg);
 
     // SOBB: teal, swept on at s2 the same way
@@ -168,9 +168,9 @@
     sobbLen = sobbEl.getTotalLength();
     sobbEl.setAttribute('stroke-dasharray', sobbLen);
     sobbEl.setAttribute('stroke-dashoffset', sobbLen);
-    sobbLabelEl = D.text('SA(SOBB)', {
+    sobbLabelEl = D.text('SOBB', {
       x: 540, y: 460,
-      fill: D.TEAL, 'font-size': 18, 'font-weight': 600, opacity: 0
+      fill: D.TEAL, 'font-size': 22, 'font-weight': 600, opacity: 0
     }, svg);
 
     // right-column rows + caption lines (start visible in CSS; hidden here)

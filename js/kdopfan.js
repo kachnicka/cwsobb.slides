@@ -117,7 +117,7 @@
 
   function isAabbPair(pair) { return pair[0] === 0 && pair[1] === 90; }
 
-  var PROMISE_TEXT = 'This talk: static scenes first, then what changes when they move.';
+  var PROMISE_TEXT = '';
 
   /* ==================== pure helpers ==================== */
 
@@ -261,7 +261,7 @@
 
   var built = false;
   var svg, worldG, kdopEl, candEl, sobbEl, candTagEls, candTagAt, stripsG;
-  var labelOldEl, labelNewG, promiseEl;
+  var labelNewG, promiseEl;
   var allLines, linesByAng, aabbLines;
   var sobbPathLen = 0;
   var kdopPts = null, candidates = null;
@@ -489,20 +489,14 @@
 
     // ---- text, all OUTSIDE the world group (never scales) ----
 
-    // entry label: EXACTLY kdopintro's final frame (748, 88, class).
-    // Crossfaded to the new label during the zoom-out entrance.
-    labelOldEl = D.text('K-DOP = SLAB PAIRS', {
-      'class': 'svg-side-label', x: 748, y: 88
-    }, svg);
-
     // permanent label, stacked in two lines so it stays inside the
     // right margin (~190px and ~150px wide from x=748)
     labelNewG = D.el('g', { opacity: 0 }, svg);
-    D.text('SOBB = SLAB PAIRS (2D)', {
+    D.text('2D SOBB - SLAB PAIRS', {
       'class': 'svg-side-label', x: 748, y: 88
     }, labelNewG);
-    D.text('SLAB TRIPLETS (3D)', {
-      'class': 'svg-side-label', x: 748, y: 108
+    D.text('3D SOBB - SLAB TRIPLETS', {
+      'class': 'svg-side-label', x: 748, y: 128
     }, labelNewG);
 
     // candidate tags: ONLY the two named beats carry text — the axis
@@ -532,9 +526,9 @@
       }
       var s = toScreen(anchor);
       var el = D.text(i === AABB_INDEX ? 'AABB' : 'OBB', {
-        x: s[0], y: s[1] - 12, 'text-anchor': 'middle',
+        x: s[0] + 15, y: s[1] - 40, 'text-anchor': 'middle',
         fill: i === OBB_INDEX ? D.BLUE : D.INK,
-        'font-size': 15, 'font-weight': 600, opacity: 0
+        'font-size': 20, 'font-weight': 600, opacity: 0
       }, svg);
       candTagEls.push(el);
       candTagAt[i] = el;
@@ -558,10 +552,9 @@
     gsap.killTweensOf(candTagEls);
     // entrance tweens: kill before re-armering any start() path
     gsap.killTweensOf(proxy);
-    gsap.killTweensOf([labelOldEl, labelNewG]);
+    gsap.killTweensOf(labelNewG);
     proxy.z = 1;
     updateWorld();
-    labelOldEl.setAttribute('opacity', 1);
     labelNewG.setAttribute('opacity', 0);
     PAIR_ANGLES.forEach(function (ang) { applyLineState(ang, LS_BASE); });
     aabbLines.forEach(function (l) {
@@ -685,7 +678,6 @@
         // deep entry: snap straight to the post-entrance state
         proxy.z = ZOOM;
         updateWorld();
-        labelOldEl.setAttribute('opacity', 0);
         labelNewG.setAttribute('opacity', 1);
         tl.seek(D.stopsFor(tl, 4)[fragStep], true);
       } else {
@@ -697,9 +689,6 @@
         gsap.to(proxy, {
           z: ZOOM, duration: 1.3, ease: 'power2.inOut',
           onUpdate: updateWorld
-        });
-        gsap.to(labelOldEl, {
-          attr: { opacity: 0 }, duration: 0.65, ease: 'power1.inOut', delay: 0.3
         });
         gsap.to(labelNewG, {
           attr: { opacity: 1 }, duration: 0.65, ease: 'power1.inOut', delay: 0.55
@@ -715,7 +704,7 @@
     stop: function () {
       if (tl) { tl.kill(); tl = null; }
       gsap.killTweensOf(proxy);
-      gsap.killTweensOf([labelOldEl, labelNewG]);
+      gsap.killTweensOf(labelNewG);
     }
   };
 
