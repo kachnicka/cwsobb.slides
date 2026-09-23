@@ -214,13 +214,30 @@
       <span class="fragment"></span>
     </section>
 
-    <!-- L4b. Pipeline 2 of 3: state-of-the-art AABB BVH₈ -->
-    <section id="slide-pipeline-aabb8" data-animator="pipeaabb8">
+    <!-- L4b. Pipeline 2 of 3: state-of-the-art AABB BVH₈ (data-transition="none":
+         its OWN transition governs the outgoing side of the cut — without this,
+         Reveal cross-fades this section out over the next slide for ~250ms and
+         the hand-off ghosts as a double exposure) -->
+    <section id="slide-pipeline-aabb8" data-animator="pipeaabb8" data-transition="none">
       <h2 class="slide-head">AABB BVH₈ — state of the art</h2>
       <div class="canvas-row">
         <div id="pipe-aabb8-canvas" class="panel"></div>
       </div>
       <div class="status-row"><span id="pipe-aabb8-caption" class="cap"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L4b+. AABB quantization to the ALIGNED (orthogonal) grid — mirror of
+         the quant slide; picks B's lead-in up (chip row pixel-identical,
+         quantization chip ACTIVE, hard cut) -->
+    <section id="slide-aabb-quant" data-animator="aabbquant" data-transition="none">
+      <h2 class="slide-head">AABB quantization — the aligned grid</h2>
+      <div class="canvas-row">
+        <div id="aabbquant-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="aabbquant-caption" class="cap"></span></div>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
@@ -252,14 +269,15 @@
       <span class="fragment"></span>
     </section>
 
-    <!-- L5. Wide node construction & quantization (reused animator) -->
-    <section id="slide-quant" data-animator="widenode">
+    <!-- L5. Wide node quantization in the skewed space — opens EXACTLY where
+         sharedbasis settled (chip row, strip, 8 shared-basis parallelograms),
+         hard cut, no rebuild -->
+    <section id="slide-quant" data-animator="widenode" data-transition="none">
       <h2 class="slide-head">Quantization demands a shared basis</h2>
       <div class="canvas-row">
         <div id="wide-canvas" class="panel"></div>
       </div>
       <div class="status-row"><span id="wide-caption" class="cap"></span></div>
-      <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
@@ -892,6 +910,7 @@
 <script src="js/common.js"></script>
 <script src="js/teaser.js"></script>
 <script src="js/pipeline.js"></script>
+<script src="js/aabbquant.js"></script>
 <script src="js/sharedbasis.js"></script>
 <script src="js/widenode.js"></script>
 <script src="js/sobbbasis.js"></script>

@@ -14,8 +14,13 @@
  *   pipeaabb8 (slide B — state of the art)
  *     s1 AABB BVH₂   — identical binary build
  *     s2 AABB BVH₈   — interiors collapse to approximate 8-ary wide nodes
- *     s3 quantization — child bounds snap to the ORTHOGONAL grid over the
- *                      wide root. Story ends here; stays axis-aligned.
+ *     s3 quantization — LEAD-IN + HAND-OFF: chip goes active, the four
+ *                      wide leaves fade away, and the wide root slides
+ *                      left into its stored slot-strip pose while its
+ *                      bounds region opens on the right holding the eight
+ *                      tight child AABBs — B's final frame IS the entry
+ *                      frame of #slide-aabb-quant, pixel-for-pixel (the
+ *                      story continues there without a cut)
  *
  *   pipesobb8 (slide C — our chain)
  *     s1 AABB BVH₂   — identical binary build
@@ -27,10 +32,12 @@
  *                      hand-off to #slide-sharedbasis (skewed-space
  *                      quantization is the next two slides' story)
  *
- * Chip strip on C ends: AABB BVH₂ / AABB BVH₈ / SOBB BVH₈ done,
- * quantization ACTIVE — exactly the entry state on sharedbasis, whose
+ * Chip strip on B ends: AABB BVH₂ / AABB BVH₈ done, quantization ACTIVE —
+ * exactly the entry state on aabbquant, whose chip row mirrors B's geometry
+ * pixel-for-pixel. Chip strip on C ends: AABB BVH₂ / AABB BVH₈ / SOBB BVH₈
+ * done, quantization ACTIVE — exactly the entry state on sharedbasis, whose
  * BASE chip row mirrors C's geometry pixel-for-pixel (_test exports keep
- * the parity machine-checkable).
+ * both parities machine-checkable).
  * 3/3/4 fragments; GSAP timelines synced to labels s1..sN via
  * DeckSVG.stopsFor. All GSAP-animated paint props are SVG ATTRIBUTES.
  */
@@ -103,24 +110,6 @@
   };
   var WIDE_ORDER = ['wl0', 'wl1', 'wl2', 'wl3', 'root']; // bottom-up proxy order
   var SLOTS = 8;                                        // 8-ary wide root
-
-  /* quantization grid over the wide root + snapped child-bound boxes */
-  var GRID = { cols: 8, rows: 4 };
-  var SNAP_CELLS = [ // (col,row,cols,rows) — 4 children, snapped to the grid
-    { c: 0, r: 0, w: 2, h: 2 },
-    { c: 2, r: 1, w: 3, h: 2 },
-    { c: 5, r: 0, w: 2, h: 3 },
-    { c: 6, r: 3, w: 2, h: 1 }
-  ];
-  var SNAP_ABS = SNAP_CELLS.map(function (b) {
-    var R = WIDE.root;
-    return {
-      x: R.x + (R.w / GRID.cols) * b.c,
-      y: R.y + (R.h / GRID.rows) * b.r,
-      w: (R.w / GRID.cols) * b.w,
-      h: (R.h / GRID.rows) * b.h
-    };
-  });
 
   /* ---- proxies over the WIDE nodes (slide C overlay; same numbers the
    * old 'form SOBB' beat used — random sizes/rotations, deterministic) ---- */
@@ -273,18 +262,41 @@
   var CFG_AABB8 = {
     host: 'pipe-aabb8-canvas', caption: 'pipe-aabb8-caption',
     chips: {
+      /* this exact row is mirrored as aabbquant.js CHIP_* (hand-off) */
       TXT: ['AABB BVH' + SUB2, 'AABB BVH' + SUB8, 'quantization'],
       W: [150, 150, 140],
       X: [304, 490, 676],
       ARROW_X: [472, 658]
     },
-    beats: ['build', 'collapse', 'quant'],
+    beats: ['build', 'collapse', 'quantleadabb'],
     captions: [
       'The state of the art: an AABB BVH₂ widened to AABB BVH₈, then quantized.',
       'The same binary AABB BVH from SAH splits.',
       'Interiors collapse to 8-ary wide nodes — the 8-wide layout here is approximate.',
-      'Quantization: child bounds snap to the orthogonal grid inside each wide node.'
+      'Quantization is the one remaining step: the wide node packs into its slot strip — the eight child bounds snap onto the orthogonal grid next.'
     ]
+  };
+
+  /* ---- slide B hand-off geometry: EXACTLY the entry state of
+   * js/aabbquant.js (constants duplicated on purpose, parity
+   * machine-checked via _test.handoff vs aabbquant._test). B's final
+   * frame resolves into this — the cut reads as a continuation. ---- */
+  var HANDOFF = {
+    STRIP: { x: 80, y: 130, w: 360, h: 64 },   // = aabbquant WIDE
+    SLOT_N: 8,
+    P: { x: 560, y: 90, w: 440, h: 380 },      // = aabbquant P
+    BOX_PAD: 4,
+    TRIS: [                                     // = aabbquant CHILD_TRIS
+      [[604, 168], [680, 158], [642, 234]],
+      [[710, 170], [784, 162], [750, 238]],
+      [[812, 166], [888, 158], [854, 232]],
+      [[878, 180], [946, 174], [916, 240]],
+      [[600, 330], [676, 320], [640, 390]],
+      [[706, 328], [782, 318], [746, 388]],
+      [[814, 332], [890, 324], [856, 394]],
+      [[884, 326], [952, 318], [922, 386]]
+    ],
+    MINICAP: 'one wide node · eight child AABBs'
   };
 
   var CFG_SOBB8 = {
@@ -325,8 +337,9 @@
     var hexWraps = {}, hexPolys = {};   // slide A: per binary node
     var parWraps = {}, parPolys = {};   // slide A: per binary node
     var parWWraps = {}, parWPolys = {}; // slide C: per wide node
-    var gridLines = [];     // slide B: orthogonal quantization grid
-    var snapBoxes = [];     // slide B: axis-aligned child bounds
+    /* slide B hand-off gear (aabbquant entry frame, mirrored exactly) */
+    var handDots = [], handGlyphs = [], handMinicap, handConn, handHead;
+    var handPanel, handTris = [], handTights = [];
     var chipRects = [], chipTexts = [];
     var captionEl;
     var tl = null;
@@ -457,29 +470,57 @@
         });
       }
 
-      /* slide B: orthogonal quantization (grid + snapped child bounds) */
-      if (has('quant')) {
-        var Rt = WIDE.root;
-        var cw = Rt.w / GRID.cols, rh = Rt.h / GRID.rows;
-        for (i = 1; i < GRID.cols; i++) {
-          gridLines.push(el('line', {
-            'class': 'quant-grid',
-            x1: Rt.x + cw * i, y1: Rt.y, x2: Rt.x + cw * i, y2: Rt.y + Rt.h,
-            'stroke-width': 1
+      /* slide B hand-off gear: hidden until the s3 lead-in, when the wide
+       * root slides into this strip pose and the bounds region opens with
+       * its eight tight child AABBs — B's final frame, pixel-equal to the
+       * aligned-grid quantization slide's entry frame. Attribute-for-
+       * attribute identical to js/aabbquant.js (parity via _test). */
+      if (has('quantleadabb')) {
+        var HS = HANDOFF.STRIP, HP = HANDOFF.P;
+        var hcy = HS.y + HS.h / 2;
+        for (i = 0; i < HANDOFF.SLOT_N; i++) {
+          var hgx = HS.x + (HS.w / HANDOFF.SLOT_N) * (i + 0.5);
+          handDots.push(el('circle', {
+            'class': 'hand-dot', cx: hgx, cy: hcy, r: 2.2, fill: INK, opacity: 0
+          }, svg));
+          handGlyphs.push(el('rect', {
+            'class': 'hand-glyph',
+            x: hgx - 10, y: hcy - 19, width: 20, height: 10, rx: 2,
+            fill: 'none', stroke: INK, 'stroke-width': 1.3, opacity: 0
           }, svg));
         }
-        for (i = 1; i < GRID.rows; i++) {
-          gridLines.push(el('line', {
-            'class': 'quant-grid',
-            x1: Rt.x, y1: Rt.y + rh * i, x2: Rt.x + Rt.w, y2: Rt.y + rh * i,
-            'stroke-width': 1
+        handMinicap = text(HANDOFF.MINICAP, {
+          'class': 'hand-minicap',
+          x: HS.x + HS.w / 2, y: HS.y + HS.h + 34,
+          'text-anchor': 'middle', 'font-size': 15, fill: FAINT, opacity: 0
+        }, svg);
+        handConn = el('line', {
+          'class': 'hand-conn',
+          x1: HS.x + HS.w + 14, y1: hcy, x2: HP.x - 22, y2: hcy,
+          stroke: EDGE, 'stroke-width': 1.4, 'stroke-dasharray': '4 4', opacity: 0
+        }, svg);
+        handHead = el('polygon', {
+          'class': 'hand-head',
+          points: (HP.x - 24) + ',' + (hcy - 5) + ' ' + (HP.x - 24) + ',' + (hcy + 5) + ' ' + (HP.x - 14) + ',' + hcy,
+          fill: EDGE, opacity: 0
+        }, svg);
+        handPanel = el('rect', {
+          'class': 'hand-panel',
+          x: HP.x, y: HP.y, width: HP.w, height: HP.h,
+          fill: 'none', stroke: INK, 'stroke-width': 1.8, opacity: 0
+        }, svg);
+        HANDOFF.TRIS.forEach(function (tri) {
+          handTris.push(el('polygon', {
+            'class': 'hand-tri',
+            points: ptsStr(tri),
+            fill: LIGHT, stroke: INK, 'stroke-width': 1.2,
+            'stroke-linejoin': 'round', opacity: 0
           }, svg));
-        }
-        SNAP_ABS.forEach(function (b) {
-          snapBoxes.push(el('rect', {
-            'class': 'quant-box',
-            x: b.x, y: b.y, width: b.w, height: b.h, rx: 1,
-            fill: LIGHT, 'fill-opacity': 0.55, stroke: INK, 'stroke-width': 1.4
+          var tb = D.inflate(D.aabb(tri), HANDOFF.BOX_PAD);
+          handTights.push(el('rect', {
+            'class': 'hand-tight',
+            x: tb.x, y: tb.y, width: tb.w, height: tb.h,
+            fill: 'none', stroke: INK, 'stroke-width': 1.4, opacity: 0
           }, svg));
         });
       }
@@ -502,6 +543,7 @@
         r.setAttribute('rx', 4);
         r.setAttribute('opacity', 0);
         r.setAttribute('stroke', INK);
+        r.setAttribute('stroke-width', 1.5); // B hand-off morph fattens it
       });
       binEdgeEls.forEach(function (l) {
         gsap.killTweensOf(l);
@@ -523,10 +565,17 @@
         l.setAttribute('opacity', 0);
         l.setAttribute('stroke', EDGE);
       });
-      slotLines.forEach(function (l) {
+      slotLines.forEach(function (l, i) {
         gsap.killTweensOf(l);
         l.setAttribute('opacity', 0);
         l.setAttribute('stroke', FAINT);
+        /* B's hand-off morphs the dividers with the root to the strip pose;
+         * restore the post-collapse coordinates (inside the wide root) */
+        var R = WIDE.root, k = i + 1;
+        l.setAttribute('x1', R.x + (R.w / SLOTS) * k);
+        l.setAttribute('x2', R.x + (R.w / SLOTS) * k);
+        l.setAttribute('y1', R.y + 8);
+        l.setAttribute('y2', R.y + R.h - 8);
       });
       Object.keys(hexWraps).forEach(function (id) {
         gsap.killTweensOf(hexWraps[id]);
@@ -549,14 +598,13 @@
         parWPolys[id].setAttribute('opacity', 0);
         parWPolys[id].setAttribute('stroke', BLUE);
       });
-      gridLines.forEach(function (l) {
-        gsap.killTweensOf(l);
-        l.setAttribute('opacity', 0);
-        l.setAttribute('stroke', FAINT);
+      /* slide B hand-off gear hidden (geometry is static — no re-init
+       * needed, only opacity back to 0) */
+      [handMinicap, handConn, handHead, handPanel].forEach(function (n) {
+        if (n) { gsap.killTweensOf(n); n.setAttribute('opacity', 0); }
       });
-      snapBoxes.forEach(function (r) {
-        gsap.killTweensOf(r);
-        r.setAttribute('opacity', 0);
+      handDots.concat(handGlyphs, handTris, handTights).forEach(function (n) {
+        gsap.killTweensOf(n); n.setAttribute('opacity', 0);
       });
       for (var i = 0; i < NCH; i++) setChip(i, 'todo');
     }
@@ -666,36 +714,75 @@
       });
     }
 
-    /* slide B s3: orthogonal quantization over the wide root */
-    function sQuant() {
-      var at = tl.duration();
-      /* slot read-out gives way to the orthogonal quantization grid */
-      tl.to(slotLines, { attr: { opacity: 0 }, duration: 0.3 }, at);
-      tl.to(gridLines, { attr: { opacity: 1 }, duration: 0.35, stagger: 0.025 }, at + 0.1);
-      snapBoxes.forEach(function (r, i) {
-        tl.fromTo(r, { attr: { opacity: 0 } }, { attr: { opacity: 1 }, duration: 0.35 }, at + 0.3 + i * 0.09);
-      });
-      /* pipeline complete — close the last chip */
-      tlChip(2, 'done', at + 0.75);
-    }
-
-    /* slide C s4: quantization lead-in — chip active, stage quiets down to
-     * the one wide node whose skewed-space quantization the next slides tell */
+    /* slide C final: quantization lead-in — chip ACTIVE, stage quiets
+     * down to the one wide node whose quantization the next slide tells
+     * (C → #slide-sharedbasis skew) */
     function sQuantLead() {
       var at = tl.duration();
       tl.to(slotLines, { attr: { opacity: 0 }, duration: 0.3 }, at);
       /* leaves fall quiet so the wide root carries the hand-off */
       WIDE_ORDER.slice(0, 4).forEach(function (wid, i) {
         tl.to(wideLeafRects[wid], { attr: { stroke: FAINT }, duration: 0.35 }, at + 0.05 + i * 0.04);
-        tl.to(parWPolys[wid], { attr: { stroke: FAINT }, duration: 0.35 }, at + 0.05 + i * 0.04);
+        if (has('parwide')) {
+          tl.to(parWPolys[wid], { attr: { stroke: FAINT }, duration: 0.35 }, at + 0.05 + i * 0.04);
+        }
       });
       tl.to(wideEdgeEls, { attr: { stroke: FAINT }, duration: 0.35 }, at + 0.1);
-      /* quantization chip stays ACTIVE — hand-off to sharedbasis */
+      /* quantization chip stays ACTIVE — hand-off to the next slide */
+    }
+
+    /* slide B final: quantization lead-in + HAND-OFF — the stage doesn't
+     * just quiet, it TRAVELS: the four wide leaves and their edges fade
+     * away, the wide root slides left into the stored slot-strip pose
+     * (dividers ride along, dots + axis-aligned glyphs light up inside),
+     * and the node-bounds region opens on the right holding the eight
+     * tight child AABBs. The end frame is the aligned-grid quantization
+     * slide's entry frame (js/aabbquant.js), pixel-for-pixel — the
+     * data-transition="none" cut between the slides reads as one story. */
+    function sQuantHandoffAabb() {
+      var at = tl.duration();
+      var HS = HANDOFF.STRIP, HP = HANDOFF.P;
+      /* the approximate tree dissolves — only the wide root survives */
+      tl.to(wideEdgeEls, { attr: { opacity: 0 }, duration: 0.35 }, at);
+      WIDE_ORDER.slice(0, 4).forEach(function (wid, i) {
+        tl.to(wideLeafRects[wid], { attr: { opacity: 0 }, duration: 0.4 }, at + i * 0.04);
+      });
+      /* the wide root slides into its stored pose: the 8-slot strip */
+      tl.to(nodeEls.r, {
+        attr: { x: HS.x, y: HS.y, width: HS.w, height: HS.h, rx: 8, 'stroke-width': 1.8 },
+        duration: 0.85, ease: 'power2.inOut'
+      }, at + 0.15);
+      slotLines.forEach(function (l, i) {
+        var k = i + 1, sx = HS.x + (HS.w / SLOTS) * k;
+        tl.to(l, {
+          attr: { x1: sx, x2: sx, y1: HS.y + 7, y2: HS.y + HS.h - 7 },
+          duration: 0.85, ease: 'power2.inOut'
+        }, at + 0.15);
+        tl.to(l, { attr: { stroke: EDGE }, duration: 0.4 }, at + 0.4);
+      });
+      /* the node-bounds region opens on the right */
+      tl.fromTo(handPanel,
+        { attr: { x: HP.x + HP.w / 2, y: HP.y + HP.h / 2, width: 0, height: 0, opacity: 0 } },
+        { attr: { x: HP.x, y: HP.y, width: HP.w, height: HP.h, opacity: 1 },
+          duration: 0.55, ease: 'power2.out' }, at + 0.65);
+      tl.to([handConn, handHead], { attr: { opacity: 1 }, duration: 0.35 }, at + 0.85);
+      /* its stored self-description: 8 slots, axis-aligned child bounds */
+      tl.to(handDots, { attr: { opacity: 1 }, duration: 0.3, stagger: 0.03 }, at + 0.85);
+      tl.to(handGlyphs, { attr: { opacity: 1 }, duration: 0.3, stagger: 0.03 }, at + 0.95);
+      tl.to(handMinicap, { attr: { opacity: 1 }, duration: 0.35 }, at + 1.05);
+      /* and the eight tight child AABBs the next slide quantizes */
+      HANDOFF.TRIS.forEach(function (tri, i) {
+        var w = at + 1.0 + i * 0.05;
+        tl.to(handTris[i], { attr: { opacity: 1 }, duration: 0.3 }, w);
+        tl.to(handTights[i], { attr: { opacity: 1 }, duration: 0.3 }, w + 0.05);
+      });
+      /* quantization chip stays ACTIVE — the next slide continues here */
     }
 
     var STAGE_FN = {
       build: sBuild, hexbin: sHexBin, parbin: sParBin,
-      collapse: sCollapse, parwide: sParWide, quant: sQuant, quantlead: sQuantLead
+      collapse: sCollapse, parwide: sParWide, quantlead: sQuantLead,
+      quantleadabb: sQuantHandoffAabb
     };
 
     /* -------------------- timeline -------------------- */
@@ -741,7 +828,10 @@
       chips: { X: cfg.chips.X, W: cfg.chips.W, Y: CHIP_Y, H: CHIP_H, ARROW_X: cfg.chips.ARROW_X, STYLE: CHIP_STYLE },
       beats: cfg.beats.slice(),
       captions: cfg.captions.slice(),
-      sections: NSEC
+      sections: NSEC,
+      /* slide B only: the hand-off frame geometry, mirrored from
+       * js/aabbquant.js so the join parity is machine-checkable */
+      handoff: has('quantleadabb') ? HANDOFF : null
     };
     return animator;
   }
@@ -763,7 +853,6 @@
       kSides: 6, parSides: 4,
       hexB: HEXB, parB: PARB, parW: PARW,
       sweptAbs: sweptAbs,
-      grid: GRID, snapCells: SNAP_CELLS, snap: SNAP_ABS,
       viewBox: [0, 0, 1120, 520]
     }
   };
