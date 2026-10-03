@@ -9,9 +9,11 @@
  *
  * s0: hand-off — the wide node with its 8 child SOBBs already on the
  *     shared basis, tight
- * s1: the skewed slab grid appears — two wire families of parallel slab
- *     lines tile the node bounds (the shared basis makes ONE grid serve
- *     the whole node)
+ * s1: the node-bounds frame morphs from the entry AABB into a
+ *     parallelogram on the shared basis, and the skewed slab grid
+ *     appears inside it — two wire families whose lines ARE the frame's
+ *     grid lines, edge to edge, no clipping (the shared basis makes ONE
+ *     grid serve the whole node; the frame is just a grid cell span)
  * s2: quantization — every bound snaps OUTWARD onto the skewed cells,
  *     conservative by construction (slab-space floor/ceil)
  * s3: closer — the grid falls quiet; 8 tight quantized shared-basis
@@ -136,16 +138,37 @@
     return D.inflate(D.aabb(tri), BOX_PAD);
   }
 
-  /* skewed grid spec: line-family positions along n1/n2 covering P's
-   * slab projection range in CELLS equal cells */
-  var GRIDSPEC = (function () {
-    var pc = boxCorners(P);
-    var r1 = project(pc, N1), r2 = project(pc, N2);
-    return {
-      o1: r1[0], s1: (r1[1] - r1[0]) / CELLS,
-      o2: r2[0], s2: (r2[1] - r2[0]) / CELLS
-    };
+  /* TARGET FRAME: the node-bounds parallelogram the slide morphs into
+   * at s1 — a slab-extent rectangle on the shared basis, sized CELLS
+   * equal cells per family and centered on the union of the children's
+   * tight slab extents. Derived FIRST (not from P's corner projections,
+   * whose circumscribed parallelogram would spill out of the viewBox);
+   * the grid spec below is then derived from the frame, so grid wires
+   * land exactly on the frame's edges and tile it perfectly. Verified:
+   * corners (466,68) (955,154) (1078,490) (589,404) — inside the
+   * 1120x560 viewBox with margin, all 8 tight child parallelograms
+   * inside the slab span. */
+  var FRAME_EXT = (function () {
+    var lo1 = Infinity, hi1 = -Infinity, lo2 = Infinity, hi2 = -Infinity;
+    CHILD_TRIS.forEach(function (tri) {
+      var eb = D.inflate(D.aabb(tri), BOX_PAD);
+      var r1 = project(boxCorners(eb), N1), r2 = project(boxCorners(eb), N2);
+      lo1 = Math.min(lo1, r1[0]); hi1 = Math.max(hi1, r1[1]);
+      lo2 = Math.min(lo2, r2[0]); hi2 = Math.max(hi2, r2[1]);
+    });
+    var W1 = 310, W2 = 430;              // slab spans: 10 cells of 31 / 43
+    var g1lo = lo1 - (W1 - (hi1 - lo1)) / 2;
+    var g2lo = lo2 - (W2 - (hi2 - lo2)) / 2;
+    return [[g1lo, g1lo + W1], [g2lo, g2lo + W2]];
   })();
+
+  /* skewed grid spec: line-family positions along n1/n2 — the frame's
+   * slab span divided into CELLS equal cells, so wire k of each family
+   * lies on a frame grid line and wires run edge to edge */
+  var GRIDSPEC = {
+    o1: FRAME_EXT[0][0], s1: (FRAME_EXT[0][1] - FRAME_EXT[0][0]) / CELLS,
+    o2: FRAME_EXT[1][0], s2: (FRAME_EXT[1][1] - FRAME_EXT[1][0]) / CELLS
+  };
 
   /* slab extents of points along the shared frame: [[lo1,hi1],[lo2,hi2]] */
   function slabExtents(pts) {
@@ -202,25 +225,18 @@
     }).join(' ');
   }
 
-  /* Liang–Barsky clip of a segment against P — skewed grid lines enter
-   * as long chords and get clipped to the node-bounds window */
-  function clipSegRect(p0, p1, r) {
-    var dx = p1[0] - p0[0], dy = p1[1] - p0[1];
-    var t0 = 0, t1 = 1;
-    var pp = [-dx, dx, -dy, dy];
-    var qq = [p0[0] - r.x, r.x + r.w - p0[0], p0[1] - r.y, r.y + r.h - p0[1]];
-    for (var i = 0; i < 4; i++) {
-      var p = pp[i], q = qq[i];
-      if (p === 0) { if (q < 0) return null; continue; }
-      var t = q / p;
-      if (p < 0) { if (t > t0) t0 = t; } else { if (t < t1) t1 = t; }
-    }
-    if (t0 > t1) return null;
-    return [
-      [p0[0] + t0 * dx, p0[1] + t0 * dy],
-      [p0[0] + t1 * dx, p0[1] + t1 * dy]
-    ];
-  }
+  /* frame morph endpoints: the entry frame is P's AABB (pixel-identical
+   * to sharedbasis's settled frame); the s1 target is the grid-aligned
+   * parallelogram. slabCorners order is c1..c4 around the loop; P's
+   * order is TL,TR,BR,BL — matched by proximity (TL→c4, TR→c1, BR→c2,
+   * BL→c3) so the points tween never self-intersects. Same point count
+   * and same "x,y x,y ..." format, so GSAP interpolates numerically. */
+  var P_PTS = pts2str(boxCorners(P));
+  var FRAME_CORNERS = slabCorners(FRAME_EXT);
+  var FRAME_PTS = pts2str([
+    FRAME_CORNERS[3], FRAME_CORNERS[0],
+    FRAME_CORNERS[1], FRAME_CORNERS[2]
+  ]);
 
   /* ==================== build ==================== */
 
@@ -297,52 +313,50 @@
       'text-anchor': 'middle', 'font-size': 20, fill: FAINT
     }, svg);
 
-    /* connector: wide node → its bounds box */
+    /* connector: wide node → its bounds frame. Aims at the frame's
+     * settled (morphed) left edge: the n2=g2hi slab line crosses the
+     * connector height (cy=162) at x≈500.5 — tip sits just short of it. */
     connLine = el('line', {
-      x1: WIDE.x + WIDE.w + 14, y1: cy, x2: P.x - 22, y2: cy,
+      x1: WIDE.x + WIDE.w + 14, y1: cy, x2: 492, y2: cy,
       stroke: EDGE, 'stroke-width': 1.4, 'stroke-dasharray': '4 4'
     }, svg);
     connHead = el('polygon', {
-      points: (P.x - 24) + ',' + (cy - 5) + ' ' + (P.x - 24) + ',' + (cy + 5) + ' ' + (P.x - 14) + ',' + cy,
+      points: '490,' + (cy - 5) + ' 490,' + (cy + 5) + ' 500,' + cy,
       fill: EDGE
     }, svg);
 
-    /* ---- right: node bounds + grids ---- */
-    /* grid wires are genuinely oblique to the axis-aligned frame and are
-     * clipped to the node bounds; children/parallelograms are positioned
-     * with margin so the clip never bites them */
-    var defs = el('defs', {}, svg);
-    var clip = el('clipPath', { id: 'wide-frame-clip' }, defs);
-    el('rect', { x: P.x, y: P.y, width: P.w, height: P.h }, clip);
-    var stageG = el('g', { 'clip-path': 'url(#wide-frame-clip)' }, svg);
+    /* ---- right: node bounds + grid ---- */
+    /* the frame is a polygon so it can morph: it opens as P's AABB
+     * (entry parity with sharedbasis) and tweens to the grid-aligned
+     * parallelogram at s1. No clipping anywhere — grid wires span the
+     * frame's slab extents exactly, edge to edge. */
+    var stageG = el('g', {}, svg);
 
-    parentRect = el('rect', {
-      x: P.x, y: P.y, width: P.w, height: P.h,
-      fill: 'none', stroke: INK, 'stroke-width': 1.8
+    parentRect = el('polygon', {
+      points: P_PTS,
+      fill: 'none', stroke: INK, 'stroke-width': 1.8,
+      'stroke-linejoin': 'round'
     }, svg);
 
-    /* skewed slab grid (s2): family 1 along E1 (normal n1), family 2
-     * along E2 (normal n2), wire-thin, clipped to P. Black and slightly
-     * transparent: subordinate to the blue quantized bounds. */
+    /* skewed slab grid (s1): family 1 along E1 (normal n1), family 2
+     * along E2 (normal n2), wire-thin. Each wire runs from one frame
+     * edge to the opposite one — the outermost wires ARE frame edges.
+     * Black and slightly transparent: subordinate to the blue bounds. */
     for (var k1 = 0; k1 <= CELLS; k1++) {
       var m1 = GRIDSPEC.o1 + GRIDSPEC.s1 * k1;
-      var a1 = [N1[0] * m1 - 1500 * E1[0], N1[1] * m1 - 1500 * E1[1]];
-      var b1 = [N1[0] * m1 + 1500 * E1[0], N1[1] * m1 + 1500 * E1[1]];
-      var s1 = clipSegRect(a1, b1, P);
-      if (!s1) continue;
+      var a1 = solveCorner(N1, N2, m1, FRAME_EXT[1][0]);
+      var b1 = solveCorner(N1, N2, m1, FRAME_EXT[1][1]);
       skewLines1.push(el('line', {
-        x1: s1[0][0], y1: s1[0][1], x2: s1[1][0], y2: s1[1][1],
+        x1: a1[0], y1: a1[1], x2: b1[0], y2: b1[1],
         stroke: INK, 'stroke-width': 1.3, opacity: 0
       }, stageG));
     }
     for (var k2 = 0; k2 <= CELLS; k2++) {
       var m2 = GRIDSPEC.o2 + GRIDSPEC.s2 * k2;
-      var a2 = [N2[0] * m2 - 1500 * E2[0], N2[1] * m2 - 1500 * E2[1]];
-      var b2 = [N2[0] * m2 + 1500 * E2[0], N2[1] * m2 + 1500 * E2[1]];
-      var s2 = clipSegRect(a2, b2, P);
-      if (!s2) continue;
+      var a2 = solveCorner(N1, N2, FRAME_EXT[0][0], m2);
+      var b2 = solveCorner(N1, N2, FRAME_EXT[0][1], m2);
       skewLines2.push(el('line', {
-        x1: s2[0][0], y1: s2[0][1], x2: s2[1][0], y2: s2[1][1],
+        x1: a2[0], y1: a2[1], x2: b2[0], y2: b2[1],
         stroke: INK, 'stroke-width': 1.3, opacity: 0
       }, stageG));
     }
@@ -363,9 +377,10 @@
       }, stageG));
     });
 
-    /* closer read-out under the panel (s4) */
+    /* closer read-out under the morphed frame (its lowest corner sits
+     * at y≈490, x≈1078 — caption centered under the frame's mid-x) */
     quantCapEl = text('8 bounds · one shared frame · snapped outward', {
-      x: P.x + P.w / 2, y: P.y + P.h + 34,
+      x: 772, y: 524,
       'text-anchor': 'middle', 'font-size': 20, fill: BLUE, opacity: 0
     }, svg);
 
@@ -395,6 +410,7 @@
     gsap.killTweensOf(connHead);
     gsap.killTweensOf(parentRect);
     parentRect.setAttribute('stroke', INK);
+    parentRect.setAttribute('points', P_PTS);
     skewLines1.concat(skewLines2).forEach(function (l) {
       gsap.killTweensOf(l);
       l.setAttribute('opacity', 0);
@@ -420,11 +436,18 @@
     tl = gsap.timeline({ paused: true });
     var at;
 
-    /* s1 — the skewed slab grid: one shared basis → ONE grid per node */
+    /* s1 — the frame morphs from the entry AABB into the grid-aligned
+     * parallelogram, then the skewed slab grid fades in edge to edge:
+     * one shared basis → ONE grid per node, and the bounds are just a
+     * cell span of that grid */
     tl.to({}, { duration: 0.2 }, '>');
     at = tl.duration();
-    tl.to(skewLines1, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at);
-    tl.to(skewLines2, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at + 0.25);
+    tl.to(parentRect, {
+      attr: { points: FRAME_PTS },
+      duration: 0.55, ease: 'power2.inOut'
+    }, at);
+    tl.to(skewLines1, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at + 0.35);
+    tl.to(skewLines2, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at + 0.6);
     tl.addLabel('s1', tl.duration());
 
     /* s2 — quantization: bounds snap OUTWARD onto the skewed cells */
@@ -487,6 +510,10 @@
     childSlabs: childSlabs,
     pts2str: pts2str,
     GRIDSPEC: GRIDSPEC,
+    FRAME_EXT: FRAME_EXT,
+    FRAME_CORNERS: FRAME_CORNERS,
+    P_PTS: P_PTS,
+    FRAME_PTS: FRAME_PTS,
     chips: {
       TXT: CHIP_TXT, X: CHIP_X, W: CHIP_W, Y: CHIP_Y, H: CHIP_H,
       ARROW_X: CHIP_ARROW_X, STATE: CHIP_STATE, STYLE: CHIP_STYLE

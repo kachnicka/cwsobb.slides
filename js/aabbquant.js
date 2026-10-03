@@ -91,8 +91,23 @@
     'Quantization: the eight child bounds snap onto the local orthogonal grid.',
     'Local orthogonal grid: anchor + integer coordinates.',
     'Quantize: every bound snaps onto the grid cells conservatively.',
-    'Bounds are slightly inflated, memory footprint is down.'
+    'Bounds are slightly inflated, memory footprint is down.',
+    'Stored per wide node: 192 bytes at f32, 63 bytes quantized — 3× smaller.'
   ];
+
+  /* s4: memory footprint bars, bottom-left blank region (x 80..540,
+   * y 260..500). Lengths exactly proportional to bytes: 2 px per byte,
+   * 192 B → 384 px, 63 B → 126 px (ratio 192:63 ≈ 3.05:1). */
+  var MEM = {
+    x: 80,
+    titleY: 296,
+    barH: 22,
+    scale: 2,                       // px per byte
+    full: { bytes: 192, labelY: 330, barY: 336 },
+    quant: { bytes: 63, labelY: 384, barY: 390 }
+  };
+  var MEM_FULL_W = MEM.full.bytes * MEM.scale;   // 384
+  var MEM_QUANT_W = MEM.quant.bytes * MEM.scale; // 126
 
   /* ==================== pure math (exported for tests) ==================== */
 
@@ -147,6 +162,8 @@
   var miniCapEl, connLine, connHead, quantCapEl;
   var parentRect, gridV = [], gridH = [];
   var tightRects = [], quantRects = [];
+  var memTitle, memFullLabel, memFullBar, memFullVal,
+      memQuantLabel, memQuantBar, memQuantVal;
   var CHILD = null;
   var captionEl;
   var tl = null;
@@ -265,6 +282,36 @@
       'text-anchor': 'middle', 'font-size': 20, fill: BLUE, opacity: 0
     }, svg);
 
+    /* s4: memory footprint comparison — two horizontal bars, lengths
+     * exactly proportional to stored bytes. Full precision in quiet ink,
+     * quantized in blue (the stored representation). Numbers de-emphasized:
+     * small, faint, beside the bar ends. */
+    memTitle = text('memory per wide node', {
+      x: MEM.x, y: MEM.titleY, 'font-size': 18, fill: FAINT, opacity: 0
+    }, svg);
+    memFullLabel = text('full precision', {
+      x: MEM.x, y: MEM.full.labelY, 'font-size': 20, fill: INK, opacity: 0
+    }, svg);
+    memFullBar = el('rect', {
+      x: MEM.x, y: MEM.full.barY, width: 0, height: MEM.barH, rx: 3,
+      fill: INK, opacity: 0
+    }, svg);
+    memFullVal = text(MEM.full.bytes + ' B', {
+      x: MEM.x + MEM_FULL_W + 10, y: MEM.full.barY + MEM.barH - 5,
+      'font-size': 14, fill: FAINT, opacity: 0
+    }, svg);
+    memQuantLabel = text('quantized', {
+      x: MEM.x, y: MEM.quant.labelY, 'font-size': 20, fill: INK, opacity: 0
+    }, svg);
+    memQuantBar = el('rect', {
+      x: MEM.x, y: MEM.quant.barY, width: 0, height: MEM.barH, rx: 3,
+      fill: BLUE, opacity: 0
+    }, svg);
+    memQuantVal = text(MEM.quant.bytes + ' B', {
+      x: MEM.x + MEM_QUANT_W + 10, y: MEM.quant.barY + MEM.barH - 5,
+      'font-size': 14, fill: FAINT, opacity: 0
+    }, svg);
+
     captionEl = document.getElementById('aabbquant-caption');
     built = true;
   }
@@ -314,11 +361,20 @@
     });
     gsap.killTweensOf(quantCapEl);
     quantCapEl.setAttribute('opacity', 0);
+    [memTitle, memFullLabel, memFullVal, memQuantLabel, memQuantVal].forEach(function (t) {
+      gsap.killTweensOf(t);
+      t.setAttribute('opacity', 0);
+    });
+    [memFullBar, memQuantBar].forEach(function (b) {
+      gsap.killTweensOf(b);
+      b.setAttribute('opacity', 0);
+      b.setAttribute('width', 0);
+    });
   }
 
   /* ==================== timeline ==================== */
 
-  var SECTIONS = 3;
+  var SECTIONS = 4;
 
   function buildTimeline() {
     tl = gsap.timeline({ paused: true });
@@ -356,6 +412,26 @@
     tl.to([wideRect, parentRect], { attr: { stroke: BLUE }, duration: 0.5 }, at + 0.25);
     tl.to(quantCapEl, { attr: { opacity: 1 }, duration: 0.45 }, at + 0.45);
     tl.addLabel('s3', tl.duration());
+
+    /* s4 — memory footprint: the full-precision bar grows first, then the
+     * quantized bar grows to its much shorter final length — the ratio
+     * lands as the punchline; labels fade in near their bars. */
+    tl.to({}, { duration: 0.2 }, '>');
+    at = tl.duration();
+    tl.to(memTitle, { attr: { opacity: 1 }, duration: 0.35 }, at);
+    tl.to(memFullLabel, { attr: { opacity: 1 }, duration: 0.3 }, at + 0.15);
+    tl.to(memFullBar, { attr: { opacity: 1 }, duration: 0.15 }, at + 0.3);
+    tl.to(memFullBar, {
+      attr: { width: MEM_FULL_W }, duration: 0.7, ease: 'power2.out'
+    }, at + 0.35);
+    tl.to(memFullVal, { attr: { opacity: 1 }, duration: 0.3 }, at + 0.95);
+    tl.to(memQuantLabel, { attr: { opacity: 1 }, duration: 0.3 }, at + 1.0);
+    tl.to(memQuantBar, { attr: { opacity: 1 }, duration: 0.15 }, at + 1.15);
+    tl.to(memQuantBar, {
+      attr: { width: MEM_QUANT_W }, duration: 0.5, ease: 'power2.out'
+    }, at + 1.2);
+    tl.to(memQuantVal, { attr: { opacity: 1 }, duration: 0.3 }, at + 1.6);
+    tl.addLabel('s4', tl.duration());
   }
 
   /* ==================== animator ==================== */
@@ -399,7 +475,13 @@
     WIDE: WIDE, SLOT_N: SLOT_N,
     P: P, CELLS: CELLS,
     CAPTIONS: CAPTIONS,
-    sections: SECTIONS
+    sections: SECTIONS,
+    memory: {
+      MEM: MEM,
+      fullWidth: MEM_FULL_W,
+      quantWidth: MEM_QUANT_W,
+      ratio: MEM.full.bytes / MEM.quant.bytes
+    }
   };
 
   window.DeckAnimators = window.DeckAnimators || {};
