@@ -390,6 +390,7 @@
 .svg-line-aabb { fill: none; stroke: var(--ink-soft); stroke-width: 2.2; stroke-linejoin: round; }
 .svg-line-sobb { fill: none; stroke: var(--blue); stroke-width: 3; stroke-linejoin: round; }
 .svg-dot-aabb  { fill: var(--ink-soft); }
+.svg-dot-hollow { fill: #ffffff; stroke: var(--ink-soft); stroke-width: 1.6; }
 .svg-dot-sobb  { fill: var(--blue); }
 .svg-end-aabb  { fill: var(--ink-soft); font-size: 18px; font-variant-numeric: tabular-nums; }
 .svg-end-sobb  { fill: var(--blue); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -528,6 +529,12 @@
 
 /* Thumbnail chip: hairline border over the clipped <image>. */
 .svg-chip      { fill: none; stroke: var(--hairline); stroke-width: 1; }
+
+/* Thumbnail-strip sub-line (tris + multiplier): compact so adjacent
+   entries at ~124px pitch don't touch. */
+.svg-strip-sub { fill: var(--ink-faint); font-size: 14px; font-variant-numeric: tabular-nums; }
+.svg-strip-spd { fill: var(--blue); font-weight: 600; }
+.svg-strip-num { fill: var(--red); font-weight: 650; }
 
 /* One reveal step for all 7 dots, landing in sequence: reveal toggles
    .visible on the group, per-dot delays do the stagger. */
