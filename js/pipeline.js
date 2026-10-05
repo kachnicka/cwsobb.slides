@@ -264,7 +264,7 @@
     chips: {
       /* this exact row is mirrored as aabbquant.js CHIP_* (hand-off) */
       TXT: ['AABB BVH' + SUB2, 'AABB BVH' + SUB8, 'quantization'],
-      W: [150, 150, 140],
+      W: [150, 150, 170],
       X: [304, 490, 676],
       ARROW_X: [472, 658]
     },
@@ -304,7 +304,7 @@
     chips: {
       /* this exact row is mirrored as sharedbasis.js BASE_* (hand-off) */
       TXT: ['AABB BVH' + SUB2, 'AABB BVH' + SUB8, 'SOBB BVH' + SUB8, 'quantization'],
-      W: [150, 150, 160, 140],
+      W: [150, 150, 160, 170],
       X: [206, 392, 578, 774],
       ARROW_X: [374, 560, 756]
     },
@@ -377,13 +377,13 @@
         chipTexts.push(text(cfg.chips.TXT[i], {
           'class': 'chip-text',
           x: cfg.chips.X[i] + cfg.chips.W[i] / 2, y: CHIP_Y + 22,
-          'text-anchor': 'middle', 'font-size': 20
+          'text-anchor': 'middle', 'font-size': 25
         }, svg));
       }
       cfg.chips.ARROW_X.forEach(function (x) {
         text('→', {
           'class': 'chip-arrow',
-          x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 21, fill: FAINT
+          x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
         }, svg);
       });
 
@@ -492,7 +492,7 @@
         handMinicap = text(HANDOFF.MINICAP, {
           'class': 'hand-minicap',
           x: HS.x + HS.w / 2, y: HS.y + HS.h + 34,
-          'text-anchor': 'middle', 'font-size': 20, fill: FAINT, opacity: 0
+          'text-anchor': 'middle', 'font-size': 25, fill: FAINT, opacity: 0
         }, svg);
         handConn = el('line', {
           'class': 'hand-conn',

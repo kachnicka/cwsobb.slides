@@ -489,14 +489,20 @@
 
     // ---- text, all OUTSIDE the world group (never scales) ----
 
-    // permanent label, stacked in two lines so it stays inside the
-    // right margin (~190px and ~150px wide from x=748)
+    // permanent label, stacked in four short lines so it stays inside
+    // the right margin (~220px max from x=748 at the 25px side-label size)
     labelNewG = D.el('g', { opacity: 0 }, svg);
-    D.text('2D SOBB - SLAB PAIRS', {
-      'class': 'svg-side-label', x: 748, y: 88
+    D.text('2D SOBB', {
+      'class': 'svg-side-label', x: 748, y: 64
     }, labelNewG);
-    D.text('3D SOBB - SLAB TRIPLETS', {
-      'class': 'svg-side-label', x: 748, y: 128
+    D.text('SLAB PAIRS', {
+      'class': 'svg-side-label', x: 748, y: 94
+    }, labelNewG);
+    D.text('3D SOBB', {
+      'class': 'svg-side-label', x: 748, y: 138
+    }, labelNewG);
+    D.text('SLAB TRIPLETS', {
+      'class': 'svg-side-label', x: 748, y: 168
     }, labelNewG);
 
     // candidate tags: ONLY the two named beats carry text — the axis
@@ -528,7 +534,7 @@
       var el = D.text(i === AABB_INDEX ? 'AABB' : 'OBB', {
         x: s[0] + 15, y: s[1] - 40, 'text-anchor': 'middle',
         fill: i === OBB_INDEX ? D.BLUE : D.INK,
-        'font-size': 20, 'font-weight': 600, opacity: 0
+        'font-size': 25, 'font-weight': 600, opacity: 0
       }, svg);
       candTagEls.push(el);
       candTagAt[i] = el;

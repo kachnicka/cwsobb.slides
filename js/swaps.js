@@ -102,7 +102,7 @@
       slotEls.push(r);
       text('slot ' + s, {
         x: slotX(s) + SLOT_W / 2, y: ROW_Y + SLOT_H + 28,
-        'text-anchor': 'middle', 'font-size': 18, fill: FAINT
+        'text-anchor': 'middle', 'font-size': 22, fill: FAINT
       }, svg);
     }
 
@@ -115,27 +115,27 @@
       }, g);
       text(String(id), {
         x: SLOT_W / 2, y: SLOT_H / 2 + 12,
-        'text-anchor': 'middle', 'font-size': 34, fill: INK
+        'text-anchor': 'middle', 'font-size': 37, fill: INK
       }, g);
       chipEls.push(g);
     }
 
     /* cost readout */
     text('total order cost', {
-      x: 560, y: 330, 'text-anchor': 'middle', 'font-size': 21, fill: FAINT
+      x: 560, y: 330, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
     }, svg);
     costText = text(String(COSTS[0]), {
-      x: 560, y: 392, 'text-anchor': 'middle', 'font-size': 52, fill: INK,
+      x: 560, y: 392, 'text-anchor': 'middle', 'font-size': 57, fill: INK,
       'font-weight': 650
     }, svg);
     deltaText = text('', {
-      x: 660, y: 392, 'text-anchor': 'start', 'font-size': 24, fill: BLUE
+      x: 660, y: 392, 'text-anchor': 'start', 'font-size': 30, fill: BLUE
     }, svg);
     iterText = text('', {
-      x: 560, y: 96, 'text-anchor': 'middle', 'font-size': 22, fill: BLUE
+      x: 560, y: 96, 'text-anchor': 'middle', 'font-size': 27, fill: BLUE
     }, svg);
     convText = text('', {
-      x: 560, y: 432, 'text-anchor': 'middle', 'font-size': 21, fill: BLUE
+      x: 560, y: 432, 'text-anchor': 'middle', 'font-size': 26, fill: BLUE
     }, svg);
 
     captionEl = document.getElementById('swap-caption');

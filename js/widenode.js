@@ -52,10 +52,10 @@
    * "shared basis" sits in the inserted slot, "quantization" last. */
   var SUB2 = '₂', SUB8 = '₈';
   var CHIP_TXT = ['AABB BVH' + SUB2, 'AABB BVH' + SUB8, 'SOBB BVH' + SUB8, 'shared basis', 'quantization'];
-  var CHIP_W = [150, 150, 160, 140, 140];
+  var CHIP_W = [150, 150, 160, 170, 170];
   var CHIP_H = 34, CHIP_Y = 24;
-  var CHIP_X = [118, 304, 490, 686, 862];
-  var CHIP_ARROW_X = [286, 472, 668, 844];
+  var CHIP_X = [88, 274, 460, 656, 862];
+  var CHIP_ARROW_X = [256, 442, 638, 844];
   var CHIP_STATE = ['done', 'done', 'done', 'done', 'active']; // static per chip
   var CHIP_STYLE = {
     todo:   { fill: '#ffffff', stroke: EDGE, txt: FAINT },
@@ -278,13 +278,13 @@
       chipTexts.push(text(CHIP_TXT[i], {
         'class': 'chip-text',
         x: CHIP_X[i] + CHIP_W[i] / 2, y: CHIP_Y + 22,
-        'text-anchor': 'middle', 'font-size': 20, fill: s.txt
+        'text-anchor': 'middle', 'font-size': 25, fill: s.txt
       }, svg));
     }
     CHIP_ARROW_X.forEach(function (x) {
       text('→', {
         'class': 'chip-arrow',
-        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 21, fill: FAINT
+        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
       }, svg);
     });
 
@@ -314,7 +314,7 @@
     }
     miniCapEl = text('one wide node · 8 child SOBBs', {
       x: WIDE.x + WIDE.w / 2, y: WIDE.y + WIDE.h + 34,
-      'text-anchor': 'middle', 'font-size': 20, fill: FAINT
+      'text-anchor': 'middle', 'font-size': 25, fill: FAINT
     }, svg);
 
     /* connector: wide node → its bounds frame. Aims at the frame's
@@ -380,20 +380,20 @@
     }, svg);
     anchorLbl = text('anchor', {
       x: ANCHOR[0] - 40, y: ANCHOR[1] + 55,
-      'text-anchor': 'end', 'font-size': 14, fill: BLUE, opacity: 0
+      'text-anchor': 'end', 'font-size': 17, fill: BLUE, opacity: 0
     }, svg);
     for (var a1 = 0; a1 <= CELLS; a1++) {
       var q1 = solveCorner(N1, N2, GRIDSPEC.o1 + GRIDSPEC.s1 * a1, FRAME_EXT[1][1]);
       tick1.push(text(String(CELLS - a1), {
         x: q1[0] + N2[0] * 22, y: q1[1] + N2[1] * 22 + 4.5,
-        'text-anchor': 'middle', 'font-size': 13, fill: INK, opacity: 0
+        'text-anchor': 'middle', 'font-size': 16, fill: INK, opacity: 0
       }, svg));
     }
     for (var a2 = 0; a2 <= CELLS; a2++) {
       var q2 = solveCorner(N1, N2, FRAME_EXT[0][1], GRIDSPEC.o2 + GRIDSPEC.s2 * a2);
       tick2.push(text(String(CELLS - a2), {
         x: q2[0] + N1[0] * 20, y: q2[1] + N1[1] * 20 + 4.5,
-        'text-anchor': 'middle', 'font-size': 13, fill: INK, opacity: 0
+        'text-anchor': 'middle', 'font-size': 16, fill: INK, opacity: 0
       }, svg));
     }
 
@@ -417,7 +417,7 @@
      * at y≈490, x≈1078 — caption centered under the frame's mid-x) */
     quantCapEl = text('8 bounds · one shared frame · snapped outward', {
       x: 772, y: 524,
-      'text-anchor': 'middle', 'font-size': 20, fill: BLUE, opacity: 0
+      'text-anchor': 'middle', 'font-size': 25, fill: BLUE, opacity: 0
     }, svg);
 
     captionEl = document.getElementById('wide-caption');

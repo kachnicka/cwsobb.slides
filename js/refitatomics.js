@@ -46,10 +46,10 @@
   var RATIO = [3e-6, 1e-5, 4e-4, 0.004, 0.02, 0.08, 0.16, 0.22, 0.24, 0.25, 0.22, 0.20, 0.19, 0.18, 0.17];
   var ATOM = TESTS.map(function (t, d) { return t * RATIO[d]; });
 
-  var WHY1A = 'root side — every thread passes through few nodes';
-  var WHY1B = 'almost every test stays local, atomics nearly vanish';
+  var WHY1A = 'root side — few nodes per thread';
+  var WHY1B = 'tests stay local, atomics nearly vanish';
   var WHY2A = 'leaf side — atomics cluster here';
-  var WHY2B = 'nodes are many, contenders per node few';
+  var WHY2B = 'many nodes, few contenders per node';
 
   /* ==================== pure helpers ==================== */
 
@@ -97,8 +97,8 @@
     for (var d = 0; d < N; d++) {
       el('line', { x1: X(d), y1: YBASE, x2: X(d), y2: YBASE + 5, stroke: FAINT, 'stroke-width': 1 }, scaffoldG);
     }
-    text('depth 0 = root', { x: 60, y: 364, 'font-size': 22, fill: FAINT }, scaffoldG);
-    text('depth 14 = leaves', { x: 1026, y: 364, 'text-anchor': 'end', 'font-size': 22, fill: FAINT }, scaffoldG);
+    text('depth 0 = root', { x: 60, y: 364, 'font-size': 27, fill: FAINT }, scaffoldG);
+    text('depth 14 = leaves', { x: 1026, y: 364, 'text-anchor': 'end', 'font-size': 27, fill: FAINT }, scaffoldG);
 
     /* ---- data lines: drawn with dashoffset sweeps (attrs, GSAP-safe).
      * Point order is leaves->root, so offset->0 paints right-to-left.
@@ -129,10 +129,10 @@
      * atomics bell peaks around y~281 — this corner is always empty) ---- */
     legendGreen = el('g', { opacity: 0 }, svg);
     el('line', { x1: 700, y1: 42, x2: 736, y2: 42, stroke: GREEN, 'stroke-width': 3 }, legendGreen);
-    text('local boundary tests', { x: 746, y: 50, 'font-size': 22, fill: INK }, legendGreen);
+    text('local boundary tests', { x: 746, y: 50, 'font-size': 27, fill: INK }, legendGreen);
     legendRed = el('g', { opacity: 0 }, svg);
     el('line', { x1: 700, y1: 78, x2: 736, y2: 78, stroke: ATOMIC_RED, 'stroke-width': 3 }, legendRed);
-    text('atomic min/max writes', { x: 746, y: 86, 'font-size': 22, fill: INK }, legendRed);
+    text('atomic min/max writes', { x: 746, y: 86, 'font-size': 27, fill: INK }, legendRed);
 
     /* ---- why cards (s4): bordered cards, two lines each. They sit in
      * a dedicated band below the axis (y386-478): the chart is squashed
@@ -141,8 +141,8 @@
     function whyCard(x, l1, l2) {
       var gEl = el('g', { opacity: 0 }, svg);
       el('rect', { x: x, y: 386, width: 510, height: 92, rx: 8, fill: '#ffffff', stroke: EDGE, 'stroke-width': 1.5 }, gEl);
-      text(l1, { x: x + 255, y: 424, 'text-anchor': 'middle', 'font-size': 20, fill: INK }, gEl);
-      text(l2, { x: x + 255, y: 455, 'text-anchor': 'middle', 'font-size': 20, fill: SOFT }, gEl);
+      text(l1, { x: x + 255, y: 424, 'text-anchor': 'middle', 'font-size': 25, fill: INK }, gEl);
+      text(l2, { x: x + 255, y: 455, 'text-anchor': 'middle', 'font-size': 25, fill: SOFT }, gEl);
       return gEl;
     }
     why1 = whyCard(40, WHY1A, WHY1B);

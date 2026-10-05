@@ -79,10 +79,10 @@
     C:  { x: 335, y: 394 },
     D:  { x: 485, y: 394 }
   };
-  var NODE_W = 46, NODE_H = 32;
+  var NODE_W = 56, NODE_H = 32;
   var LEVEL_LABELS = [
     { text: 'root', y: 86 },
-    { text: 'internal', y: 240 },
+    { text: 'internal', y: 205 },  /* raised off the row: at 240 the 25px label runs under M0's widened box; at 205 it clears both the box and the R->M0 edge (edge x>=179 there) */
     /* leaves row label raised to 364: clears leaf A's box and the M0->A
        edge (same argument as the refit slide; tree geometry is static). */
     { text: 'leaves', y: 364 }
@@ -127,7 +127,7 @@
   };
 
   /* s6: red cost badge beside the root. */
-  var COST_BADGE = { x: 311, y: 74, w: 170, h: 26, text: '4.4–4.7× · ~60 MB' };
+  var COST_BADGE = { x: 311, y: 74, w: 200, h: 26, text: '4.4–4.7× · ~60 MB' };
 
   var CAPTIONS = [
     'SOBBs — every node wraps its geometry in its own skew basis.',
@@ -481,7 +481,7 @@
     });
     text('?', {
       x: qt[0], y: qt[1] - 12, 'text-anchor': 'middle',
-      'font-size': 22, 'font-weight': 650, fill: INK
+      'font-size': 27, 'font-weight': 650, fill: INK
     }, qAux);
   }
 
@@ -561,7 +561,7 @@
       var tagPos = KDOP_TAG[id];
       text('k-DOP', {
         x: tagPos.x, y: tagPos.y, 'text-anchor': tagPos.anchor,
-        'font-size': 17, fill: BLUE
+        'font-size': 21, fill: BLUE
       }, g);
       kdopEls[id] = g;
     });
@@ -575,7 +575,7 @@
     }, costBadgeG);
     text(COST_BADGE.text, {
       x: COST_BADGE.x + COST_BADGE.w / 2, y: COST_BADGE.y + 17.5,
-      'text-anchor': 'middle', 'font-size': 18, fill: RED, 'font-weight': 650
+      'text-anchor': 'middle', 'font-size': 22, fill: RED, 'font-weight': 650
     }, costBadgeG);
   }
 

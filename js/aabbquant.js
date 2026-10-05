@@ -52,7 +52,7 @@
    * a pixel-continuous hand-off): first two done, quantization ACTIVE. */
   var SUB2 = '₂', SUB8 = '₈';
   var CHIP_TXT = ['AABB BVH' + SUB2, 'AABB BVH' + SUB8, 'quantization'];
-  var CHIP_W = [150, 150, 140];
+  var CHIP_W = [150, 150, 170];
   var CHIP_H = 34, CHIP_Y = 24;
   var CHIP_X = [304, 490, 676];
   var CHIP_ARROW_X = [472, 658];
@@ -189,13 +189,13 @@
       chipTexts.push(text(CHIP_TXT[i], {
         'class': 'chip-text',
         x: CHIP_X[i] + CHIP_W[i] / 2, y: CHIP_Y + 22,
-        'text-anchor': 'middle', 'font-size': 20, fill: s.txt
+        'text-anchor': 'middle', 'font-size': 25, fill: s.txt
       }, svg));
     }
     CHIP_ARROW_X.forEach(function (x) {
       text('→', {
         'class': 'chip-arrow',
-        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 21, fill: FAINT
+        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
       }, svg);
     });
 
@@ -224,7 +224,7 @@
     }
     miniCapEl = text('one wide node · eight child AABBs', {
       x: WIDE.x + WIDE.w / 2, y: WIDE.y + WIDE.h + 34,
-      'text-anchor': 'middle', 'font-size': 20, fill: FAINT
+      'text-anchor': 'middle', 'font-size': 25, fill: FAINT
     }, svg);
 
     /* connector: wide node → its bounds box */
@@ -274,16 +274,16 @@
     }, svg);
     anchorLbl = text('anchor', {
       x: P.x - 16, y: P.y + P.h - 8,
-      'text-anchor': 'end', 'font-size': 14, fill: BLUE, opacity: 0
+      'text-anchor': 'end', 'font-size': 17, fill: BLUE, opacity: 0
     }, svg);
     for (i = 0; i <= CELLS; i++) {
       tickX.push(text(String(i), {
         x: P.x + P.w * i / CELLS, y: P.y + P.h + 16,
-        'text-anchor': 'middle', 'font-size': 13, fill: INK, opacity: 0
+        'text-anchor': 'middle', 'font-size': 16, fill: INK, opacity: 0
       }, svg));
       tickY.push(text(String(CELLS - i), {
         x: P.x - 6, y: P.y + P.h * i / CELLS + 4.5,
-        'text-anchor': 'end', 'font-size': 13, fill: INK, opacity: 0
+        'text-anchor': 'end', 'font-size': 16, fill: INK, opacity: 0
       }, svg));
     }
 
@@ -307,7 +307,7 @@
     /* closer under the panel (s3) — terse, no numeric readouts */
     quantCapEl = text('snapped outward — conservative by construction', {
       x: P.x + P.w / 2, y: P.y + P.h + 34,
-      'text-anchor': 'middle', 'font-size': 20, fill: BLUE, opacity: 0
+      'text-anchor': 'middle', 'font-size': 25, fill: BLUE, opacity: 0
     }, svg);
 
     /* s4: memory footprint comparison — two horizontal bars, lengths
@@ -315,10 +315,10 @@
      * quantized in blue (the stored representation). Numbers de-emphasized:
      * small, faint, beside the bar ends. */
     memTitle = text('memory per wide node', {
-      x: MEM.x, y: MEM.titleY, 'font-size': 18, fill: FAINT, opacity: 0
+      x: MEM.x, y: MEM.titleY, 'font-size': 22, fill: FAINT, opacity: 0
     }, svg);
     memFullLabel = text('full precision', {
-      x: MEM.x, y: MEM.full.labelY, 'font-size': 20, fill: INK, opacity: 0
+      x: MEM.x, y: MEM.full.labelY, 'font-size': 25, fill: INK, opacity: 0
     }, svg);
     memFullBar = el('rect', {
       x: MEM.x, y: MEM.full.barY, width: 0, height: MEM.barH, rx: 3,
@@ -326,10 +326,10 @@
     }, svg);
     memFullVal = text(MEM.full.bytes + ' B', {
       x: MEM.x + MEM_FULL_W + 10, y: MEM.full.barY + MEM.barH - 5,
-      'font-size': 14, fill: FAINT, opacity: 0
+      'font-size': 17, fill: FAINT, opacity: 0
     }, svg);
     memQuantLabel = text('quantized', {
-      x: MEM.x, y: MEM.quant.labelY, 'font-size': 20, fill: INK, opacity: 0
+      x: MEM.x, y: MEM.quant.labelY, 'font-size': 25, fill: INK, opacity: 0
     }, svg);
     memQuantBar = el('rect', {
       x: MEM.x, y: MEM.quant.barY, width: 0, height: MEM.barH, rx: 3,
@@ -337,7 +337,7 @@
     }, svg);
     memQuantVal = text(MEM.quant.bytes + ' B', {
       x: MEM.x + MEM_QUANT_W + 10, y: MEM.quant.barY + MEM.barH - 5,
-      'font-size': 14, fill: FAINT, opacity: 0
+      'font-size': 17, fill: FAINT, opacity: 0
     }, svg);
 
     captionEl = document.getElementById('aabbquant-caption');

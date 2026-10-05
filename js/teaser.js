@@ -476,13 +476,13 @@
     aabbLabelEl = setText(el('text', {
       x: scene.labels.aabb[0], y: scene.labels.aabb[1],
       'text-anchor': 'end',
-      'font-size': 25, fill: INK, opacity: 0
+      'font-size': 27, fill: INK, opacity: 0
     }, g), 'SA(AABB) = N');
     obbLabelEl = setText(el('text', {
       x: scene.labels.obb[0], y: scene.labels.obb[1],
       transform: 'rotate(' + scene.labels.obbAngle.toFixed(2) + ' ' +
         scene.labels.obb[0] + ' ' + scene.labels.obb[1] + ')',
-      'font-size': 25, fill: BLUE, 'font-weight': 650, opacity: 0
+      'font-size': 27, fill: BLUE, 'font-weight': 650, opacity: 0
     }, g), 'SA(OBB) ≤ N');
 
     // s2 hit tick + label at the AABB entry point
@@ -494,14 +494,14 @@
     }, g);
     hitTextEl = setText(el('text', {
       x: scene.labels.hit[0], y: scene.labels.hit[1],
-      'text-anchor': 'middle', 'font-size': 20, fill: RED,
+      'text-anchor': 'middle', 'font-size': 25, fill: RED,
       'font-weight': 650, opacity: 0
     }, g), 'hit');
 
     // s2 miss badge near the OBB's bottom edge
     missBadgeEl = setText(el('text', {
       x: scene.labels.badge[0], y: scene.labels.badge[1],
-      'text-anchor': 'middle', 'font-size': 20, fill: BLUE,
+      'text-anchor': 'middle', 'font-size': 25, fill: BLUE,
       'font-weight': 650, opacity: 0
     }, g), '✗ miss');
 

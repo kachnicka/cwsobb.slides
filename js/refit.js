@@ -70,10 +70,10 @@
     C:  { x: 335, y: 394 },
     D:  { x: 485, y: 394 }
   };
-  var NODE_W = 46, NODE_H = 32;
+  var NODE_W = 56, NODE_H = 32;
   var LEVEL_LABELS = [
     { text: 'root', y: 86 },
-    { text: 'internal', y: 240 },
+    { text: 'internal', y: 205 },  /* raised off the row: at 240 the 25px label runs under M0's widened box; at 205 it clears both the box and the R->M0 edge (edge x>=179 there) */
     /* leaves: raised above the row center (394) — at 394 the label's
        tail slides under leaf node A's box (A starts at x=52, the label
        extends to ~x=74). At 364 the baseline sits at 369 and the label

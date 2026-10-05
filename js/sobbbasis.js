@@ -102,11 +102,11 @@
   /* summary chips — the closer stays, BIG and readable (viewBox units,
    * rendered ~1.5× larger than the old 13px chips) */
   var CHIPS = [
-    { x: 40,  w: 262, t: 'Σ sum · exact · slow',          fill: INK,  win: false },
-    { x: 318, w: 280, t: '∪ union · cheap · loose',       fill: INK,  win: false },
-    { x: 614, w: 366, t: '✓ avg · cheap · tight enough',  fill: BLUE, win: true }
+    { x: 40,  w: 280, t: 'Σ sum · exact · slow',          fill: INK,  win: false },
+    { x: 336, w: 310, t: '∪ union · cheap · loose',       fill: INK,  win: false },
+    { x: 662, w: 390, t: '✓ avg · cheap · tight enough',  fill: BLUE, win: true }
   ];
-  var CHIP_FS = 21;
+  var CHIP_FS = 26;
 
   var CAPTIONS = [
     'One wide node — eight children must be tightly bounded with a single basis.',
@@ -502,15 +502,15 @@
 
     /* ---- badges / dots / closer cue (all hidden at base) ---- */
     sumBadge = text('Σ sum', {
-      x: 446, y: 402, 'text-anchor': 'middle', 'font-size': 22,
+      x: 446, y: 402, 'text-anchor': 'middle', 'font-size': 27,
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
     stageBadge = text('∪ union', {
-      x: STAGE[0], y: 144, 'text-anchor': 'middle', 'font-size': 22,
+      x: STAGE[0], y: 144, 'text-anchor': 'middle', 'font-size': 27,
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
     closerCue = text('one stored frame', {
-      x: 446, y: 100, 'text-anchor': 'middle', 'font-size': 21,
+      x: 446, y: 100, 'text-anchor': 'middle', 'font-size': 26,
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
     var r1 = dotRow(SUM_CANDS.length, 446, 434, svg);

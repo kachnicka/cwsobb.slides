@@ -40,18 +40,18 @@
   var CHIP_TXT = ['AABB BVH₂', 'AABB BVH₈', 'SOBB BVH₈', 'quantization', 'shared basis'];
   /* base row = pipesobb8's exact chip geometry (js/pipeline.js CFG_SOBB8
    * chips, mirrored for a pixel-continuous hand-off) */
-  var CHIP_W = [150, 150, 160, 140, 140];
+  var CHIP_W = [150, 150, 160, 170, 170];
   var CHIP_H = 34, CHIP_Y = 24;
   var BASE_X = [206, 392, 578, 774];
-  /* final row: 5 chips, 36px gaps, centered (sum 884, margins 118).
+  /* final row: 5 chips, 36px gaps, centered (sum 944, margins 88).
    * "shared basis" (idx 4) sits between "SOBB BVH₈" (idx 2) and
    * "quantization" (idx 3). */
-  var FINAL_X = [118, 304, 490, 686, 862];
+  var FINAL_X = [88, 274, 460, 656, 862];
   var INSERT_IDX = 4;                 // DOM index of the "shared basis" chip
   var INSERT_AT = 3;                  // row position it occupies in FINAL_X
   var QUANT_IDX = 3;                  // "quantization" chip
   var BASE_ARROW_X = [374, 560, 756];
-  var FINAL_ARROW_X = [286, 472, 668, 844];
+  var FINAL_ARROW_X = [256, 442, 638, 844];
 
   var CHIP_STYLE = {
     todo:   { fill: '#ffffff', stroke: EDGE, txt: FAINT },
@@ -201,11 +201,7 @@
   }
 
   /* DOM order ≠ final row order: chips 0..3 keep their slot, the insert
-   * takes slot INSERT_AT(=4), so "quantization" (DOM 4) lands at slot 5. */
-  function chipDelta(i) {
-    var slot = i < INSERT_AT ? i : i + 1;
-    return FINAL_X[slot] - BASE_X[i];
-  }
+   * takes slot INSERT_AT(=3), so "quantization" (DOM 3) lands at slot 4. */
 
   function build() {
     CHILD = childGeom();
@@ -215,35 +211,35 @@
     var i;
 
     /* stage chips: idx 0..3 at base row; the insert (idx 4) parks at its
-     * final gap, lifted and invisible (pipeline idiom) */
+     * final gap, 60px below the row via ATTRIBUTES (a transform park would
+     * still swallow the SOBB chip label's center for bbox-based checks)
+     * and invisible; s2 tweens the attrs back up. */
     for (i = 0; i < 5; i++) {
       var x = i === INSERT_IDX ? FINAL_X[INSERT_AT] : BASE_X[i];
-      var g = el('g', {
-        transform: i === INSERT_IDX ? 'translate(0 -8)' : 'translate(0 0)',
-        opacity: i === INSERT_IDX ? 0 : 1
-      }, svg);
+      var yOff = i === INSERT_IDX ? 60 : 0;
+      var g = el('g', { opacity: i === INSERT_IDX ? 0 : 1 }, svg);
       var r = el('rect', {
         'class': 'chip-rect',
-        x: x, y: CHIP_Y, width: CHIP_W[i], height: CHIP_H, rx: 6,
+        x: x, y: CHIP_Y + yOff, width: CHIP_W[i], height: CHIP_H, rx: 6,
         'stroke-width': 1.4
       }, g);
       var t = text(CHIP_TXT[i], {
         'class': 'chip-text',
-        x: x + CHIP_W[i] / 2, y: CHIP_Y + 22,
-        'text-anchor': 'middle', 'font-size': 20
+        x: x + CHIP_W[i] / 2, y: CHIP_Y + 22 + yOff,
+        'text-anchor': 'middle', 'font-size': 25
       }, g);
       chipGs.push(g); chipRects.push(r); chipTexts.push(t);
     }
     BASE_ARROW_X.forEach(function (x) {
       baseArrows.push(text('→', {
         'class': 'chip-arrow',
-        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 21, fill: FAINT
+        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
       }, svg));
     });
     FINAL_ARROW_X.forEach(function (x) {
       finalArrows.push(text('→', {
         'class': 'chip-arrow',
-        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 21,
+        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 26,
         fill: FAINT, opacity: 0
       }, svg));
     });
@@ -274,7 +270,7 @@
     }
     miniCapEl = text('one wide node · 8 child SOBBs', {
       x: WIDE.x + WIDE.w / 2, y: WIDE.y + WIDE.h + 34,
-      'text-anchor': 'middle', 'font-size': 20, fill: FAINT
+      'text-anchor': 'middle', 'font-size': 25, fill: FAINT
     }, svg);
 
     /* connector: wide node → its bounds region */
@@ -318,8 +314,16 @@
   function resetDom() {
     chipGs.forEach(function (g, i) {
       gsap.killTweensOf(g);
-      g.setAttribute('transform', i === INSERT_IDX ? 'translate(0 -8)' : 'translate(0 0)');
+      gsap.killTweensOf(chipRects[i]);
+      gsap.killTweensOf(chipTexts[i]);
+      g.removeAttribute('transform');
       g.setAttribute('opacity', i === INSERT_IDX ? 0 : 1);
+      var bx = i === INSERT_IDX ? FINAL_X[INSERT_AT] : BASE_X[i];
+      var yOff = i === INSERT_IDX ? 60 : 0;
+      chipRects[i].setAttribute('x', bx);
+      chipRects[i].setAttribute('y', CHIP_Y + yOff);
+      chipTexts[i].setAttribute('x', bx + CHIP_W[i] / 2);
+      chipTexts[i].setAttribute('y', CHIP_Y + 22 + yOff);
     });
     for (var i = 0; i < 3; i++) setChip(i, 'done');
     setChip(QUANT_IDX, 'active');
@@ -377,18 +381,31 @@
     /* quantization is no longer pending — the story rewinds one step */
     tlChip(tl, QUANT_IDX, 'todo', at);
     tl.to(baseArrows, { attr: { opacity: 0 }, duration: 0.25 }, at);
+    /* re-space via x ATTRIBUTES, not a group transform — bbox-based
+     * overflow checks (and anything else reading getBBox) must see the
+     * settled geometry */
     [0, 1, 2, 3].forEach(function (i) {
-      tl.to(chipGs[i], {
-        attr: { transform: 'translate(' + chipDelta(i) + ' 0)' },
-        duration: 0.6, ease: 'power2.inOut'
+      var slot = i < INSERT_AT ? i : i + 1;
+      tl.to(chipRects[i], {
+        attr: { x: FINAL_X[slot] }, duration: 0.6, ease: 'power2.inOut'
+      }, at);
+      tl.to(chipTexts[i], {
+        attr: { x: FINAL_X[slot] + CHIP_W[i] / 2 }, duration: 0.6, ease: 'power2.inOut'
       }, at);
     });
+    /* the insert rises only AFTER the row finishes re-spacing — during
+     * the slide its rect would briefly swallow the moving SOBB label */
     tl.to(chipGs[INSERT_IDX], {
-      attr: { opacity: 1, transform: 'translate(0 0)' },
-      duration: 0.45, ease: 'power2.out'
-    }, at + 0.35);
-    tl.to(finalArrows, { attr: { opacity: 1 }, duration: 0.35 }, at + 0.55);
-    tlChip(tl, INSERT_IDX, 'active', at + 0.85);
+      attr: { opacity: 1 }, duration: 0.45, ease: 'power2.out'
+    }, at + 0.65);
+    tl.to(chipRects[INSERT_IDX], {
+      attr: { y: CHIP_Y }, duration: 0.45, ease: 'power2.out'
+    }, at + 0.65);
+    tl.to(chipTexts[INSERT_IDX], {
+      attr: { y: CHIP_Y + 22 }, duration: 0.45, ease: 'power2.out'
+    }, at + 0.65);
+    tl.to(finalArrows, { attr: { opacity: 1 }, duration: 0.35 }, at + 0.85);
+    tlChip(tl, INSERT_IDX, 'active', at + 1.15);
     tl.addLabel('s2', tl.duration());
 
     /* s3 — THE CONVERSION: one deliberate sweep — every parallelogram

@@ -73,8 +73,8 @@
   var CAPTIONS = [
     'Naively, a ray is traced by testing it against every triangle.',
     'Naively, a ray is traced by testing it against every triangle.',
-    'With BVH, a ray is traced by testing it against the boxes, starting at the root — a miss culls the whole subtree.',
-    'With BVH, a ray is traced by testing it against the boxes, starting at the root — a miss culls the whole subtree.',
+    'With BVH, the ray tests boxes from the root down — a miss culls the whole subtree.',
+    'With BVH, the ray tests boxes from the root down — a miss culls the whole subtree.',
     'If the hit node is a leaf, we test the triangles.',
     'If the hit node is a leaf, we test the triangles.',
   ];
@@ -224,7 +224,7 @@
       var b = D.aabb(t.pts);
       badgeEls.push(text('', {
         x: b.x + b.w / 2, y: b.y - 10, 'text-anchor': 'middle',
-        'font-size': 18, fill: BLUE, 'font-weight': 650, opacity: 0
+        'font-size': 22, fill: BLUE, 'font-weight': 650, opacity: 0
       }, svg));
     });
 
@@ -265,12 +265,12 @@
     }, svg);
     checkEl = text('✓', {
       x: HIT_MARK[0] + 20, y: HIT_MARK[1] - 8,
-      'font-size': 22, fill: RED, 'font-weight': 700, opacity: 0
+      'font-size': 27, fill: RED, 'font-weight': 700, opacity: 0
     }, svg);
 
     /* in-canvas test tally (top-right, content via timeline callbacks) */
     tallyEl = text('', {
-      x: 1090, y: 30, 'text-anchor': 'end', 'font-size': 21,
+      x: 1090, y: 30, 'text-anchor': 'end', 'font-size': 26,
       fill: INK, 'font-weight': 600, opacity: 0
     }, svg);
 
