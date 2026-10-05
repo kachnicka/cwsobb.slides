@@ -73,14 +73,15 @@
   var NODE_W = 56, NODE_H = 32;
   var LEVEL_LABELS = [
     { text: 'root', y: 86 },
-    { text: 'internal', y: 205 },  /* raised off the row: at 240 the 25px label runs under M0's widened box; at 205 it clears both the box and the R->M0 edge (edge x>=179 there) */
-    /* leaves: raised above the row center (394) — at 394 the label's
-       tail slides under leaf node A's box (A starts at x=52, the label
-       extends to ~x=74). At 364 the baseline sits at 369 and the label
-       clears both the box (top 378) and the M0->A edge further right.
-       Tree geometry is static across all fragment steps (only node
-       fill/edge stroke pulses), so this holds at every step. */
-    { text: 'leaves', y: 364 }
+    { text: 'internal', y: 205 },  /* 19px label (svg-side-label-sm): baseline 210, ends ~x=127 — clear of the R->M0 edge (x>=175 there) and every node box (top 224) */
+    /* leaves label raised to y=336 (baseline 341): the M0->A edge is
+       the binding constraint — across the label's y-span (320-347) the
+       edge sits at x>=98 while the 19px label ends ~x=91.4 (~6.6px
+       clearance at the worst corner); also clears the leaf boxes
+       (top 378). Tree geometry is static across all fragment steps
+       (only node fill/edge stroke pulses), so this holds at every
+       step. */
+    { text: 'leaves', y: 336 }
   ];
 
   var BOX_PAD = 12; // visual padding around each bound
@@ -237,7 +238,7 @@
     }, container);
 
     LEVEL_LABELS.forEach(function (l) {
-      var t = el('text', { 'class': 'svg-side-label', x: 18, y: l.y + 5 }, treeSvg);
+      var t = el('text', { 'class': 'svg-side-label-sm', x: 18, y: l.y + 5 }, treeSvg);
       t.textContent = l.text.toUpperCase();
     });
 

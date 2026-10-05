@@ -52,10 +52,10 @@
    * a pixel-continuous hand-off): first two done, quantization ACTIVE. */
   var SUB2 = '₂', SUB8 = '₈';
   var CHIP_TXT = ['AABB BVH' + SUB2, 'AABB BVH' + SUB8, 'quantization'];
-  var CHIP_W = [150, 150, 170];
-  var CHIP_H = 34, CHIP_Y = 24;
-  var CHIP_X = [304, 490, 676];
-  var CHIP_ARROW_X = [472, 658];
+  var CHIP_W = [168, 168, 190];
+  var CHIP_H = 44, CHIP_Y = 14;
+  var CHIP_X = [251, 465, 679];
+  var CHIP_ARROW_X = [442, 656];
   var CHIP_STATE = ['done', 'done', 'active']; // static per chip
   var CHIP_STYLE = {
     todo:   { fill: '#ffffff', stroke: EDGE, txt: FAINT },
@@ -161,7 +161,7 @@
   var svg;
   var chipRects = [], chipTexts = [];
   var wideRect, wideSlots = [], slotDots = [], slotGlyphs = [];
-  var miniCapEl, connLine, connHead, quantCapEl;
+  var miniCapEl, connLine, connHead;
   var parentRect, gridV = [], gridH = [];
   var anchorDot, anchorLbl, tickX = [], tickY = [];
   var tightRects = [], quantRects = [];
@@ -188,14 +188,14 @@
       }, svg));
       chipTexts.push(text(CHIP_TXT[i], {
         'class': 'chip-text',
-        x: CHIP_X[i] + CHIP_W[i] / 2, y: CHIP_Y + 22,
+        x: CHIP_X[i] + CHIP_W[i] / 2, y: CHIP_Y + 27,
         'text-anchor': 'middle', 'font-size': 25, fill: s.txt
       }, svg));
     }
     CHIP_ARROW_X.forEach(function (x) {
       text('→', {
         'class': 'chip-arrow',
-        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
+        x: x, y: CHIP_Y + 27, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
       }, svg);
     });
 
@@ -304,12 +304,6 @@
       }, svg));
     });
 
-    /* closer under the panel (s3) — terse, no numeric readouts */
-    quantCapEl = text('snapped outward — conservative by construction', {
-      x: P.x + P.w / 2, y: P.y + P.h + 34,
-      'text-anchor': 'middle', 'font-size': 25, fill: BLUE, opacity: 0
-    }, svg);
-
     /* s4: memory footprint comparison — two horizontal bars, lengths
      * exactly proportional to stored bytes. Full precision in quiet ink,
      * quantized in blue (the stored representation). Numbers de-emphasized:
@@ -395,8 +389,6 @@
       quantRects[i].setAttribute('width', ta.width);
       quantRects[i].setAttribute('height', ta.height);
     });
-    gsap.killTweensOf(quantCapEl);
-    quantCapEl.setAttribute('opacity', 0);
     [memTitle, memFullLabel, memFullVal, memQuantLabel, memQuantVal].forEach(function (t) {
       gsap.killTweensOf(t);
       t.setAttribute('opacity', 0);
@@ -452,7 +444,6 @@
     tl.to(tickX.concat(tickY), { attr: { opacity: 0.35 }, duration: 0.5 }, at);
     tl.to(tightRects, { attr: { opacity: 0.55 }, duration: 0.4 }, at);
     tl.to([wideRect, parentRect], { attr: { stroke: BLUE }, duration: 0.5 }, at + 0.25);
-    tl.to(quantCapEl, { attr: { opacity: 1 }, duration: 0.45 }, at + 0.45);
     tl.addLabel('s3', tl.duration());
 
     /* s4 — memory footprint: the full-precision bar grows first, then the

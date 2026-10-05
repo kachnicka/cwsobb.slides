@@ -233,7 +233,7 @@
 
   /* ==================== slide configs ==================== */
 
-  var CHIP_H = 34, CHIP_Y = 24;
+  var CHIP_H = 44, CHIP_Y = 14; // taller chips for the 25px labels; bottom stays y=58
   var CHIP_STYLE = {
     todo:   { fill: '#ffffff', stroke: EDGE, txt: FAINT },
     active: { fill: '#eaf2fd', stroke: BLUE, txt: INK },
@@ -246,9 +246,9 @@
     host: 'pipe-sobb2-canvas', caption: 'pipe-sobb2-caption',
     chips: {
       TXT: ['AABB BVH' + SUB2, 'fit k-DOP', 'SOBB BVH' + SUB2],
-      W: [150, 110, 150],
-      X: [319, 505, 651],
-      ARROW_X: [487, 633]
+      W: [168, 122, 168],
+      X: [285, 499, 667],
+      ARROW_X: [476, 644]
     },
     beats: ['build', 'hexbin', 'parbin'],
     captions: [
@@ -264,9 +264,9 @@
     chips: {
       /* this exact row is mirrored as aabbquant.js CHIP_* (hand-off) */
       TXT: ['AABB BVH' + SUB2, 'AABB BVH' + SUB8, 'quantization'],
-      W: [150, 150, 170],
-      X: [304, 490, 676],
-      ARROW_X: [472, 658]
+      W: [168, 168, 190],
+      X: [251, 465, 679],
+      ARROW_X: [442, 656]
     },
     beats: ['build', 'collapse', 'quantleadabb'],
     captions: [
@@ -304,9 +304,9 @@
     chips: {
       /* this exact row is mirrored as sharedbasis.js BASE_* (hand-off) */
       TXT: ['AABB BVH' + SUB2, 'AABB BVH' + SUB8, 'SOBB BVH' + SUB8, 'quantization'],
-      W: [150, 150, 160, 170],
-      X: [206, 392, 578, 774],
-      ARROW_X: [374, 560, 756]
+      W: [168, 168, 168, 190],
+      X: [144, 358, 572, 786],
+      ARROW_X: [335, 549, 763]
     },
     beats: ['build', 'collapse', 'parwide', 'quantlead'],
     captions: [
@@ -376,14 +376,14 @@
         }, svg));
         chipTexts.push(text(cfg.chips.TXT[i], {
           'class': 'chip-text',
-          x: cfg.chips.X[i] + cfg.chips.W[i] / 2, y: CHIP_Y + 22,
+          x: cfg.chips.X[i] + cfg.chips.W[i] / 2, y: CHIP_Y + 27,
           'text-anchor': 'middle', 'font-size': 25
         }, svg));
       }
       cfg.chips.ARROW_X.forEach(function (x) {
         text('→', {
           'class': 'chip-arrow',
-          x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
+          x: x, y: CHIP_Y + 27, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
         }, svg);
       });
 

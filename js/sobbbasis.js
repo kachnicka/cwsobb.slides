@@ -58,22 +58,22 @@
    * lean ~10°, odd slots ~70°, amplitudes ascending so the union fly-in
    * fattens on every arrival. Region boxed by FRAME. */
   var CHILDREN = [
-    { c: [190, 156], a: 42, b: 25.2, psi: 4,  th0: 3 },
-    { c: [345, 162], a: 44, b: 28.2, psi: 63, th0: 3 },
-    { c: [500, 152], a: 46, b: 27.6, psi: 17, th0: 3 },
-    { c: [655, 160], a: 48, b: 30.7, psi: 75, th0: 3 },
-    { c: [215, 322], a: 50, b: 30.0, psi: 7,  th0: 3 },
-    { c: [370, 328], a: 52, b: 33.3, psi: 66, th0: 3 },
-    { c: [525, 320], a: 54, b: 32.4, psi: 15, th0: 3 },
-    { c: [680, 326], a: 56, b: 35.8, psi: 78, th0: 3 }
+    { c: [190, 112], a: 42, b: 25.2, psi: 4,  th0: 3 },
+    { c: [345, 118], a: 44, b: 28.2, psi: 63, th0: 3 },
+    { c: [500, 108], a: 46, b: 27.6, psi: 17, th0: 3 },
+    { c: [655, 116], a: 48, b: 30.7, psi: 75, th0: 3 },
+    { c: [215, 278], a: 50, b: 30.0, psi: 7,  th0: 3 },
+    { c: [370, 284], a: 52, b: 33.3, psi: 66, th0: 3 },
+    { c: [525, 276], a: 54, b: 32.4, psi: 15, th0: 3 },
+    { c: [680, 282], a: 56, b: 35.8, psi: 78, th0: 3 }
   ];
-  var CENTROID = [435, 242];         // mean of the child centres
-  var FRAME = { x: 116, y: 76, w: 660, h: 336 };   // the node's extent
-  var WIDE = { x: 56, y: 442, w: 244, h: 56 };     // wide node strip
+  var CENTROID = [435, 198];         // mean of the child centres
+  var FRAME = { x: 116, y: 32, w: 660, h: 336 };   // the node's extent
+  var WIDE = { x: 56, y: 398, w: 244, h: 56 };     // wide node strip
   var SLOT_N = 8;
 
   /* right stage: the single proxy (union / avg) + its candidate fit */
-  var STAGE = [930, 300];
+  var STAGE = [930, 256];
 
   /* deck-wide shared frame (identical numbers to widenode/sharedbasis/
    * kdopfan: normals n1=100° teal pair, n2=160° amber pair) */
@@ -502,20 +502,20 @@
 
     /* ---- badges / dots / closer cue (all hidden at base) ---- */
     sumBadge = text('Σ sum', {
-      x: 446, y: 402, 'text-anchor': 'middle', 'font-size': 27,
+      x: 446, y: 358, 'text-anchor': 'middle', 'font-size': 27,
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
     stageBadge = text('∪ union', {
-      x: STAGE[0], y: 144, 'text-anchor': 'middle', 'font-size': 27,
+      x: STAGE[0], y: 100, 'text-anchor': 'middle', 'font-size': 27,
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
     closerCue = text('one stored frame', {
-      x: 446, y: 100, 'text-anchor': 'middle', 'font-size': 26,
+      x: 446, y: 56, 'text-anchor': 'middle', 'font-size': 26,
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
-    var r1 = dotRow(SUM_CANDS.length, 446, 434, svg);
+    var r1 = dotRow(SUM_CANDS.length, 446, 390, svg);
     sumDotG = r1.g; sumDots = r1.dots;
-    var r2 = dotRow(UNION_CANDS.length, STAGE[0], 172, svg);
+    var r2 = dotRow(UNION_CANDS.length, STAGE[0], 128, svg);
     stageDotG = r2.g; stageDots = r2.dots;
 
     /* ---- three-way summary chips (s3 on) ---- */

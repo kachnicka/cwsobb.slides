@@ -82,10 +82,15 @@
   var NODE_W = 56, NODE_H = 32;
   var LEVEL_LABELS = [
     { text: 'root', y: 86 },
-    { text: 'internal', y: 205 },  /* raised off the row: at 240 the 25px label runs under M0's widened box; at 205 it clears both the box and the R->M0 edge (edge x>=179 there) */
-    /* leaves row label raised to 364: clears leaf A's box and the M0->A
-       edge (same argument as the refit slide; tree geometry is static). */
-    { text: 'leaves', y: 364 }
+    { text: 'internal', y: 205 },  /* 19px label (svg-side-label-sm): at
+        baseline 210 it ends ~x=127, clear of the R->M0 edge, the node
+        boxes (top 224) and the k-DOP overlays (top 215) */
+    /* leaves label raised to y=336 (baseline 341): clears the M0->A edge
+        (x>=98 across the label span 320-347, label ends ~x=91.4 — ~6.6px
+        worst-corner clearance), the leaf node boxes (top 378) and the
+        k-DOP ping frames (top 372) — same argument as the refit slide;
+        tree geometry is static. */
+    { text: 'leaves', y: 336 }
   ];
 
   /* Per-node SOBB basis at rest: edge directions e1/e2 in degrees.
@@ -491,7 +496,7 @@
     }, container);
 
     LEVEL_LABELS.forEach(function (l) {
-      text(l.text.toUpperCase(), { 'class': 'svg-side-label', x: 18, y: l.y + 5 }, treeSvg);
+      text(l.text.toUpperCase(), { 'class': 'svg-side-label-sm', x: 18, y: l.y + 5 }, treeSvg);
     });
 
     Object.keys(CHILDREN).forEach(function (parent) {

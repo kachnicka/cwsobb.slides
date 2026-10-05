@@ -52,10 +52,10 @@
    * "shared basis" sits in the inserted slot, "quantization" last. */
   var SUB2 = '₂', SUB8 = '₈';
   var CHIP_TXT = ['AABB BVH' + SUB2, 'AABB BVH' + SUB8, 'SOBB BVH' + SUB8, 'shared basis', 'quantization'];
-  var CHIP_W = [150, 150, 160, 170, 170];
-  var CHIP_H = 34, CHIP_Y = 24;
-  var CHIP_X = [88, 274, 460, 656, 862];
-  var CHIP_ARROW_X = [256, 442, 638, 844];
+  var CHIP_W = [168, 168, 168, 182, 190];
+  var CHIP_H = 44, CHIP_Y = 14;
+  var CHIP_X = [42, 250, 458, 666, 888];
+  var CHIP_ARROW_X = [230, 438, 646, 868];
   var CHIP_STATE = ['done', 'done', 'done', 'done', 'active']; // static per chip
   var CHIP_STYLE = {
     todo:   { fill: '#ffffff', stroke: EDGE, txt: FAINT },
@@ -247,7 +247,7 @@
   var svg;
   var chipRects = [], chipTexts = [];
   var wideRect, wideSlots = [], slotDots = [], slotGlyphs = [];
-  var miniCapEl, connLine, connHead, quantCapEl;
+  var miniCapEl, connLine, connHead;
   var parentRect, skewLines1 = [], skewLines2 = [];  var ghostParas = [], quantParas = [];
   var anchorDot, anchorLbl, tick1 = [], tick2 = [];
   var CHILD = null;
@@ -277,14 +277,14 @@
       }, svg));
       chipTexts.push(text(CHIP_TXT[i], {
         'class': 'chip-text',
-        x: CHIP_X[i] + CHIP_W[i] / 2, y: CHIP_Y + 22,
+        x: CHIP_X[i] + CHIP_W[i] / 2, y: CHIP_Y + 27,
         'text-anchor': 'middle', 'font-size': 25, fill: s.txt
       }, svg));
     }
     CHIP_ARROW_X.forEach(function (x) {
       text('→', {
         'class': 'chip-arrow',
-        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
+        x: x, y: CHIP_Y + 27, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
       }, svg);
     });
 
@@ -319,13 +319,16 @@
 
     /* connector: wide node → its bounds frame. Aims at the frame's
      * settled (morphed) left edge: the n2=g2hi slab line crosses the
-     * connector height (cy=162) at x≈500.5 — tip sits just short of it. */
+     * connector height (y=156) at x≈498.3 — tip sits just short of it.
+     * Raised 6px above the node centerline so the dashed line clears
+     * the '7' tick label (top y≈163.4) instead of grazing it. */
+    var connY = WIDE.y + WIDE.h / 2 - 6;
     connLine = el('line', {
-      x1: WIDE.x + WIDE.w + 14, y1: cy, x2: 492, y2: cy,
+      x1: WIDE.x + WIDE.w + 14, y1: connY, x2: 488, y2: connY,
       stroke: EDGE, 'stroke-width': 1.4, 'stroke-dasharray': '4 4'
     }, svg);
     connHead = el('polygon', {
-      points: '490,' + (cy - 5) + ' 490,' + (cy + 5) + ' 500,' + cy,
+      points: '486,' + (connY - 5) + ' 486,' + (connY + 5) + ' 496,' + connY,
       fill: EDGE
     }, svg);
 
@@ -413,13 +416,6 @@
       }, stageG));
     });
 
-    /* closer read-out under the morphed frame (its lowest corner sits
-     * at y≈490, x≈1078 — caption centered under the frame's mid-x) */
-    quantCapEl = text('8 bounds · one shared frame · snapped outward', {
-      x: 772, y: 524,
-      'text-anchor': 'middle', 'font-size': 25, fill: BLUE, opacity: 0
-    }, svg);
-
     captionEl = document.getElementById('wide-caption');
     built = true;
   }
@@ -468,8 +464,6 @@
       quantParas[i].setAttribute('opacity', 0);
       quantParas[i].setAttribute('points', pts2str(c.tight));
     });
-    gsap.killTweensOf(quantCapEl);
-    quantCapEl.setAttribute('opacity', 0);
   }
 
   /* ==================== timeline ==================== */
@@ -523,7 +517,6 @@
     tl.to(tick1.concat(tick2), { attr: { opacity: 0.35 }, duration: 0.5 }, at);
     tl.to(ghostParas, { attr: { opacity: 0.55 }, duration: 0.4 }, at);
     tl.to([wideRect, parentRect], { attr: { stroke: BLUE }, duration: 0.5 }, at + 0.25);
-    tl.to(quantCapEl, { attr: { opacity: 1 }, duration: 0.45 }, at + 0.45);
     tl.addLabel('s3', tl.duration());
   }
 

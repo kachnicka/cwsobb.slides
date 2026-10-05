@@ -40,18 +40,18 @@
   var CHIP_TXT = ['AABB BVH₂', 'AABB BVH₈', 'SOBB BVH₈', 'quantization', 'shared basis'];
   /* base row = pipesobb8's exact chip geometry (js/pipeline.js CFG_SOBB8
    * chips, mirrored for a pixel-continuous hand-off) */
-  var CHIP_W = [150, 150, 160, 170, 170];
-  var CHIP_H = 34, CHIP_Y = 24;
-  var BASE_X = [206, 392, 578, 774];
-  /* final row: 5 chips, 36px gaps, centered (sum 944, margins 88).
+  var CHIP_W = [168, 168, 168, 190, 182];
+  var CHIP_H = 44, CHIP_Y = 14;
+  var BASE_X = [144, 358, 572, 786];
+  /* final row: 5 chips, 40px gaps, centered (sum 1036, margins 42).
    * "shared basis" (idx 4) sits between "SOBB BVH₈" (idx 2) and
    * "quantization" (idx 3). */
-  var FINAL_X = [88, 274, 460, 656, 862];
+  var FINAL_X = [42, 250, 458, 666, 888];
   var INSERT_IDX = 4;                 // DOM index of the "shared basis" chip
   var INSERT_AT = 3;                  // row position it occupies in FINAL_X
   var QUANT_IDX = 3;                  // "quantization" chip
-  var BASE_ARROW_X = [374, 560, 756];
-  var FINAL_ARROW_X = [256, 442, 638, 844];
+  var BASE_ARROW_X = [335, 549, 763];
+  var FINAL_ARROW_X = [230, 438, 646, 868];
 
   var CHIP_STYLE = {
     todo:   { fill: '#ffffff', stroke: EDGE, txt: FAINT },
@@ -225,7 +225,7 @@
       }, g);
       var t = text(CHIP_TXT[i], {
         'class': 'chip-text',
-        x: x + CHIP_W[i] / 2, y: CHIP_Y + 22 + yOff,
+        x: x + CHIP_W[i] / 2, y: CHIP_Y + 27 + yOff,
         'text-anchor': 'middle', 'font-size': 25
       }, g);
       chipGs.push(g); chipRects.push(r); chipTexts.push(t);
@@ -233,13 +233,13 @@
     BASE_ARROW_X.forEach(function (x) {
       baseArrows.push(text('→', {
         'class': 'chip-arrow',
-        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
+        x: x, y: CHIP_Y + 27, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
       }, svg));
     });
     FINAL_ARROW_X.forEach(function (x) {
       finalArrows.push(text('→', {
         'class': 'chip-arrow',
-        x: x, y: CHIP_Y + 22, 'text-anchor': 'middle', 'font-size': 26,
+        x: x, y: CHIP_Y + 27, 'text-anchor': 'middle', 'font-size': 26,
         fill: FAINT, opacity: 0
       }, svg));
     });
@@ -323,7 +323,7 @@
       chipRects[i].setAttribute('x', bx);
       chipRects[i].setAttribute('y', CHIP_Y + yOff);
       chipTexts[i].setAttribute('x', bx + CHIP_W[i] / 2);
-      chipTexts[i].setAttribute('y', CHIP_Y + 22 + yOff);
+      chipTexts[i].setAttribute('y', CHIP_Y + 27 + yOff);
     });
     for (var i = 0; i < 3; i++) setChip(i, 'done');
     setChip(QUANT_IDX, 'active');
@@ -402,7 +402,7 @@
       attr: { y: CHIP_Y }, duration: 0.45, ease: 'power2.out'
     }, at + 0.65);
     tl.to(chipTexts[INSERT_IDX], {
-      attr: { y: CHIP_Y + 22 }, duration: 0.45, ease: 'power2.out'
+      attr: { y: CHIP_Y + 27 }, duration: 0.45, ease: 'power2.out'
     }, at + 0.65);
     tl.to(finalArrows, { attr: { opacity: 1 }, duration: 0.35 }, at + 0.85);
     tlChip(tl, INSERT_IDX, 'active', at + 1.15);

@@ -141,14 +141,14 @@
   min-width: 0;
 }
 
+/* Legend-only row: sits tight under the visualization (the user asked
+   for it adjacent to the drawing), left-aligned in the shared gutter. */
 .refit-status {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: baseline;
-  /* symmetric 95px gutter = the shared content column; the right edge
-     (~1185) also stays clear of the bottom-right slide number */
-  margin: 8px 95px 0;
-  min-height: 30px;
+  margin: 4px 95px 0;
+  min-height: 32px;
   font-size: 26px;
   flex: none;
 }
@@ -166,11 +166,23 @@
 
 .sw-stale { border-top: 2px dashed var(--red); }
 
-.refit-caption {
-  color: var(--ink);
-  font-weight: 550;
-  text-align: right;
-  min-height: 28px;
+/* Full-width centered caption below the legend, with a stable two-line
+   reserve so 1-line and 2-line captions never shift the visualization.
+   Deliberately NOT a .status-row: the verify harness anchors on
+   .status-row rows and requires each to stay single-line; this row is
+   allowed to wrap. */
+.refit-caption-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin: 4px 95px 0;
+  min-height: 62px; /* two 26px/1.15 caption lines */
+  flex: none;
+}
+
+.refit-caption-row .cap {
+  text-align: center;
+  max-width: 100%;
 }
 
 /* Outline slide */
@@ -357,6 +369,10 @@
 .svg-node      { fill: #ffffff; stroke: var(--ink); stroke-width: 1.6; }
 .svg-node-text { fill: var(--ink); font-size: 25px; }
 .svg-side-label{ fill: var(--ink-faint); font-size: 25px; letter-spacing: 0.08em; }
+/* Smaller variant for cramped side gutters (refit tree level descriptors):
+   the 25px version runs under the tree edges/overlays after the deck-wide
+   font bump. */
+.svg-side-label-sm { fill: var(--ink-faint); font-size: 19px; letter-spacing: 0.08em; }
 .svg-dot       { fill: var(--ink); }
 .svg-cloud-box { fill: none; stroke-width: 1.6; }
 

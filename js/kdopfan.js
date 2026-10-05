@@ -492,17 +492,17 @@
     // permanent label, stacked in four short lines so it stays inside
     // the right margin (~220px max from x=748 at the 25px side-label size)
     labelNewG = D.el('g', { opacity: 0 }, svg);
-    D.text('2D SOBB', {
+    D.text('2D SOBB:', {
       'class': 'svg-side-label', x: 748, y: 64
     }, labelNewG);
-    D.text('SLAB PAIRS', {
-      'class': 'svg-side-label', x: 748, y: 94
+    D.text(' SLAB PAIRS', {
+      'class': 'svg-side-label', x: 758, y: 94
     }, labelNewG);
-    D.text('3D SOBB', {
+    D.text('3D SOBB:', {
       'class': 'svg-side-label', x: 748, y: 138
     }, labelNewG);
     D.text('SLAB TRIPLETS', {
-      'class': 'svg-side-label', x: 748, y: 168
+      'class': 'svg-side-label', x: 758, y: 168
     }, labelNewG);
 
     // candidate tags: ONLY the two named beats carry text — the axis
