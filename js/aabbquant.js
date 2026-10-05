@@ -21,7 +21,9 @@
  *
  * s0: hand-off — one wide node · eight tight axis-aligned child bounds
  * s1: the orthogonal slab grid appears — one wire family per axis
- *     (black, slightly transparent), tiling the node bounds
+ *     (black, slightly transparent), tiling the node bounds; the grid's
+ *     bottom-left corner is dotted as the ANCHOR and every wire picks
+ *     up its integer coordinate (0 at the anchor, increasing outward)
  * s2: quantization — every bound snaps OUTWARD onto the grid cells,
  *     conservative by construction (axis-space floor/ceil)
  * s3: closer — the grid falls quiet; eight crisp quantized AABBs remain;
@@ -161,6 +163,7 @@
   var wideRect, wideSlots = [], slotDots = [], slotGlyphs = [];
   var miniCapEl, connLine, connHead, quantCapEl;
   var parentRect, gridV = [], gridH = [];
+  var anchorDot, anchorLbl, tickX = [], tickY = [];
   var tightRects = [], quantRects = [];
   var memTitle, memFullLabel, memFullBar, memFullVal,
       memQuantLabel, memQuantBar, memQuantVal;
@@ -226,11 +229,11 @@
 
     /* connector: wide node → its bounds box */
     connLine = el('line', {
-      x1: WIDE.x + WIDE.w + 14, y1: cy, x2: P.x - 22, y2: cy,
+      x1: WIDE.x + WIDE.w + 14, y1: cy, x2: P.x - 28, y2: cy,
       stroke: EDGE, 'stroke-width': 1.4, 'stroke-dasharray': '4 4'
     }, svg);
     connHead = el('polygon', {
-      points: (P.x - 24) + ',' + (cy - 5) + ' ' + (P.x - 24) + ',' + (cy + 5) + ' ' + (P.x - 14) + ',' + cy,
+      points: (P.x - 30) + ',' + (cy - 5) + ' ' + (P.x - 30) + ',' + (cy + 5) + ' ' + (P.x - 20) + ',' + cy,
       fill: EDGE
     }, svg);
 
@@ -256,6 +259,31 @@
         x1: P.x, y1: P.y + P.h * i / CELLS,
         x2: P.x + P.w, y2: P.y + P.h * i / CELLS,
         stroke: INK, 'stroke-width': 1.3, opacity: 0
+      }, svg));
+    }
+
+    /* anchor + integer coordinates (s1): the grid's bottom-left corner
+     * is the local origin — a dotted anchor, and every wire labeled with
+     * its integer coordinate: 0 at the anchor, increasing monotonically
+     * away from it (x left→right, y bottom→top). Ticks sit just outside
+     * the panel: x row under the bottom edge, y column left of the left
+     * edge (sized to clear the connector arrowhead at y≈162). */
+    anchorDot = el('circle', {
+      cx: P.x, cy: P.y + P.h, r: 4.5,
+      fill: BLUE, stroke: '#ffffff', 'stroke-width': 2, opacity: 0
+    }, svg);
+    anchorLbl = text('anchor', {
+      x: P.x - 16, y: P.y + P.h - 8,
+      'text-anchor': 'end', 'font-size': 14, fill: BLUE, opacity: 0
+    }, svg);
+    for (i = 0; i <= CELLS; i++) {
+      tickX.push(text(String(i), {
+        x: P.x + P.w * i / CELLS, y: P.y + P.h + 16,
+        'text-anchor': 'middle', 'font-size': 13, fill: INK, opacity: 0
+      }, svg));
+      tickY.push(text(String(CELLS - i), {
+        x: P.x - 6, y: P.y + P.h * i / CELLS + 4.5,
+        'text-anchor': 'end', 'font-size': 13, fill: INK, opacity: 0
       }, svg));
     }
 
@@ -343,6 +371,14 @@
       gsap.killTweensOf(l);
       l.setAttribute('opacity', 0);
     });
+    [anchorDot, anchorLbl].forEach(function (e) {
+      gsap.killTweensOf(e);
+      e.setAttribute('opacity', 0);
+    });
+    tickX.concat(tickY).forEach(function (t) {
+      gsap.killTweensOf(t);
+      t.setAttribute('opacity', 0);
+    });
     CHILD.forEach(function (c, i) {
       var ta = rectAttrs(c.exact);
       gsap.killTweensOf(tightRects[i]);
@@ -385,6 +421,11 @@
     at = tl.duration();
     tl.to(gridV, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at);
     tl.to(gridH, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at + 0.25);
+    /* anchor + integer coordinates ride in behind the grid: the corner
+     * dot first, then the tick numbers */
+    tl.to([anchorDot, anchorLbl], { attr: { opacity: 1 }, duration: 0.3 }, at + 0.5);
+    tl.to(tickX, { attr: { opacity: 0.85 }, duration: 0.35, stagger: 0.02 }, at + 0.6);
+    tl.to(tickY, { attr: { opacity: 0.85 }, duration: 0.35, stagger: 0.02 }, at + 0.65);
     tl.addLabel('s1', tl.duration());
 
     /* s2 — quantization: bounds snap OUTWARD onto the grid cells */
@@ -408,6 +449,7 @@
     tl.to({}, { duration: 0.2 }, '>');
     at = tl.duration();
     tl.to(gridV.concat(gridH), { attr: { opacity: 0.18 }, duration: 0.5 }, at);
+    tl.to(tickX.concat(tickY), { attr: { opacity: 0.35 }, duration: 0.5 }, at);
     tl.to(tightRects, { attr: { opacity: 0.55 }, duration: 0.4 }, at);
     tl.to([wideRect, parentRect], { attr: { stroke: BLUE }, duration: 0.5 }, at + 0.25);
     tl.to(quantCapEl, { attr: { opacity: 1 }, duration: 0.45 }, at + 0.45);

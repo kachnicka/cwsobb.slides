@@ -496,12 +496,12 @@
         }, svg);
         handConn = el('line', {
           'class': 'hand-conn',
-          x1: HS.x + HS.w + 14, y1: hcy, x2: HP.x - 22, y2: hcy,
+          x1: HS.x + HS.w + 14, y1: hcy, x2: HP.x - 28, y2: hcy,
           stroke: EDGE, 'stroke-width': 1.4, 'stroke-dasharray': '4 4', opacity: 0
         }, svg);
         handHead = el('polygon', {
           'class': 'hand-head',
-          points: (HP.x - 24) + ',' + (hcy - 5) + ' ' + (HP.x - 24) + ',' + (hcy + 5) + ' ' + (HP.x - 14) + ',' + hcy,
+          points: (HP.x - 30) + ',' + (hcy - 5) + ' ' + (HP.x - 30) + ',' + (hcy + 5) + ' ' + (HP.x - 20) + ',' + hcy,
           fill: EDGE, opacity: 0
         }, svg);
         handPanel = el('rect', {

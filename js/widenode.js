@@ -13,7 +13,10 @@
  *     parallelogram on the shared basis, and the skewed slab grid
  *     appears inside it — two wire families whose lines ARE the frame's
  *     grid lines, edge to edge, no clipping (the shared basis makes ONE
- *     grid serve the whole node; the frame is just a grid cell span)
+ *     grid serve the whole node; the frame is just a grid cell span);
+ *     the frame's bottom-left corner is dotted as the ANCHOR and every
+ *     wire picks up its integer coordinate (0 at the anchor,
+ *     increasing outward)
  * s2: quantization — every bound snaps OUTWARD onto the skewed cells,
  *     conservative by construction (slab-space floor/ceil)
  * s3: closer — the grid falls quiet; 8 tight quantized shared-basis
@@ -246,6 +249,7 @@
   var wideRect, wideSlots = [], slotDots = [], slotGlyphs = [];
   var miniCapEl, connLine, connHead, quantCapEl;
   var parentRect, skewLines1 = [], skewLines2 = [];  var ghostParas = [], quantParas = [];
+  var anchorDot, anchorLbl, tick1 = [], tick2 = [];
   var CHILD = null;
   var captionEl;
   var tl = null;
@@ -361,6 +365,38 @@
       }, stageG));
     }
 
+    /* anchor + integer coordinates (s1): the frame's bottom-left corner
+     * is the local origin — a dotted anchor, and every wire labeled
+     * with its integer coordinate: 0 at the anchor, increasing
+     * monotonically away from it along each family (both anchor wires
+     * are index CELLS, so a wire's value is CELLS-k). Ticks sit just
+     * OUTSIDE the frame in its settled pose: family-1 wires (10°)
+     * labeled along the left edge, offset along +N2; family-2 wires
+     * (70°) along the bottom edge, offset along +N1. */
+    var ANCHOR = solveCorner(N1, N2, FRAME_EXT[0][1], FRAME_EXT[1][1]);
+    anchorDot = el('circle', {
+      cx: ANCHOR[0], cy: ANCHOR[1], r: 4.5,
+      fill: BLUE, stroke: '#ffffff', 'stroke-width': 2, opacity: 0
+    }, svg);
+    anchorLbl = text('anchor', {
+      x: ANCHOR[0] - 40, y: ANCHOR[1] + 55,
+      'text-anchor': 'end', 'font-size': 14, fill: BLUE, opacity: 0
+    }, svg);
+    for (var a1 = 0; a1 <= CELLS; a1++) {
+      var q1 = solveCorner(N1, N2, GRIDSPEC.o1 + GRIDSPEC.s1 * a1, FRAME_EXT[1][1]);
+      tick1.push(text(String(CELLS - a1), {
+        x: q1[0] + N2[0] * 22, y: q1[1] + N2[1] * 22 + 4.5,
+        'text-anchor': 'middle', 'font-size': 13, fill: INK, opacity: 0
+      }, svg));
+    }
+    for (var a2 = 0; a2 <= CELLS; a2++) {
+      var q2 = solveCorner(N1, N2, FRAME_EXT[0][1], GRIDSPEC.o2 + GRIDSPEC.s2 * a2);
+      tick2.push(text(String(CELLS - a2), {
+        x: q2[0] + N1[0] * 20, y: q2[1] + N1[1] * 20 + 4.5,
+        'text-anchor': 'middle', 'font-size': 13, fill: INK, opacity: 0
+      }, svg));
+    }
+
     /* children: tight shared-basis parallelograms + blue quantized
      * parallelograms (start superimposed on tight, snap out). Source
      * triangles are not drawn — the bounds alone carry the concept. */
@@ -415,6 +451,14 @@
       gsap.killTweensOf(l);
       l.setAttribute('opacity', 0);
     });
+    [anchorDot, anchorLbl].forEach(function (e) {
+      gsap.killTweensOf(e);
+      e.setAttribute('opacity', 0);
+    });
+    tick1.concat(tick2).forEach(function (t) {
+      gsap.killTweensOf(t);
+      t.setAttribute('opacity', 0);
+    });
     CHILD.forEach(function (c, i) {
       gsap.killTweensOf(ghostParas[i]);
       ghostParas[i].setAttribute('opacity', 1);
@@ -448,6 +492,12 @@
     }, at);
     tl.to(skewLines1, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at + 0.35);
     tl.to(skewLines2, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at + 0.6);
+    /* anchor + integer coordinates ride in once the morph has settled
+     * (their positions are in the frame's final pose): the corner dot
+     * first, then the tick numbers */
+    tl.to([anchorDot, anchorLbl], { attr: { opacity: 1 }, duration: 0.3 }, at + 0.75);
+    tl.to(tick1, { attr: { opacity: 0.85 }, duration: 0.35, stagger: 0.02 }, at + 0.9);
+    tl.to(tick2, { attr: { opacity: 0.85 }, duration: 0.35, stagger: 0.02 }, at + 0.95);
     tl.addLabel('s1', tl.duration());
 
     /* s2 — quantization: bounds snap OUTWARD onto the skewed cells */
@@ -470,6 +520,7 @@
     tl.to({}, { duration: 0.2 }, '>');
     at = tl.duration();
     tl.to(skewLines1.concat(skewLines2), { attr: { opacity: 0.18 }, duration: 0.5 }, at);
+    tl.to(tick1.concat(tick2), { attr: { opacity: 0.35 }, duration: 0.5 }, at);
     tl.to(ghostParas, { attr: { opacity: 0.55 }, duration: 0.4 }, at);
     tl.to([wideRect, parentRect], { attr: { stroke: BLUE }, duration: 0.5 }, at + 0.25);
     tl.to(quantCapEl, { attr: { opacity: 1 }, duration: 0.45 }, at + 0.45);
