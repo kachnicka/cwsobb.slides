@@ -96,23 +96,23 @@
                Sabino stacked quieter just below it (same year, same lane;
                no link drawn, the shared cell is the relation) -->
           <g class="fragment">
-            <rect x="105" y="100" width="190" height="40" rx="20" class="svg-rw-node"/>
-            <text x="200" y="125" text-anchor="middle" class="svg-rw-title">Vitsas et al. ’23</text>
-            <rect x="105" y="152" width="190" height="40" rx="20" class="svg-rw-node svg-rw-node-soft"/>
-            <text x="200" y="177" text-anchor="middle" class="svg-rw-title svg-rw-title-soft">Sabino et al. ’23</text>
+            <rect x="85" y="100" width="230" height="40" rx="20" class="svg-rw-node"/>
+            <text x="200" y="125" text-anchor="middle" class="svg-rw-title">Vitsas et al. ’23 OBB</text>
+            <rect x="80" y="152" width="240" height="40" rx="20" class="svg-rw-node svg-rw-node-soft"/>
+            <text x="200" y="177" text-anchor="middle" class="svg-rw-title svg-rw-title-soft">Sabino et al. ’23 oDOP</text>
           </g>
 
           <!-- frag 2: K&amp;B '24, k-DOP lane -->
           <g class="fragment">
-            <rect x="350" y="225" width="130" height="40" rx="20" class="svg-rw-node"/>
-            <text x="415" y="250" text-anchor="middle" class="svg-rw-title">K&amp;B ’24</text>
+            <rect x="330" y="225" width="170" height="40" rx="20" class="svg-rw-node"/>
+            <text x="415" y="250" text-anchor="middle" class="svg-rw-title">K&amp;B ’24 k-DOP</text>
           </g>
 
           <!-- frag 3: Kern '25, OBB lane — conversion line continues -->
           <g class="fragment">
-            <line x1="300" y1="120" x2="557" y2="120" class="svg-rw-link" marker-end="url(#rw-head)"/>
-            <rect x="560" y="100" width="170" height="40" rx="20" class="svg-rw-node"/>
-            <text x="645" y="125" text-anchor="middle" class="svg-rw-title">Kern et al. ’25</text>
+            <line x1="318" y1="120" x2="530" y2="120" class="svg-rw-link" marker-end="url(#rw-head)"/>
+            <rect x="535" y="100" width="220" height="40" rx="20" class="svg-rw-node"/>
+            <text x="645" y="125" text-anchor="middle" class="svg-rw-title">Kern et al. ’25 DOBB</text>
           </g>
 
           <!-- frag 4: K&amp;B '25, SOBB lane — k-DOP machinery drops down a lane;
@@ -123,14 +123,14 @@
             <path d="M 455,268 L 563,346" class="svg-rw-link" marker-end="url(#rw-head)"/>
             <text x="565" y="330" class="svg-rw-rellbl">k-DOP fit</text>
             <rect x="570" y="350" width="150" height="40" rx="20" class="svg-rw-node"/>
-            <text x="645" y="375" text-anchor="middle" class="svg-rw-title">K&amp;B ’25</text>
+            <text x="645" y="375" text-anchor="middle" class="svg-rw-title">K&amp;B ’25 SOBB</text>
             <rect x="570" y="402" width="150" height="40" rx="20" class="svg-rw-node svg-rw-node-soft"/>
             <text x="645" y="427" text-anchor="middle" class="svg-rw-title svg-rw-title-soft">K&amp;B ’25 uBVH</text>
           </g>
 
           <!-- frag 5: this work — three accent relations converge -->
           <g class="fragment">
-            <path d="M 170,97 C 280,14 940,10 995,346" class="svg-rw-link-hl" marker-end="url(#rw-head-blue)"/>
+            <path d="M 170,97 C 280,14 940,2 995,346" class="svg-rw-link-hl" marker-end="url(#rw-head-blue)"/>
             <text x="300" y="30" class="svg-rw-rellbl-hl">refit</text>
             <path d="M 700,143 L 880,346" class="svg-rw-link-hl" marker-end="url(#rw-head-blue)"/>
             <text x="796" y="240" class="svg-rw-rellbl-hl">shared basis</text>
@@ -299,175 +299,222 @@
     </section>
 
     <!-- L7. Static scenes results (static Pareto scatter), 38-DOP.
-         Both axes in time units, lower-left = better.
-         X: relative build time vs AABB8 (linear 1.00–1.25):
-         X = 90 + (v-1)*3880. Y: relative traversal time per 10⁹ rays
-         (= 1/speedup, AABB8 = 1.0 at the top, 0.0 at the bottom):
-         Y = 472 - v*387. Data (paper NEW_RESULTS, tab:sobb_static):
-         San Miguel 1.180/0.916, Mammoth 1.177/0.869, Crown 1.157/0.713,
-         Bistro ext. 1.115/0.656, Powerplant 1.148/0.581,
-         Hairball 1.136/0.570, Bistro int. 1.098/0.541, Sheep 1.139/0.136.
-         Dots are plain markers; annotation lives in a thumbnail strip
-         below the plot (48×48 chips, name + tris + time multiplier),
-         ordered by dot X so the faint leader lines don't cross.
-         Pareto frontier: Bistro int. → Sheep.
-         3 fragment steps: 0 = axes + AABB8 reference, 1 = the 7
-         in-range dots + their strip entries (staggered via CSS
-         delays), 2 = Sheep dot + strip entry + frontier + summary
-         strip (sheep group and strip share data-fragment-index 2).
-         viewBox extended to 1100×656 to host the strip below the
-         x-axis label. -->
-    <section id="slide-results">
-      <h2 class="slide-head">Static scenes — build cost vs traversal time (38-DOP)</h2>
+         X: secondary-ray speed vs AABB8 (linear 1.0–2.0, then an axis break
+         and a compressed extension to 10× for Sheep). Y: build cost vs AABB8
+         (linear 1.00–1.20). Mapping: mainX = 182 + (v-1)*680 (X=1 guide at
+         182, 2× boundary at 862, main axis to 868); extX = 897 + (v-2)*15.625
+         (tinted extension rect x=872 w=150, break at ~870, 10× tick at 1022);
+         Y = 440 - (v-1)*1450 (gridlines at
+         1.00/1.05/1.10/1.15/1.20 → y 440/367.5/295/222.5/150; plot axis
+         x=162, y-axis 150–452).
+         Data (paper NEW_RESULTS, tab:sobb_static), speed/build/tris:
+         San Miguel 1.09/1.180/10.0M, Mammoth 1.15/1.177/8.8M,
+         Crown 1.40/1.157/3.5M, Bistro ext. 1.52/1.115/2.8M,
+         Powerplant 1.72/1.148/12.8M, Hairball 1.76/1.136/2.9M,
+         Bistro int. 1.85/1.098/1.0M, Sheep 7.4/1.139/10.7M.
+         Left margin, left-to-right: red "worse" arrow (x=16, caption x=28
+         above the arrow tip) → rotated
+         "relative build time" label (x=52) → Y tick values (end x=152)
+         → axis (x=162). Top strip: two-line label (scene name / tris)
+         ABOVE each 72px thumbnail chip, centered on the chip; strip
+         ordered by dot X so the dashed leader lines don't cross. The
+         ×-speed value is an in-place blue label next to each dot, not
+         in the strip.
+         4 fragment steps: 0 = axes + AABB8 reference (main axes end at
+         2.0), 1 = direction arrows OUTSIDE the plot (green = faster/
+         better below the X-axis label, red = costlier/worse in the
+         left margin), 2 = the 7 in-range dots + top-strip chips
+         (staggered via CSS delays), 3 = the whole compressed extension
+         (tint, break marker, extension axis, 10× tick) + Sheep (chip +
+         leader + dot + speed label) + summary strip (sheep group and
+         cost strip share data-fragment-index 3). -->
+    <section id="slide-results-speed">
+      <h2 class="slide-head">Static scenes — speed vs build cost (38-DOP)</h2>
       <div class="results-col">
         <div class="pareto-fig">
-          <svg viewBox="0 0 1100 656" width="100%" height="100%" role="img" aria-label="Pareto scatter of SOBB8 38-DOP vs AABB8: build time against traversal time per billion rays, eight scenes, lower-left is better">
-            <title>SOBB8 (38-DOP) vs AABB BVH8 — build time vs traversal time per 10⁹ rays</title>
+          <svg viewBox="0 0 1100 560" width="100%" height="100%" role="img" aria-label="Pareto scatter of SOBB8 38-DOP vs AABB8: secondary-ray speed against build time, eight scenes plus Sheep outlier">
+            <title>SOBB8 (38-DOP) vs AABB BVH8 — secondary speed vs build time</title>
 
             <defs>
-              <clipPath id="tn38-bint"><rect x="108" y="556" width="48" height="48" rx="8"/></clipPath>
-              <clipPath id="tn38-bext"><rect x="232" y="556" width="48" height="48" rx="8"/></clipPath>
-              <clipPath id="tn38-hb"><rect x="355" y="556" width="48" height="48" rx="8"/></clipPath>
-              <clipPath id="tn38-sheep"><rect x="479" y="556" width="48" height="48" rx="8"/></clipPath>
-              <clipPath id="tn38-pp"><rect x="603" y="556" width="48" height="48" rx="8"/></clipPath>
-              <clipPath id="tn38-crown"><rect x="727" y="556" width="48" height="48" rx="8"/></clipPath>
-              <clipPath id="tn38-mam"><rect x="850" y="556" width="48" height="48" rx="8"/></clipPath>
-              <clipPath id="tn38-sm"><rect x="974" y="556" width="48" height="48" rx="8"/></clipPath>
+              <clipPath id="tn38-sm"><rect x="156" y="56" width="72" height="72" rx="9"/></clipPath>
+              <clipPath id="tn38-mam"><rect x="280" y="56" width="72" height="72" rx="9"/></clipPath>
+              <clipPath id="tn38-crown"><rect x="403" y="56" width="72" height="72" rx="9"/></clipPath>
+              <clipPath id="tn38-bext"><rect x="527" y="56" width="72" height="72" rx="9"/></clipPath>
+              <clipPath id="tn38-pp"><rect x="651" y="56" width="72" height="72" rx="9"/></clipPath>
+              <clipPath id="tn38-hb"><rect x="775" y="56" width="72" height="72" rx="9"/></clipPath>
+              <clipPath id="tn38-bint"><rect x="898" y="56" width="72" height="72" rx="9"/></clipPath>
+              <clipPath id="tn38-sheep"><rect x="1022" y="56" width="72" height="72" rx="9"/></clipPath>
+              <marker id="arr-good" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9e5b"/></marker>
+              <marker id="arr-bad" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d93636"/></marker>
             </defs>
 
-            <!-- f1: axes, grid, guides, AABB8 reference -->
+            <!-- f0: axes, grid, guides, AABB8 reference — main axes end at 2.0.
+                 Geometry: y-axis x=162, X=1 at 182, mainX(v)=182+(v-1)*680,
+                 2x boundary at 862. Left margin spread: red arrow x=16
+                 (y 420→230), "worse" caption rotated at (28,168) — clear
+                 above the arrow tip — rotated Y label x=52, second
+                 rotated row (absolute scale) x=78, tick values end
+                 x=152 (74px clear of the second Y row). -->
             <g class="fragment" data-fragment-index="0">
-              <!-- grid: X at 1.05–1.20, Y at 0.2–0.8 -->
-              <line x1="284" y1="85" x2="284" y2="472" class="svg-grid"/>
-              <line x1="478" y1="85" x2="478" y2="472" class="svg-grid"/>
-              <line x1="672" y1="85" x2="672" y2="472" class="svg-grid"/>
-              <line x1="866" y1="85" x2="866" y2="472" class="svg-grid"/>
-              <line x1="70" y1="162" x2="1060" y2="162" class="svg-grid"/>
-              <line x1="70" y1="240" x2="1060" y2="240" class="svg-grid"/>
-              <line x1="70" y1="317" x2="1060" y2="317" class="svg-grid"/>
-              <line x1="70" y1="395" x2="1060" y2="395" class="svg-grid"/>
+              <!-- main-region grid -->
+              <line x1="352" y1="150" x2="352" y2="452" class="svg-grid"/>
+              <line x1="522" y1="150" x2="522" y2="452" class="svg-grid"/>
+              <line x1="692" y1="150" x2="692" y2="452" class="svg-grid"/>
+              <line x1="162" y1="150" x2="862" y2="150" class="svg-grid"/>
+              <line x1="162" y1="222.5" x2="862" y2="222.5" class="svg-grid"/>
+              <line x1="162" y1="295" x2="862" y2="295" class="svg-grid"/>
+              <line x1="162" y1="367.5" x2="862" y2="367.5" class="svg-grid"/>
 
-              <!-- reference guides: X=1 and Y=1 through the AABB8 marker -->
-              <line x1="90" y1="85" x2="90" y2="472" class="svg-baseline"/>
-              <line x1="70" y1="85" x2="1060" y2="85" class="svg-baseline"/>
+              <!-- reference guides: X=1 and Y=1 through the AABB8 marker, + 2× boundary -->
+              <line x1="182" y1="150" x2="182" y2="452" class="svg-baseline"/>
+              <line x1="162" y1="440" x2="868" y2="440" class="svg-baseline"/>
+              <line x1="862" y1="150" x2="862" y2="452" class="svg-baseline"/>
 
               <!-- axes -->
-              <line x1="70" y1="85" x2="70" y2="472" class="svg-axis"/>
-              <line x1="70" y1="472" x2="1060" y2="472" class="svg-axis"/>
+              <line x1="162" y1="150" x2="162" y2="452" class="svg-axis"/>
+              <line x1="162" y1="452" x2="868" y2="452" class="svg-axis"/>
 
-              <!-- x ticks: 1.00–1.25 -->
-              <line x1="90" y1="472" x2="90" y2="477" class="svg-tick"/>
-              <line x1="284" y1="472" x2="284" y2="477" class="svg-tick"/>
-              <line x1="478" y1="472" x2="478" y2="477" class="svg-tick"/>
-              <line x1="672" y1="472" x2="672" y2="477" class="svg-tick"/>
-              <line x1="866" y1="472" x2="866" y2="477" class="svg-tick"/>
-              <line x1="1060" y1="472" x2="1060" y2="477" class="svg-tick"/>
-              <text x="90" y="494" text-anchor="middle" class="svg-val">1.00</text>
-              <text x="284" y="494" text-anchor="middle" class="svg-val">1.05</text>
-              <text x="478" y="494" text-anchor="middle" class="svg-val">1.10</text>
-              <text x="672" y="494" text-anchor="middle" class="svg-val">1.15</text>
-              <text x="866" y="494" text-anchor="middle" class="svg-val">1.20</text>
-              <text x="1060" y="494" text-anchor="middle" class="svg-val">1.25</text>
+              <!-- x ticks: speed 1.0–2.0 -->
+              <line x1="182" y1="452" x2="182" y2="457" class="svg-tick"/>
+              <line x1="352" y1="452" x2="352" y2="457" class="svg-tick"/>
+              <line x1="522" y1="452" x2="522" y2="457" class="svg-tick"/>
+              <line x1="692" y1="452" x2="692" y2="457" class="svg-tick"/>
+              <line x1="862" y1="452" x2="862" y2="457" class="svg-tick"/>
+              <text x="182" y="474" text-anchor="middle" class="svg-val">1.0</text>
+              <text x="352" y="474" text-anchor="middle" class="svg-val">1.25</text>
+              <text x="522" y="474" text-anchor="middle" class="svg-val">1.5</text>
+              <text x="692" y="474" text-anchor="middle" class="svg-val">1.75</text>
+              <text x="862" y="474" text-anchor="middle" class="svg-val">2.0</text>
 
-              <!-- y ticks: 0.0–1.0 -->
-              <line x1="65" y1="472" x2="70" y2="472" class="svg-tick"/>
-              <line x1="65" y1="395" x2="70" y2="395" class="svg-tick"/>
-              <line x1="65" y1="317" x2="70" y2="317" class="svg-tick"/>
-              <line x1="65" y1="240" x2="70" y2="240" class="svg-tick"/>
-              <line x1="65" y1="162" x2="70" y2="162" class="svg-tick"/>
-              <line x1="65" y1="85" x2="70" y2="85" class="svg-tick"/>
-              <text x="58" y="476" text-anchor="end" class="svg-val">0.0</text>
-              <text x="58" y="399" text-anchor="end" class="svg-val">0.2</text>
-              <text x="58" y="321" text-anchor="end" class="svg-val">0.4</text>
-              <text x="58" y="244" text-anchor="end" class="svg-val">0.6</text>
-              <text x="58" y="166" text-anchor="end" class="svg-val">0.8</text>
-              <text x="58" y="89" text-anchor="end" class="svg-val">1.0</text>
+              <!-- y ticks: build cost 1.00–1.20 -->
+              <line x1="157" y1="440" x2="162" y2="440" class="svg-tick"/>
+              <line x1="157" y1="367.5" x2="162" y2="367.5" class="svg-tick"/>
+              <line x1="157" y1="295" x2="162" y2="295" class="svg-tick"/>
+              <line x1="157" y1="222.5" x2="162" y2="222.5" class="svg-tick"/>
+              <line x1="157" y1="150" x2="162" y2="150" class="svg-tick"/>
+              <text x="152" y="444" text-anchor="end" class="svg-val">1.00</text>
+              <text x="152" y="371.5" text-anchor="end" class="svg-val">1.05</text>
+              <text x="152" y="299" text-anchor="end" class="svg-val">1.10</text>
+              <text x="152" y="226.5" text-anchor="end" class="svg-val">1.15</text>
+              <text x="152" y="154" text-anchor="end" class="svg-val">1.20</text>
 
               <!-- axis metric labels -->
-              <text x="565" y="528" text-anchor="middle" class="svg-faint">relative build time</text>
-              <text transform="rotate(-90 25 278)" x="25" y="278" text-anchor="middle" class="svg-faint">relative traversal time per 10&#8313; rays</text>
+              <text x="522" y="504" text-anchor="middle" class="svg-faint">relative secondary rays traversal speed (absolute: hundreds of MRps)</text>
+              <text transform="rotate(-90 52 301)" x="52" y="301" text-anchor="middle" class="svg-faint">relative build time</text>
+              <text transform="rotate(-90 78 301)" x="78" y="301" text-anchor="middle" class="svg-faint">(absolute: ~5ms per 1M &#9651;)</text>
 
               <!-- AABB8 reference at (1,1): ink diamond on the guide crossing -->
-              <polygon points="90,76 99,85 90,94 81,85" class="svg-dot-ref"/>
-              <text x="104" y="101" class="svg-val">AABB8 reference (1&#215;, 1&#215;)</text>
+              <polygon points="182,431 191,440 182,449 173,440" class="svg-dot-ref"/>
+              <text x="196" y="423" class="svg-val">AABB8 reference (1&#215;, 1&#215;)</text>
             </g>
 
-            <!-- f2: the 7 in-range SOBB8 dots + their strip entries,
-                 staggered via CSS delays. Strip ordered by dot X:
-                 Bistro int., Bistro ext., Hairball, [Sheep slot],
-                 Powerplant, Crown, Mammoth, San Miguel. -->
-            <g class="fragment px-dots" data-fragment-index="1">
+            <!-- f1: direction cues OUTSIDE the plot — green = faster (better)
+                 below the X-axis label, red = costlier (worse) in the left
+                 margin, left of the rotated Y-axis label -->
+            <g class="fragment" data-fragment-index="1">
+              <line x1="392" y1="526" x2="562" y2="526" class="svg-arrow-good" marker-end="url(#arr-good)"/>
+              <text x="578" y="531" class="svg-cap-good">better</text>
+              <line x1="16" y1="420" x2="16" y2="230" class="svg-arrow-bad" marker-end="url(#arr-bad)"/>
+              <text transform="rotate(-90 28 168)" x="28" y="168" text-anchor="middle" class="svg-cap-bad">worse</text>
+            </g>
+
+            <!-- f2: the 7 in-range SOBB8 dots, staggered via CSS delays.
+                 Top strip ordered by dot X: San Miguel, Mammoth, Crown,
+                 Bistro ext., Powerplant, Hairball, Bistro int., [Sheep].
+                 Two-line label (name / tris) centered ABOVE each 72px
+                 chip; ×-speed sits in-place beside each dot. -->
+            <g class="fragment px-dots" data-fragment-index="2">
               <g class="px-pt">
-                <line x1="132" y1="554" x2="470.2" y2="262.6" class="svg-grid"/>
-                <circle cx="470.2" cy="262.6" r="5.5" class="svg-dot-sobb"/>
-                <image href="img/tn/tn_bint.png" x="108" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-bint)"/>
-                <rect x="108" y="556" width="48" height="48" rx="8" class="svg-chip"/>
-                <text x="132" y="624" text-anchor="middle" class="svg-scene">Bistro int.</text>
-                <text x="132" y="644" text-anchor="middle" class="svg-strip-sub">1.0M &#9651; &#183; <tspan class="svg-strip-spd">0.54&#215;</tspan></text>
+                <line x1="192" y1="130" x2="243" y2="179" class="svg-leader" stroke-dasharray="4 4"/>
+                <text x="192" y="26" text-anchor="middle" class="svg-scene">San Miguel</text>
+                <text x="192" y="46" text-anchor="middle" class="svg-scene-sub">10.0M &#9651;</text>
+                <image href="img/tn/tn_sm.png" x="156" y="56" width="72" height="72" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-sm)"/>
+                <rect x="156" y="56" width="72" height="72" rx="9" class="svg-chip"/>
+                <circle cx="243" cy="179" r="5.5" class="svg-dot-sobb"/>
+                <text x="232" y="184" text-anchor="end" class="svg-scene-spd">1.09&#215;</text>
               </g>
               <g class="px-pt">
-                <line x1="256" y1="554" x2="536.2" y2="218.1" class="svg-grid"/>
-                <circle cx="536.2" cy="218.1" r="5.5" class="svg-dot-sobb"/>
-                <image href="img/tn/tn_bext.png" x="232" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-bext)"/>
-                <rect x="232" y="556" width="48" height="48" rx="8" class="svg-chip"/>
-                <text x="256" y="624" text-anchor="middle" class="svg-scene">Bistro ext.</text>
-                <text x="256" y="644" text-anchor="middle" class="svg-strip-sub">2.8M &#9651; &#183; <tspan class="svg-strip-spd">0.66&#215;</tspan></text>
+                <line x1="316" y1="130" x2="284" y2="183" class="svg-leader" stroke-dasharray="4 4"/>
+                <text x="316" y="26" text-anchor="middle" class="svg-scene">Mammoth</text>
+                <text x="316" y="46" text-anchor="middle" class="svg-scene-sub">8.8M &#9651;</text>
+                <image href="img/tn/tn_mammoth.png" x="280" y="56" width="72" height="72" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-mam)"/>
+                <rect x="280" y="56" width="72" height="72" rx="9" class="svg-chip"/>
+                <circle cx="284" cy="183" r="5.5" class="svg-dot-sobb"/>
+                <text x="284" y="203" text-anchor="middle" class="svg-scene-spd">1.15&#215;</text>
               </g>
               <g class="px-pt">
-                <line x1="379" y1="554" x2="617.7" y2="251.4" class="svg-grid"/>
-                <circle cx="617.7" cy="251.4" r="5.5" class="svg-dot-sobb"/>
-                <image href="img/tn/tn_hb.png" x="355" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-hb)"/>
-                <rect x="355" y="556" width="48" height="48" rx="8" class="svg-chip"/>
-                <text x="379" y="624" text-anchor="middle" class="svg-scene">Hairball</text>
-                <text x="379" y="644" text-anchor="middle" class="svg-strip-sub">2.9M &#9651; &#183; <tspan class="svg-strip-spd">0.57&#215;</tspan></text>
+                <line x1="439" y1="130" x2="454" y2="212" class="svg-leader" stroke-dasharray="4 4"/>
+                <text x="439" y="26" text-anchor="middle" class="svg-scene">Crown</text>
+                <text x="439" y="46" text-anchor="middle" class="svg-scene-sub">3.5M &#9651;</text>
+                <image href="img/tn/tn_crown.png" x="403" y="56" width="72" height="72" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-crown)"/>
+                <rect x="403" y="56" width="72" height="72" rx="9" class="svg-chip"/>
+                <circle cx="454" cy="212" r="5.5" class="svg-dot-sobb"/>
+                <text x="454" y="232" text-anchor="middle" class="svg-scene-spd">1.40&#215;</text>
               </g>
               <g class="px-pt">
-                <line x1="627" y1="554" x2="664.2" y2="247.2" class="svg-grid"/>
-                <circle cx="664.2" cy="247.2" r="5.5" class="svg-dot-sobb"/>
-                <image href="img/tn/tn_pplant.png" x="603" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-pp)"/>
-                <rect x="603" y="556" width="48" height="48" rx="8" class="svg-chip"/>
-                <text x="627" y="624" text-anchor="middle" class="svg-scene">Powerplant</text>
-                <text x="627" y="644" text-anchor="middle" class="svg-strip-sub">12.8M &#9651; &#183; <tspan class="svg-strip-spd">0.58&#215;</tspan></text>
+                <line x1="563" y1="130" x2="536" y2="273" class="svg-leader" stroke-dasharray="4 4"/>
+                <text x="563" y="26" text-anchor="middle" class="svg-scene">Bistro ext.</text>
+                <text x="563" y="46" text-anchor="middle" class="svg-scene-sub">2.8M &#9651;</text>
+                <image href="img/tn/tn_bext.png" x="527" y="56" width="72" height="72" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-bext)"/>
+                <rect x="527" y="56" width="72" height="72" rx="9" class="svg-chip"/>
+                <circle cx="536" cy="273" r="5.5" class="svg-dot-sobb"/>
+                <text x="527" y="269" text-anchor="end" class="svg-scene-spd">1.52&#215;</text>
               </g>
               <g class="px-pt">
-                <line x1="751" y1="554" x2="699.2" y2="196.1" class="svg-grid"/>
-                <circle cx="699.2" cy="196.1" r="5.5" class="svg-dot-sobb"/>
-                <image href="img/tn/tn_crown.png" x="727" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-crown)"/>
-                <rect x="727" y="556" width="48" height="48" rx="8" class="svg-chip"/>
-                <text x="751" y="624" text-anchor="middle" class="svg-scene">Crown</text>
-                <text x="751" y="644" text-anchor="middle" class="svg-strip-sub">3.5M &#9651; &#183; <tspan class="svg-strip-spd">0.71&#215;</tspan></text>
+                <line x1="687" y1="130" x2="672" y2="225" class="svg-leader" stroke-dasharray="4 4"/>
+                <text x="687" y="26" text-anchor="middle" class="svg-scene">Powerplant</text>
+                <text x="687" y="46" text-anchor="middle" class="svg-scene-sub">12.8M &#9651;</text>
+                <image href="img/tn/tn_pplant.png" x="651" y="56" width="72" height="72" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-pp)"/>
+                <rect x="651" y="56" width="72" height="72" rx="9" class="svg-chip"/>
+                <circle cx="672" cy="225" r="5.5" class="svg-dot-sobb"/>
+                <text x="663" y="220" text-anchor="end" class="svg-scene-spd">1.72&#215;</text>
               </g>
               <g class="px-pt">
-                <line x1="874" y1="554" x2="776.8" y2="135.7" class="svg-grid"/>
-                <circle cx="776.8" cy="135.7" r="5.5" class="svg-dot-sobb"/>
-                <image href="img/tn/tn_mammoth.png" x="850" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-mam)"/>
-                <rect x="850" y="556" width="48" height="48" rx="8" class="svg-chip"/>
-                <text x="874" y="624" text-anchor="middle" class="svg-scene">Mammoth</text>
-                <text x="874" y="644" text-anchor="middle" class="svg-strip-sub">8.8M &#9651; &#183; <tspan class="svg-strip-spd">0.87&#215;</tspan></text>
+                <line x1="811" y1="130" x2="699" y2="243" class="svg-leader" stroke-dasharray="4 4"/>
+                <text x="811" y="26" text-anchor="middle" class="svg-scene">Hairball</text>
+                <text x="811" y="46" text-anchor="middle" class="svg-scene-sub">2.9M &#9651;</text>
+                <image href="img/tn/tn_hb.png" x="775" y="56" width="72" height="72" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-hb)"/>
+                <rect x="775" y="56" width="72" height="72" rx="9" class="svg-chip"/>
+                <circle cx="699" cy="243" r="5.5" class="svg-dot-sobb"/>
+                <text x="708" y="248" text-anchor="start" class="svg-scene-spd">1.76&#215;</text>
               </g>
               <g class="px-pt">
-                <line x1="998" y1="554" x2="788.4" y2="117.5" class="svg-grid"/>
-                <circle cx="788.4" cy="117.5" r="5.5" class="svg-dot-sobb"/>
-                <image href="img/tn/tn_sm.png" x="974" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-sm)"/>
-                <rect x="974" y="556" width="48" height="48" rx="8" class="svg-chip"/>
-                <text x="998" y="624" text-anchor="middle" class="svg-scene">San Miguel</text>
-                <text x="998" y="644" text-anchor="middle" class="svg-strip-sub">10.0M &#9651; &#183; <tspan class="svg-strip-spd">0.92&#215;</tspan></text>
+                <line x1="934" y1="130" x2="760" y2="298" class="svg-leader" stroke-dasharray="4 4"/>
+                <text x="934" y="26" text-anchor="middle" class="svg-scene">Bistro int.</text>
+                <text x="934" y="46" text-anchor="middle" class="svg-scene-sub">1.0M &#9651;</text>
+                <image href="img/tn/tn_bint.png" x="898" y="56" width="72" height="72" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-bint)"/>
+                <rect x="898" y="56" width="72" height="72" rx="9" class="svg-chip"/>
+                <circle cx="760" cy="298" r="5.5" class="svg-dot-sobb"/>
+                <text x="760" y="318" text-anchor="middle" class="svg-scene-spd">1.85&#215;</text>
               </g>
             </g>
 
-            <!-- f3: Sheep dot + strip entry + Pareto frontier (Bistro int. → Sheep) -->
-            <g class="fragment" data-fragment-index="2">
-              <polyline points="470.2,262.6 629.3,419.4" class="svg-line-sobb"/>
-              <line x1="503" y1="554" x2="629.3" y2="419.4" class="svg-grid"/>
-              <circle cx="629.3" cy="419.4" r="6" class="svg-dot-sheep"/>
-              <image href="img/tn/tn_sheep.png" x="479" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-sheep)"/>
-              <rect x="479" y="556" width="48" height="48" rx="8" class="svg-chip"/>
-              <text x="503" y="624" text-anchor="middle" class="svg-scene">Sheep</text>
-              <text x="503" y="644" text-anchor="middle" class="svg-strip-sub">10.7M &#9651; &#183; <tspan class="svg-strip-num">0.14&#215;</tspan></text>
+            <!-- f3: the whole compressed extension appears together with
+                 Sheep — tint, break marker, extension axis, 10× tick,
+                 then chip + leader + dot + speed label (standard blue
+                 SOBB treatment). Extension geometry: tint 872–1022 (150px),
+                 extX(v)=897+(v-2)*15.625 → 10× tick at 1022, Sheep 7.4×
+                 dot at 981. Chip stays in the top strip (1022–1094,
+                 6px inside the 1100 viewBox). -->
+            <g class="fragment" data-fragment-index="3">
+              <rect x="872" y="150" width="150" height="302" class="svg-extbg"/>
+              <line x1="872" y1="440" x2="1022" y2="440" class="svg-baseline"/>
+              <line x1="872" y1="452" x2="1022" y2="452" class="svg-axis"/>
+              <text x="867" y="459" text-anchor="middle" class="svg-faint">&#8943;</text>
+              <line x1="1022" y1="452" x2="1022" y2="457" class="svg-tick"/>
+              <text x="1022" y="474" text-anchor="middle" class="svg-val">10&#215;</text>
+
+              <line x1="1058" y1="130" x2="981" y2="238" class="svg-leader" stroke-dasharray="4 4"/>
+              <text x="1058" y="26" text-anchor="middle" class="svg-scene">Sheep</text>
+              <text x="1058" y="46" text-anchor="middle" class="svg-scene-sub">10.7M &#9651;</text>
+              <image href="img/tn/tn_sheep.png" x="1022" y="56" width="72" height="72" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38-sheep)"/>
+              <rect x="1022" y="56" width="72" height="72" rx="9" class="svg-chip"/>
+              <circle cx="981" cy="238" r="6" class="svg-dot-sobb"/>
+              <text x="971" y="234" text-anchor="end" class="svg-scene-spd">7.4&#215;</text>
             </g>
           </svg>
         </div>
-        <div class="cost-strip fragment" data-fragment-index="2"><span>+10–18% build</span><span>·</span><span>≤+5% memory</span></div>
+        <div class="cost-strip fragment" data-fragment-index="3"><span>+10–18% build</span><span>·</span><span>≤+5% memory</span></div>
       </div>
       <div class="status-row"><span class="cap results-note">SOBB8 38-DOP vs AABB BVH8 reference.</span></div>
     </section>
@@ -764,6 +811,182 @@
         </svg>
       </figure>
       <div class="status-row"><span class="cap">Relative trace performance over 64 frames without rebuild (medium movement).</span></div>
+    </section>
+
+    <!-- L15b. Backup — static scenes results, 38-DOP (build-cost-vs-
+         traversal variant; moved out of the main flow, superseded by the
+         speed-vs-cost orientation on #slide-results-speed).
+         Both axes in time units, lower-left = better.
+         X: relative build time vs AABB8 (linear 1.00–1.25):
+         X = 90 + (v-1)*3880. Y: relative traversal time per 10⁹ rays
+         (= 1/speedup, AABB8 = 1.0 at the top, 0.0 at the bottom):
+         Y = 472 - v*387. Data (paper NEW_RESULTS, tab:sobb_static):
+         San Miguel 1.180/0.916, Mammoth 1.177/0.869, Crown 1.157/0.713,
+         Bistro ext. 1.115/0.656, Powerplant 1.148/0.581,
+         Hairball 1.136/0.570, Bistro int. 1.098/0.541, Sheep 1.139/0.136.
+         Dots are plain markers; annotation lives in a thumbnail strip
+         below the plot (48×48 chips, name + tris + time multiplier),
+         ordered by dot X so the faint leader lines don't cross.
+         Pareto frontier: Bistro int. → Sheep.
+         3 fragment steps: 0 = axes + AABB8 reference, 1 = the 7
+         in-range dots + their strip entries (staggered via CSS
+         delays), 2 = Sheep dot + strip entry + frontier + summary
+         strip (sheep group and strip share data-fragment-index 2).
+         viewBox extended to 1100×656 to host the strip below the
+         x-axis label. -->
+    <section id="slide-backup-results">
+      <h2 class="slide-head">Backup — build cost vs traversal time (38-DOP)</h2>
+      <div class="results-col">
+        <div class="pareto-fig">
+          <svg viewBox="0 0 1100 656" width="100%" height="100%" role="img" aria-label="Pareto scatter of SOBB8 38-DOP vs AABB8: build time against traversal time per billion rays, eight scenes, lower-left is better">
+            <title>SOBB8 (38-DOP) vs AABB BVH8 — build time vs traversal time per 10⁹ rays</title>
+
+            <defs>
+              <clipPath id="tn38b-bint"><rect x="108" y="556" width="48" height="48" rx="8"/></clipPath>
+              <clipPath id="tn38b-bext"><rect x="232" y="556" width="48" height="48" rx="8"/></clipPath>
+              <clipPath id="tn38b-hb"><rect x="355" y="556" width="48" height="48" rx="8"/></clipPath>
+              <clipPath id="tn38b-sheep"><rect x="479" y="556" width="48" height="48" rx="8"/></clipPath>
+              <clipPath id="tn38b-pp"><rect x="603" y="556" width="48" height="48" rx="8"/></clipPath>
+              <clipPath id="tn38b-crown"><rect x="727" y="556" width="48" height="48" rx="8"/></clipPath>
+              <clipPath id="tn38b-mam"><rect x="850" y="556" width="48" height="48" rx="8"/></clipPath>
+              <clipPath id="tn38b-sm"><rect x="974" y="556" width="48" height="48" rx="8"/></clipPath>
+            </defs>
+
+            <!-- f1: axes, grid, guides, AABB8 reference -->
+            <g class="fragment" data-fragment-index="0">
+              <!-- grid: X at 1.05–1.20, Y at 0.2–0.8 -->
+              <line x1="284" y1="85" x2="284" y2="472" class="svg-grid"/>
+              <line x1="478" y1="85" x2="478" y2="472" class="svg-grid"/>
+              <line x1="672" y1="85" x2="672" y2="472" class="svg-grid"/>
+              <line x1="866" y1="85" x2="866" y2="472" class="svg-grid"/>
+              <line x1="70" y1="162" x2="1060" y2="162" class="svg-grid"/>
+              <line x1="70" y1="240" x2="1060" y2="240" class="svg-grid"/>
+              <line x1="70" y1="317" x2="1060" y2="317" class="svg-grid"/>
+              <line x1="70" y1="395" x2="1060" y2="395" class="svg-grid"/>
+
+              <!-- reference guides: X=1 and Y=1 through the AABB8 marker -->
+              <line x1="90" y1="85" x2="90" y2="472" class="svg-baseline"/>
+              <line x1="70" y1="85" x2="1060" y2="85" class="svg-baseline"/>
+
+              <!-- axes -->
+              <line x1="70" y1="85" x2="70" y2="472" class="svg-axis"/>
+              <line x1="70" y1="472" x2="1060" y2="472" class="svg-axis"/>
+
+              <!-- x ticks: 1.00–1.25 -->
+              <line x1="90" y1="472" x2="90" y2="477" class="svg-tick"/>
+              <line x1="284" y1="472" x2="284" y2="477" class="svg-tick"/>
+              <line x1="478" y1="472" x2="478" y2="477" class="svg-tick"/>
+              <line x1="672" y1="472" x2="672" y2="477" class="svg-tick"/>
+              <line x1="866" y1="472" x2="866" y2="477" class="svg-tick"/>
+              <line x1="1060" y1="472" x2="1060" y2="477" class="svg-tick"/>
+              <text x="90" y="494" text-anchor="middle" class="svg-val">1.00</text>
+              <text x="284" y="494" text-anchor="middle" class="svg-val">1.05</text>
+              <text x="478" y="494" text-anchor="middle" class="svg-val">1.10</text>
+              <text x="672" y="494" text-anchor="middle" class="svg-val">1.15</text>
+              <text x="866" y="494" text-anchor="middle" class="svg-val">1.20</text>
+              <text x="1060" y="494" text-anchor="middle" class="svg-val">1.25</text>
+
+              <!-- y ticks: 0.0–1.0 -->
+              <line x1="65" y1="472" x2="70" y2="472" class="svg-tick"/>
+              <line x1="65" y1="395" x2="70" y2="395" class="svg-tick"/>
+              <line x1="65" y1="317" x2="70" y2="317" class="svg-tick"/>
+              <line x1="65" y1="240" x2="70" y2="240" class="svg-tick"/>
+              <line x1="65" y1="162" x2="70" y2="162" class="svg-tick"/>
+              <line x1="65" y1="85" x2="70" y2="85" class="svg-tick"/>
+              <text x="58" y="476" text-anchor="end" class="svg-val">0.0</text>
+              <text x="58" y="399" text-anchor="end" class="svg-val">0.2</text>
+              <text x="58" y="321" text-anchor="end" class="svg-val">0.4</text>
+              <text x="58" y="244" text-anchor="end" class="svg-val">0.6</text>
+              <text x="58" y="166" text-anchor="end" class="svg-val">0.8</text>
+              <text x="58" y="89" text-anchor="end" class="svg-val">1.0</text>
+
+              <!-- axis metric labels -->
+              <text x="565" y="528" text-anchor="middle" class="svg-faint">relative build time</text>
+              <text transform="rotate(-90 25 278)" x="25" y="278" text-anchor="middle" class="svg-faint">relative traversal time per 10&#8313; rays</text>
+
+              <!-- AABB8 reference at (1,1): ink diamond on the guide crossing -->
+              <polygon points="90,76 99,85 90,94 81,85" class="svg-dot-ref"/>
+              <text x="104" y="101" class="svg-val">AABB8 reference (1&#215;, 1&#215;)</text>
+            </g>
+
+            <!-- f2: the 7 in-range SOBB8 dots + their strip entries,
+                 staggered via CSS delays. Strip ordered by dot X:
+                 Bistro int., Bistro ext., Hairball, [Sheep slot],
+                 Powerplant, Crown, Mammoth, San Miguel. -->
+            <g class="fragment px-dots" data-fragment-index="1">
+              <g class="px-pt">
+                <line x1="132" y1="554" x2="470.2" y2="262.6" class="svg-grid"/>
+                <circle cx="470.2" cy="262.6" r="5.5" class="svg-dot-sobb"/>
+                <image href="img/tn/tn_bint.png" x="108" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38b-bint)"/>
+                <rect x="108" y="556" width="48" height="48" rx="8" class="svg-chip"/>
+                <text x="132" y="624" text-anchor="middle" class="svg-scene">Bistro int.</text>
+                <text x="132" y="644" text-anchor="middle" class="svg-strip-sub">1.0M &#9651; &#183; <tspan class="svg-strip-spd">0.54&#215;</tspan></text>
+              </g>
+              <g class="px-pt">
+                <line x1="256" y1="554" x2="536.2" y2="218.1" class="svg-grid"/>
+                <circle cx="536.2" cy="218.1" r="5.5" class="svg-dot-sobb"/>
+                <image href="img/tn/tn_bext.png" x="232" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38b-bext)"/>
+                <rect x="232" y="556" width="48" height="48" rx="8" class="svg-chip"/>
+                <text x="256" y="624" text-anchor="middle" class="svg-scene">Bistro ext.</text>
+                <text x="256" y="644" text-anchor="middle" class="svg-strip-sub">2.8M &#9651; &#183; <tspan class="svg-strip-spd">0.66&#215;</tspan></text>
+              </g>
+              <g class="px-pt">
+                <line x1="379" y1="554" x2="617.7" y2="251.4" class="svg-grid"/>
+                <circle cx="617.7" cy="251.4" r="5.5" class="svg-dot-sobb"/>
+                <image href="img/tn/tn_hb.png" x="355" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38b-hb)"/>
+                <rect x="355" y="556" width="48" height="48" rx="8" class="svg-chip"/>
+                <text x="379" y="624" text-anchor="middle" class="svg-scene">Hairball</text>
+                <text x="379" y="644" text-anchor="middle" class="svg-strip-sub">2.9M &#9651; &#183; <tspan class="svg-strip-spd">0.57&#215;</tspan></text>
+              </g>
+              <g class="px-pt">
+                <line x1="627" y1="554" x2="664.2" y2="247.2" class="svg-grid"/>
+                <circle cx="664.2" cy="247.2" r="5.5" class="svg-dot-sobb"/>
+                <image href="img/tn/tn_pplant.png" x="603" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38b-pp)"/>
+                <rect x="603" y="556" width="48" height="48" rx="8" class="svg-chip"/>
+                <text x="627" y="624" text-anchor="middle" class="svg-scene">Powerplant</text>
+                <text x="627" y="644" text-anchor="middle" class="svg-strip-sub">12.8M &#9651; &#183; <tspan class="svg-strip-spd">0.58&#215;</tspan></text>
+              </g>
+              <g class="px-pt">
+                <line x1="751" y1="554" x2="699.2" y2="196.1" class="svg-grid"/>
+                <circle cx="699.2" cy="196.1" r="5.5" class="svg-dot-sobb"/>
+                <image href="img/tn/tn_crown.png" x="727" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38b-crown)"/>
+                <rect x="727" y="556" width="48" height="48" rx="8" class="svg-chip"/>
+                <text x="751" y="624" text-anchor="middle" class="svg-scene">Crown</text>
+                <text x="751" y="644" text-anchor="middle" class="svg-strip-sub">3.5M &#9651; &#183; <tspan class="svg-strip-spd">0.71&#215;</tspan></text>
+              </g>
+              <g class="px-pt">
+                <line x1="874" y1="554" x2="776.8" y2="135.7" class="svg-grid"/>
+                <circle cx="776.8" cy="135.7" r="5.5" class="svg-dot-sobb"/>
+                <image href="img/tn/tn_mammoth.png" x="850" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38b-mam)"/>
+                <rect x="850" y="556" width="48" height="48" rx="8" class="svg-chip"/>
+                <text x="874" y="624" text-anchor="middle" class="svg-scene">Mammoth</text>
+                <text x="874" y="644" text-anchor="middle" class="svg-strip-sub">8.8M &#9651; &#183; <tspan class="svg-strip-spd">0.87&#215;</tspan></text>
+              </g>
+              <g class="px-pt">
+                <line x1="998" y1="554" x2="788.4" y2="117.5" class="svg-grid"/>
+                <circle cx="788.4" cy="117.5" r="5.5" class="svg-dot-sobb"/>
+                <image href="img/tn/tn_sm.png" x="974" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38b-sm)"/>
+                <rect x="974" y="556" width="48" height="48" rx="8" class="svg-chip"/>
+                <text x="998" y="624" text-anchor="middle" class="svg-scene">San Miguel</text>
+                <text x="998" y="644" text-anchor="middle" class="svg-strip-sub">10.0M &#9651; &#183; <tspan class="svg-strip-spd">0.92&#215;</tspan></text>
+              </g>
+            </g>
+
+            <!-- f3: Sheep dot + strip entry + Pareto frontier (Bistro int. → Sheep) -->
+            <g class="fragment" data-fragment-index="2">
+              <polyline points="470.2,262.6 629.3,419.4" class="svg-line-sobb"/>
+              <line x1="503" y1="554" x2="629.3" y2="419.4" class="svg-grid"/>
+              <circle cx="629.3" cy="419.4" r="6" class="svg-dot-sheep"/>
+              <image href="img/tn/tn_sheep.png" x="479" y="556" width="48" height="48" preserveAspectRatio="xMidYMid slice" clip-path="url(#tn38b-sheep)"/>
+              <rect x="479" y="556" width="48" height="48" rx="8" class="svg-chip"/>
+              <text x="503" y="624" text-anchor="middle" class="svg-scene">Sheep</text>
+              <text x="503" y="644" text-anchor="middle" class="svg-strip-sub">10.7M &#9651; &#183; <tspan class="svg-strip-num">0.14&#215;</tspan></text>
+            </g>
+          </svg>
+        </div>
+        <div class="cost-strip fragment" data-fragment-index="2"><span>+10–18% build</span><span>·</span><span>≤+5% memory</span></div>
+      </div>
+      <div class="status-row"><span class="cap results-note">SOBB8 38-DOP vs AABB BVH8 reference.</span></div>
     </section>
 
     <!-- L16. Backup — static scenes results, 56-DOP (appendix variant of the

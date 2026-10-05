@@ -518,9 +518,11 @@
    different scale, not a continuation of the linear region. */
 .svg-extbg     { fill: #f6f8fb; }
 
-/* Sheep outlier: red dot + translucent beam filling to the 10x axis end. */
+/* Sheep outlier: translucent beam fills to the 10x axis end (blue on
+   the speed slide); .svg-dot-sheep is the red outlier dot still used
+   by the backup and appendix variants of the results chart. */
 .svg-dot-sheep { fill: var(--red); }
-.svg-beam      { fill: var(--red); opacity: 0.15; }
+.svg-beam      { fill: var(--blue); opacity: 0.15; }
 .svg-dot-ref   { fill: var(--ink); }
 
 .svg-scene     { fill: var(--ink); font-size: 21px; }
@@ -533,6 +535,21 @@
 /* Thumbnail-strip sub-line (tris + multiplier): compact so adjacent
    entries at ~124px pitch don't touch. */
 .svg-strip-sub { fill: var(--ink-faint); font-size: 14px; font-variant-numeric: tabular-nums; }
+
+/* In-place dot label sub-line (tris · speed): slightly larger than the
+   old strip sub-line since it now carries the annotation alone. */
+.svg-scene-sub { fill: var(--ink-faint); font-size: 16px; font-variant-numeric: tabular-nums; }
+
+/* Top-strip leader lines: hairline, dashed via attribute (static paint,
+   but attribute keeps it tween-safe per repo rule). */
+.svg-leader    { stroke: var(--hairline); stroke-width: 1; }
+
+/* Direction-cue arrows (f1): semantic green/red, muted to fit the
+   ink + blue + red palette. Marker fills live in the SVG defs. */
+.svg-arrow-good { stroke: #2e9e5b; stroke-width: 2.5; }
+.svg-arrow-bad  { stroke: var(--red); stroke-width: 2.5; }
+.svg-cap-good   { fill: #2e9e5b; font-size: 16px; font-weight: 650; }
+.svg-cap-bad    { fill: var(--red); font-size: 16px; font-weight: 650; }
 .svg-strip-spd { fill: var(--blue); font-weight: 600; }
 .svg-strip-num { fill: var(--red); font-weight: 650; }
 
