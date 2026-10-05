@@ -415,14 +415,11 @@
 /* BV-type lane glyphs: rotated rect (OBB) / hexagon (k-DOP) / skewed parallelogram (SOBB). */
 .svg-rw-glyph      { fill: none; stroke: var(--ink-soft); stroke-width: 1.6; stroke-linejoin: round; }
 
-/* Relation arrows: quiet dashed ink between prior works, accent dashes into
-   this work; the EG25 → this-work link is solid — the direct basis. */
-.svg-rw-link       { fill: none; stroke: var(--ink-faint); stroke-width: 1.5; stroke-dasharray: 4 4; }
+/* Relation arrows: accent dashes into this work; the EG25 → this-work
+   link is solid — the direct basis. */
 .svg-rw-link-hl    { fill: none; stroke: var(--blue); stroke-width: 1.6; stroke-dasharray: 5 4; }
 .svg-rw-link-main  { fill: none; stroke: var(--blue); stroke-width: 2; }
-.svg-rw-head       { fill: var(--ink-faint); }
 .svg-rw-head-blue  { fill: var(--blue); }
-.svg-rw-rellbl     { fill: var(--ink-soft); font-size: 18px; }
 .svg-rw-rellbl-hl  { fill: var(--blue); font-size: 18px; }
 
 /* ---------- Title slide logos ---------- */
