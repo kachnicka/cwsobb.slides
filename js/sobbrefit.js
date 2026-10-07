@@ -131,8 +131,17 @@
     R:  { x: 280, y: 52,  anchor: 'middle' }
   };
 
-  /* s6: red cost badge beside the root. */
-  var COST_BADGE = { x: 311, y: 74, w: 200, h: 26, text: '4.4–4.7× · ~60 MB' };
+  /* s6: red cost badge, top-right of the tree panel. Clears the root
+   * node box (top 70 — badge bottom 40, 30px gap), the R k-DOP overlay
+   * (246–314 × 61–111 — fully left/below), both root edges (they live
+   * at y >= 86, 46px below the badge), and the 'root' level label
+   * (ends ~x=73). Right
+   * edge 536 — 24px inside the 560-wide viewBox; left edge 312 keeps a
+   * 4px horizontal gap to the 'k-DOP' tag (spans ~252–308 at y~36–52;
+   * only y 36–40 overlaps the badge's y-span). Font stepped down to 16
+   * so the longer '~5× slower than AABB refit' fits the 224-wide rect;
+   * baseline centered (see buildTree) for balanced breathing room. */
+  var COST_BADGE = { x: 312, y: 10, w: 224, h: 30, text: '~5× slower than AABB refit' };
 
   var CAPTIONS = [
     'SOBBs — every node wraps its geometry in its own skew basis.',
@@ -141,7 +150,7 @@
     'The parent’s turn: its children have different bases — no cheap union.',
     'EG25: hand the full k-DOP up — refit each parent k-DOP → SOBB.',
     'Same again at the root — every node, bottom-up, every frame.',
-    '4.4–4.7× slower than AABB refit · ~60 MB scratch.'
+    'The cost — a slow bottom-up refit and a heavy scratch footprint, every frame.'
   ];
 
   /* ==================== pure geometry helpers ==================== */
@@ -518,9 +527,7 @@
         width: NODE_W, height: NODE_H
       }, g);
       nodeEls[id] = rect;
-      text(LEAVES.indexOf(id) >= 0 ? '△ ' + id : id, {
-        'class': 'svg-node-text', x: p.x, y: p.y + 5.5, 'text-anchor': 'middle'
-      }, g);
+      /* no node name labels (user request — they carried no meaning) */
     });
 
     // basis glyph per node: two skew segments under the node box,
@@ -579,8 +586,12 @@
       fill: '#fbeaea', stroke: RED, 'stroke-width': 1.8
     }, costBadgeG);
     text(COST_BADGE.text, {
-      x: COST_BADGE.x + COST_BADGE.w / 2, y: COST_BADGE.y + 17.5,
-      'text-anchor': 'middle', 'font-size': 22, fill: RED, 'font-weight': 650
+      /* baseline = vertical center + ~0.34em: glyph box centers in the
+       * rect ('~' and 'g'-free string — no descenders), balanced
+       * breathing room top and bottom */
+      x: COST_BADGE.x + COST_BADGE.w / 2,
+      y: COST_BADGE.y + COST_BADGE.h / 2 + 5.5,
+      'text-anchor': 'middle', 'font-size': 16, fill: RED, 'font-weight': 650
     }, costBadgeG);
   }
 
@@ -596,6 +607,31 @@
         { stroke: BLUE },
         { stroke: EDGE, duration: 0.9, ease: 'power1.out' });
     });
+  }
+
+  /* Transient edge-only flash (leaf beat: the nodes themselves go
+   * permanently blue via addNodesDone instead). */
+  function pulseEdges(ids) {
+    ids.forEach(function (id) {
+      var e = edgeForChild[id];
+      if (!e) return;
+      gsap.fromTo(e,
+        { stroke: BLUE },
+        { stroke: EDGE, duration: 0.9, ease: 'power1.out' });
+    });
+  }
+
+  /* Leaves only (user request — this slide's internal/root beats stay
+   * transient, it's the "problem" story): after the leaf re-fit the
+   * leaf nodes flash brighter blue, then settle to a steady #bcd6f8 and
+   * STAY blue — the level's refit is done. Timeline set+to (not a
+   * callback) so backward stepping scrubs the blue away and forward
+   * re-applies it. Fill is a CSS inline style — .svg-node's fill comes
+   * from a CSS class, an attribute tween would lose to it. */
+  function addNodesDone(ids, at) {
+    var rects = ids.map(function (id) { return nodeEls[id]; });
+    tl.set(rects, { fill: '#8db9f5' }, at);
+    tl.to(rects, { fill: '#bcd6f8', duration: 0.9, ease: 'power1.out' }, at);
   }
 
   /* Morph node SOBBs to their (aligned) moved corners, blue. */
@@ -723,8 +759,9 @@
     // parents are not. The spacer keeps the s1 label clear of the
     // refit stroke .set.
     tl.to({}, { duration: 0.3 }, '>');
-    tl.add(function () { pulseNodes(LEAVES); }, '>');
+    tl.add(function () { pulseEdges(LEAVES); }, '>');
     var leafAt = tl.duration();
+    addNodesDone(LEAVES, leafAt);
     addParaRefit(LEAVES, '>', 0.9);
     addGlyphRot(LEAVES, function (id) { return clusterById(id).move.rot; }, leafAt, 0.9);
     tl.to(polyEls.map(function (p) { return p.el; }), {

@@ -1,23 +1,26 @@
-/* Shared-basis insertion animator — paper Sec. 3.3, first half.
+/* Shared-basis animator — paper Sec. 3.3, first half.
  *
  * Picks the SOBB BVH₈ pipeline up exactly where pipesobb8 left it (chip
- * row pixel-identical, quantization chip ACTIVE) and INSERTS the stage
- * the quantized wide node actually needs: all 8 children of a wide node
- * take ONE shared SOBB basis.
+ * row pixel-identical, quantization chip ACTIVE) and presents the shared
+ * basis as what it is: a PROPERTY of the wide node, not a pipeline build
+ * phase. No chip is inserted — the chip row never changes on this slide.
+ * The story is told as an annotation on the node itself.
  *
  * s1: the pipeline so far — chip strip as handed over, and ONE 8-wide
  *     node below (root box + slots + bounds region): the children are
  *     parallelogram SOBBs at independent orientations, big enough to
  *     spill over each other — a tangle of skewed boxes covering the node
- * s2: THE INSERTION — the chip row re-spaces and a new "shared basis"
- *     chip slots in between "SOBB BVH₈" and "quantization"
+ * s2: THE ANNOTATION — a basis callout fades in beside the node: one
+ *     shared basis for all 8 children, a property of the wide node
  * s3: THE CONVERSION — all 8 parallelograms re-tilt in one deliberate
  *     sweep onto the shared basis (normals n1=100°/n2=160°, edges
- *     E1=10°/E2=70°); hand-off to the next slide (skewed quantization)
+ *     E1=10°/E2=70°); the callout stays up and hands off to the next
+ *     slide (skewed quantization), which opens pixel-identical
  *
- * Layout note: WIDE strip / P panel / CHILD_TRIS / slab frame are
- * numerically identical to js/widenode.js — the settle state here IS the
- * entry state there (hand-off continuity), constants duplicated on purpose.
+ * Layout note: WIDE strip / P panel / CHILD_TRIS / slab frame / chip row
+ * / basis callout are numerically identical to js/widenode.js — the
+ * settle state here IS the entry state there (hand-off continuity),
+ * constants duplicated on purpose.
  * All GSAP-animated paint props are SVG ATTRIBUTES, never CSS.
  */
 (function () {
@@ -33,25 +36,17 @@
   /* ==================== LAYOUT DATA (viewBox 0 0 1120 560) ==================== */
 
   /* stage chips — the SOBB BVH₈ pipeline slide's end-state strip (first
-   * three done, quantization ACTIVE, exactly as pipesobb8 left it), plus
-   * the inserted stage parked at its final gap.
-   * Chip idiom mirrors js/pipeline.js (CHIP_STYLE, parked insert,
-   * style flips as reverse-safe timeline sets). */
-  var CHIP_TXT = ['AABB BVH₂', 'AABB BVH₈', 'SOBB BVH₈', 'quantization', 'shared basis'];
-  /* base row = pipesobb8's exact chip geometry (js/pipeline.js CFG_SOBB8
-   * chips, mirrored for a pixel-continuous hand-off) */
-  var CHIP_W = [168, 168, 168, 190, 182];
+   * three done, quantization ACTIVE, exactly as pipesobb8 left it).
+   * STATIC on this slide: the shared basis is a property of the wide
+   * node, not a pipeline phase, so the row never re-spaces and no chip
+   * is inserted. Geometry mirrors js/pipeline.js CFG_SOBB8 (hand-off)
+   * and js/widenode.js (settle = its entry). */
+  var CHIP_TXT = ['AABB BVH₂', 'AABB BVH₈', 'SOBB BVH₈', 'quantization'];
+  var CHIP_W = [168, 168, 168, 190];
   var CHIP_H = 44, CHIP_Y = 14;
-  var BASE_X = [144, 358, 572, 786];
-  /* final row: 5 chips, 40px gaps, centered (sum 1036, margins 42).
-   * "shared basis" (idx 4) sits between "SOBB BVH₈" (idx 2) and
-   * "quantization" (idx 3). */
-  var FINAL_X = [42, 250, 458, 666, 888];
-  var INSERT_IDX = 4;                 // DOM index of the "shared basis" chip
-  var INSERT_AT = 3;                  // row position it occupies in FINAL_X
-  var QUANT_IDX = 3;                  // "quantization" chip
-  var BASE_ARROW_X = [335, 549, 763];
-  var FINAL_ARROW_X = [230, 438, 646, 868];
+  var CHIP_X = [144, 358, 572, 786];
+  var CHIP_ARROW_X = [335, 549, 763];
+  var CHIP_STATE = ['done', 'done', 'done', 'active'];
 
   var CHIP_STYLE = {
     todo:   { fill: '#ffffff', stroke: EDGE, txt: FAINT },
@@ -74,13 +69,16 @@
 
   /* 8 child source triangles inside P — geometry only (tight-box
    * derivation), never rendered; identical to widenode.js so the settled
-   * parallelograms this slide ends on are the ones the next slide opens with */
+   * parallelograms this slide ends on are the ones the next slide opens
+   * with. Child 4 (the bottom-left box) starts at the grid anchor of the
+   * next slide's frame — its tight corner sits ~3px inside the anchor,
+   * so the snapped corner lands exactly on it (see widenode.js) */
   var CHILD_TRIS = [
     [[604, 168], [680, 158], [642, 234]],
     [[710, 170], [784, 162], [750, 238]],
     [[812, 166], [888, 158], [854, 232]],
     [[878, 180], [946, 174], [916, 240]],
-    [[600, 330], [676, 320], [640, 390]],
+    [[595.6, 337], [671.6, 327], [635.6, 397]],
     [[706, 328], [782, 318], [746, 388]],
     [[814, 332], [890, 324], [856, 394]],
     [[884, 326], [952, 318], [922, 386]]
@@ -96,11 +94,18 @@
   var FAIL_ROT = [24, -16, 30, -12, 20, -28, 14, -22];
   var BIG_SCALE = [1.30, 1.16, 1.34, 1.22, 1.26, 1.14, 1.32, 1.20];
 
+  /* basis callout (s2): the shared basis presented as a PROPERTY of the
+   * wide node — an enlarged basis glyph (the slot mini parallelogram at
+   * 3x, on the shared tilt) plus two lines of annotation, parked in the
+   * empty lower-left region. Identical geometry in js/widenode.js. */
+  var CALLOUT = { x: 250, y: 296 };
+  var CALLOUT_PTS = '48,15.6 -30,15.6 -48,-15.6 30,-15.6';  // MINI_PTS × 3
+
   var CAPTIONS = [
     'Quantization: the eight child bounds snap onto the local grid.',
-    'Eight children, eight independent SOBB bases — inefficient to quantize.',
-    'Similar to DOBB (Kern et al. 2025), we form a shared node basis.',
-    'Similar to DOBB (Kern et al. 2025), we form a shared node basis.',
+    'Eight children, eight independent SOBB bases — awkward to quantize.',
+    'The wide node carries ONE shared basis — chosen once for all eight children.',
+    'All eight children re-tilt onto the shared basis (DOBB-style, Kern et al. 2025).',
   ];
 
   /* ==================== pure math (exported for tests) ==================== */
@@ -177,9 +182,9 @@
 
   var built = false;
   var svg;
-  var chipGs = [], chipRects = [], chipTexts = [];
-  var baseArrows = [], finalArrows = [];
+  var chipRects = [], chipTexts = [];
   var wideRect, wideSlots = [], slotDots = [], slotGlyphs = [];
+  var calloutG;
   var miniCapEl, connLine, connHead;
   var parentRect;
   var paras = [];
@@ -187,21 +192,11 @@
   var captionEl;
   var tl = null;
 
-  function setChip(i, styleName) {
-    var s = CHIP_STYLE[styleName];
-    chipRects[i].setAttribute('fill', s.fill);
-    chipRects[i].setAttribute('stroke', s.stroke);
-    chipTexts[i].setAttribute('fill', s.txt);
-  }
-
   function glyphTransform(i, deg) {
     var gx = WIDE.x + (WIDE.w / SLOT_N) * (i + 0.5);
     var gy = WIDE.y + WIDE.h / 2 - 14;
     return 'translate(' + gx + ' ' + gy + ') rotate(' + deg + ')';
   }
-
-  /* DOM order ≠ final row order: chips 0..3 keep their slot, the insert
-   * takes slot INSERT_AT(=3), so "quantization" (DOM 3) lands at slot 4. */
 
   function build() {
     CHILD = childGeom();
@@ -210,38 +205,25 @@
     svg = el('svg', { viewBox: '0 0 1120 560', width: '100%', height: '100%' }, host);
     var i;
 
-    /* stage chips: idx 0..3 at base row; the insert (idx 4) parks at its
-     * final gap, 60px below the row via ATTRIBUTES (a transform park would
-     * still swallow the SOBB chip label's center for bbox-based checks)
-     * and invisible; s2 tweens the attrs back up. */
-    for (i = 0; i < 5; i++) {
-      var x = i === INSERT_IDX ? FINAL_X[INSERT_AT] : BASE_X[i];
-      var yOff = i === INSERT_IDX ? 60 : 0;
-      var g = el('g', { opacity: i === INSERT_IDX ? 0 : 1 }, svg);
-      var r = el('rect', {
+    /* stage chips: pipesobb8's exact hand-off row, static states */
+    for (i = 0; i < CHIP_TXT.length; i++) {
+      var s = CHIP_STYLE[CHIP_STATE[i]];
+      chipRects.push(el('rect', {
         'class': 'chip-rect',
-        x: x, y: CHIP_Y + yOff, width: CHIP_W[i], height: CHIP_H, rx: 6,
-        'stroke-width': 1.4
-      }, g);
-      var t = text(CHIP_TXT[i], {
+        x: CHIP_X[i], y: CHIP_Y, width: CHIP_W[i], height: CHIP_H, rx: 6,
+        'stroke-width': 1.4, fill: s.fill, stroke: s.stroke
+      }, svg));
+      chipTexts.push(text(CHIP_TXT[i], {
         'class': 'chip-text',
-        x: x + CHIP_W[i] / 2, y: CHIP_Y + 27 + yOff,
-        'text-anchor': 'middle', 'font-size': 25
-      }, g);
-      chipGs.push(g); chipRects.push(r); chipTexts.push(t);
+        x: CHIP_X[i] + CHIP_W[i] / 2, y: CHIP_Y + 27,
+        'text-anchor': 'middle', 'font-size': 25, fill: s.txt
+      }, svg));
     }
-    BASE_ARROW_X.forEach(function (x) {
-      baseArrows.push(text('→', {
+    CHIP_ARROW_X.forEach(function (x) {
+      text('→', {
         'class': 'chip-arrow',
         x: x, y: CHIP_Y + 27, 'text-anchor': 'middle', 'font-size': 26, fill: FAINT
-      }, svg));
-    });
-    FINAL_ARROW_X.forEach(function (x) {
-      finalArrows.push(text('→', {
-        'class': 'chip-arrow',
-        x: x, y: CHIP_Y + 27, 'text-anchor': 'middle', 'font-size': 26,
-        fill: FAINT, opacity: 0
-      }, svg));
+      }, svg);
     });
 
     /* ---- the wide node (identical layout to widenode.js) ---- */
@@ -273,6 +255,29 @@
       'text-anchor': 'middle', 'font-size': 25, fill: FAINT
     }, svg);
 
+    /* basis callout (s2): the shared basis as a node PROPERTY — an
+     * enlarged basis glyph on the shared tilt + annotation, in the
+     * empty lower-left region. Hidden until s2; identical geometry in
+     * widenode.js, which opens with it and retires it as the skewed
+     * grid (the basis made visible) arrives. */
+    calloutG = el('g', { opacity: 0 }, svg);
+    var calloutGlyph = el('g', {
+      transform: 'translate(' + CALLOUT.x + ' ' + CALLOUT.y + ') rotate(' + GLYPH_DEG + ')'
+    }, calloutG);
+    el('polygon', {
+      points: CALLOUT_PTS,
+      fill: 'none', stroke: INK, 'stroke-width': 1.6,
+      'stroke-linejoin': 'round'
+    }, calloutGlyph);
+    text('one shared basis', {
+      x: CALLOUT.x, y: CALLOUT.y + 62,
+      'text-anchor': 'middle', 'font-size': 25, 'font-weight': 600, fill: INK
+    }, calloutG);
+    text('a property of the wide node', {
+      x: CALLOUT.x, y: CALLOUT.y + 94,
+      'text-anchor': 'middle', 'font-size': 20, fill: FAINT
+    }, calloutG);
+
     /* connector: wide node → its bounds region */
     connLine = el('line', {
       x1: WIDE.x + WIDE.w + 14, y1: cy, x2: P.x - 22, y2: cy,
@@ -297,7 +302,7 @@
     CHILD.forEach(function (c, i) {
       paras.push(el('polygon', {
         points: pts2str(c.big),
-        fill: 'none', stroke: INK, 'stroke-width': 1.4,
+        fill: 'none', stroke: INK, 'stroke-width': 2.4,
         'stroke-linejoin': 'round', opacity: 0
       }, svg));
     });
@@ -312,29 +317,16 @@
    * tangle/glyphs/insert hidden. */
 
   function resetDom() {
-    chipGs.forEach(function (g, i) {
-      gsap.killTweensOf(g);
-      gsap.killTweensOf(chipRects[i]);
-      gsap.killTweensOf(chipTexts[i]);
-      g.removeAttribute('transform');
-      g.setAttribute('opacity', i === INSERT_IDX ? 0 : 1);
-      var bx = i === INSERT_IDX ? FINAL_X[INSERT_AT] : BASE_X[i];
-      var yOff = i === INSERT_IDX ? 60 : 0;
-      chipRects[i].setAttribute('x', bx);
-      chipRects[i].setAttribute('y', CHIP_Y + yOff);
-      chipTexts[i].setAttribute('x', bx + CHIP_W[i] / 2);
-      chipTexts[i].setAttribute('y', CHIP_Y + 27 + yOff);
+    chipRects.forEach(function (r, i) {
+      var s = CHIP_STYLE[CHIP_STATE[i]];
+      r.setAttribute('fill', s.fill);
+      r.setAttribute('stroke', s.stroke);
     });
-    for (var i = 0; i < 3; i++) setChip(i, 'done');
-    setChip(QUANT_IDX, 'active');
-    baseArrows.forEach(function (a) {
-      gsap.killTweensOf(a);
-      a.setAttribute('opacity', 1);
+    chipTexts.forEach(function (t, i) {
+      t.setAttribute('fill', CHIP_STYLE[CHIP_STATE[i]].txt);
     });
-    finalArrows.forEach(function (a) {
-      gsap.killTweensOf(a);
-      a.setAttribute('opacity', 0);
-    });
+    gsap.killTweensOf(calloutG);
+    calloutG.setAttribute('opacity', 0);
     slotGlyphs.forEach(function (g, k) {
       gsap.killTweensOf(g);
       g.setAttribute('opacity', 0);
@@ -350,13 +342,6 @@
   /* ==================== timeline ==================== */
 
   var SECTIONS = 3;
-
-  /* chip styling as timeline sets (reverse-safe, unlike callbacks) */
-  function tlChip(timeline, i, styleName, pos) {
-    var s = CHIP_STYLE[styleName];
-    timeline.set(chipRects[i], { attr: { fill: s.fill, stroke: s.stroke } }, pos);
-    timeline.set(chipTexts[i], { attr: { fill: s.txt } }, pos);
-  }
 
   function buildTimeline() {
     tl = gsap.timeline({ paused: true });
@@ -374,38 +359,14 @@
     });
     tl.addLabel('s1', tl.duration());
 
-    /* s2 — THE INSERTION: the chip row visibly re-spaces apart and
-     * "shared basis" slots in between "SOBB BVH₈" and "quantization" */
+    /* s2 — THE ANNOTATION: the basis callout fades in beside the node.
+     * The shared basis is framed as a property the wide node carries,
+     * not a stage the pipeline runs — the chip row never moves. */
     tl.to({}, { duration: 0.25 }, '>');
     at = tl.duration();
-    /* quantization is no longer pending — the story rewinds one step */
-    tlChip(tl, QUANT_IDX, 'todo', at);
-    tl.to(baseArrows, { attr: { opacity: 0 }, duration: 0.25 }, at);
-    /* re-space via x ATTRIBUTES, not a group transform — bbox-based
-     * overflow checks (and anything else reading getBBox) must see the
-     * settled geometry */
-    [0, 1, 2, 3].forEach(function (i) {
-      var slot = i < INSERT_AT ? i : i + 1;
-      tl.to(chipRects[i], {
-        attr: { x: FINAL_X[slot] }, duration: 0.6, ease: 'power2.inOut'
-      }, at);
-      tl.to(chipTexts[i], {
-        attr: { x: FINAL_X[slot] + CHIP_W[i] / 2 }, duration: 0.6, ease: 'power2.inOut'
-      }, at);
-    });
-    /* the insert rises only AFTER the row finishes re-spacing — during
-     * the slide its rect would briefly swallow the moving SOBB label */
-    tl.to(chipGs[INSERT_IDX], {
-      attr: { opacity: 1 }, duration: 0.45, ease: 'power2.out'
-    }, at + 0.65);
-    tl.to(chipRects[INSERT_IDX], {
-      attr: { y: CHIP_Y }, duration: 0.45, ease: 'power2.out'
-    }, at + 0.65);
-    tl.to(chipTexts[INSERT_IDX], {
-      attr: { y: CHIP_Y + 27 }, duration: 0.45, ease: 'power2.out'
-    }, at + 0.65);
-    tl.to(finalArrows, { attr: { opacity: 1 }, duration: 0.35 }, at + 0.85);
-    tlChip(tl, INSERT_IDX, 'active', at + 1.15);
+    tl.to(calloutG, {
+      attr: { opacity: 1 }, duration: 0.55, ease: 'power1.inOut'
+    }, at + 0.15);
     tl.addLabel('s2', tl.duration());
 
     /* s3 — THE CONVERSION: one deliberate sweep — every parallelogram
@@ -423,8 +384,6 @@
         duration: 1.0, ease: 'power2.inOut'
       }, w);
     });
-    tlChip(tl, INSERT_IDX, 'done', at + 1.35);
-    tlChip(tl, QUANT_IDX, 'active', at + 1.5);
     tl.addLabel('s3', tl.duration());
   }
 
@@ -438,8 +397,10 @@
       buildTimeline();
       captionEl.textContent = CAPTIONS[fragStep] || CAPTIONS[0];
       if (fragStep > 0) tl.seek(D.stopsFor(tl, SECTIONS)[fragStep], true);
-      gsap.fromTo(svg, { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out', overwrite: 'auto' });
+      /* NO entrance fade/rise: this slide opens pixel-identical to
+       * pipesobb8's settled frame (hard-cut hand-off) — a fromTo here
+       * would read as a bounce on identical content. */
+      gsap.set(svg, { opacity: 1, y: 0 });
     },
     step: function (fragStep) {
       if (!tl) return;
@@ -461,11 +422,10 @@
     pts2str: pts2str,
     chips: {
       TXT: CHIP_TXT, W: CHIP_W, Y: CHIP_Y, H: CHIP_H,
-      BASE_X: BASE_X, FINAL_X: FINAL_X,
-      BASE_ARROW_X: BASE_ARROW_X, FINAL_ARROW_X: FINAL_ARROW_X,
-      INSERT_IDX: INSERT_IDX, INSERT_AT: INSERT_AT, QUANT_IDX: QUANT_IDX,
+      X: CHIP_X, ARROW_X: CHIP_ARROW_X, STATE: CHIP_STATE,
       STYLE: CHIP_STYLE
     },
+    CALLOUT: CALLOUT, CALLOUT_PTS: CALLOUT_PTS,
     N1: N1, N2: N2,
     GLYPH_DEG: GLYPH_DEG,
     FAIL_ROT: FAIL_ROT, BIG_SCALE: BIG_SCALE,

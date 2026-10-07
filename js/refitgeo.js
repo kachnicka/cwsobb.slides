@@ -6,28 +6,37 @@
  *     triangles, a mid node 2 minis per descendant leaf (8), the root
  *     2 micros per leaf (16). Minis start pending-faint and brighten
  *     when their own thread is tested at that node.
- *   - bounds start INVALID (paper init: [+FLT_MAX,-FLT_MAX]) — a tiny
- *     dashed ghost parallelogram. First arrival at a node always
- *     commits (pop); later arrivals locally test their carried
- *     triangle against the current bound (ghost outline appears):
- *     fits -> passes silently; pokes out -> the parallelogram MORPHS
- *     to the union + red atomic flash. Which arrivals commit is not
- *     scripted: a tiny slab-extent simulation over the shuffled
- *     arrival order decides, exactly like the real local test.
+ *   - NO invalid-init ghost bounds and NO running commentary: bounds
+ *     simply POP into existence at the first arrival ("first write
+ *     always commits"); later commits MORPH them to the union + red
+ *     atomic flash + comic starburst badge.
+ *   - resident triangles fill their SOBBs tightly at every level:
+ *     leaf triangles run as a diagonal chain along the leaf's long
+ *     slab axis; mid/root blob pairs sit at slab-space corner slots.
+ *     Cross-level correspondence is deliberately loose; the refit
+ *     (grow-on-commit, never shrink) is what must read correctly.
+ *   - threads wait INSIDE the node at their blob position (the thread
+ *     is at the node, testing locally) — no floating wait rows that
+ *     collide with the skewed bound edges.
  *   - thread order: departure ranks shuffled with a seeded mulberry32
  *     (local copy — DeckSVG.mulberry32 is not exported on window.DeckSVG
  *     and common.js is outside this file's edit allowance) plus jittered
  *     hop durations, so arrivals at parents are visibly out of order.
+ *     The climb runs ~4x slower than the original draft so the viewer
+ *     can parse each local test.
+ *   - every arrival gets a comic starburst badge near the node — a big
+ *     red "BANG!" for commits (atomic min/max write), a small dim "pew"
+ *     for passes — plus ONE persistent red "atomic min/max" badge in
+ *     the middle of the canvas, visible from the first thread reaching
+ *     an internal node until the end.
  *
  * Timeline sections (one per reveal.js fragment step):
- *   s1: spawn — one green dot per leaf child; leaf SOBBs pop from
- *       invalid ghosts to fitted; init note tag
+ *   s1: spawn — one green dot per leaf child; leaf SOBBs pop in fitted
+ *       (bounds appear out of nothing)
  *   s2: climb — shuffled, overlapping; ghost local test per arrival;
- *       commits morph the SOBB + flash red ("changed -> atomic min/max"
- *       tag on the first mid-tree grow), passes stay silent
- *       ("no change -> nothing written" at the first root pass)
- *   s3: numbers stamp — writes-per-test gradient
- *   s4: meaning stamp + root emphasis
+ *       commits morph the SOBB + red flash + BANG! badge, passes get a
+ *       quiet pew badge; the persistent atomic badge fades in at the
+ *       first internal-node arrival and stays.
  */
 (function () {
   'use strict';
@@ -39,6 +48,7 @@
   var ATOMIC_RED = '#c23c3c';      // by design: green = thread, red = atomic)
   var MINI_INK = '#6a7078';
   var MINI_FILL = '#f2f4f9';
+  var PASS_INK = '#8a909a';
 
   /* DeckSVG.mulberry32 is module-local in common.js (not on the exported
    * object) and common.js is outside my edit allowance — local copy. */
@@ -54,41 +64,64 @@
 
   /* ==================== LAYOUT DATA (viewBox 0 0 1120 520) ====================
    * Wide-BVH tree: root -> 2 internal -> 8 leaf clusters. All geometry
-   * derived (parallelograms are parasitic fits of their resident clouds),
-   * then smoke-checked to sit >= 24 units inside the viewBox. */
+   * derived: resident triangles sit at slab-space slots of their node's
+   * basis, so each parallelogram fit wraps its cloud snugly. */
 
-  var ROOT = { cx: 560, cy: 102, a1: 101, a2: 159, pad: 13, blobDx: 31, scale: 0.34 };
+  var ROOT = { cx: 560, cy: 100, a1: 101, a2: 159, pad: 9, scale: 0.6, w: 3 };
   var MIDS = [
-    { cx: 285, cy: 232, a1: 96, a2: 167, pad: 11, blobDx: 46, scale: 0.5 },
-    { cx: 835, cy: 232, a1: 104, a2: 154, pad: 11, blobDx: 46, scale: 0.5 }
+    { cx: 285, cy: 260, a1: 96, a2: 167, pad: 9, scale: 0.72, w: 2.6 },
+    { cx: 835, cy: 260, a1: 104, a2: 154, pad: 9, scale: 0.72, w: 2.6 }
   ];
   var LEAF_X = [150, 240, 330, 420, 700, 790, 880, 970];
-  var LEAF_Y = 386;
-  var LEAF_PAD = 8;
+  var LEAF_Y = 404;
+  var LEAF_PAD = 5;
+  var LEAF_W = 2.2;
   var JA = [-9, -4, 3, 8, -7, -2, 5, 10];   // per-leaf basis jitter, deg
   var JB = [7, 2, -5, -10, 9, 4, -3, -8];
   var TRI_LITE = [2, 6];                   // leaves drawn with 2 triangles
 
+  /* blob slots in unit slab coords (s1 along basis normal 1, s2 along
+   * normal 2): corners for mids, corner+edge-mid ring for the root.
+   * Multiplied by per-node slab half-extents A/B. */
+  var MID_SLOT = [
+    { s1: -1, s2: -1 }, { s1: -1, s2: 1 }, { s1: 1, s2: 1 }, { s1: 1, s2: -1 }
+  ];
+  var MID_A = 20, MID_B = 70;
+  var ROOT_SLOT = [
+    { s1: -1, s2: -1 }, { s1: -1, s2: 0 }, { s1: -1, s2: 1 }, { s1: 0, s2: 1 },
+    { s1: 1, s2: 1 }, { s1: 1, s2: 0 }, { s1: 1, s2: -1 }, { s1: 0, s2: -1 }
+  ];
+  var ROOT_A = 15, ROOT_BH = 122;
+
+  /* leaf triangle slots in unit slab coords (fraction of LEAF_A/B):
+   * a diagonal chain along the parallelogram's long (skewed) axis, so
+   * the fitted bound hugs the chain on all four sides */
+  var LEAF_TRI_SLOT3 = [
+    { s1: -0.6, s2: -0.62 }, { s1: 0.02, s2: 0.02 }, { s1: 0.6, s2: 0.62 }
+  ];
+  var LEAF_TRI_SLOT2 = [
+    { s1: -0.58, s2: -0.6 }, { s1: 0.58, s2: 0.6 }
+  ];
+  var LEAF_A = 15, LEAF_B = 20;
+
   var SIDE_LABELS = [
-    { text: 'ROOT', y: 106 },
-    { text: 'INTERNAL', y: 236 },
-    { text: 'LEAVES', y: 390 }
+    { text: 'ROOT', y: 104 },
+    { text: 'INTERNAL', y: 264 },
+    { text: 'LEAVES', y: 408 }
   ];
 
-  /* stamps + tags */
-  var TAG_INIT = 'every new bound starts invalid — first write always commits';
-  var TAG_ATOMIC = 'changed → atomic min/max';
-  var TAG_PASS = 'no change → nothing written';
-  var STAMP_NUM = 'writes per test: 16–26% near the leaves · ~20% overall · ~0.0003% at the root';
-  var STAMP_MEAN = 'every triangle reaches the root — the top bound saw them all';
+  /* persistent atomic legend badge, dead center of the canvas */
+  var ATOMIC_LABEL = 'atomic min/max';
+  var ATOMIC_LX = 560, ATOMIC_LY = 260;
 
-  /* timing */
+  /* timing — the climb runs ~4x slower than the original draft so each
+   * local test (ghost triangle, morph, badge) is parseable */
   var SEED = 20260417;
-  var STAG = 0.13;
-  var HOP1 = 0.7, HOP2 = 0.75;
-  var T_PASS = 0.32, T_COMMIT = 0.58;
+  var STAG = 0.55;
+  var HOP1 = 2.9, HOP2 = 3.1;
+  var T_PASS = 1.05, T_COMMIT = 1.75;
 
-  var OP_PENDING = 0.16, OP_MINI = 0.75, OP_MICRO = 0.7;
+  var OP_PENDING = 0.16, OP_MINI = 0.85, OP_MICRO = 0.8;
 
   /* ==================== pure geometry ==================== */
 
@@ -128,38 +161,40 @@
     return [lo, hi];
   }
 
-  /* corners of parallelogram {lo1,hi1,lo2,hi2} in basis -> 4 pts CCW */
-  function corners(st, b) {
+  /* xy point whose slab projections are (d1, d2) in basis b */
+  function slabXY(b, d1, d2) {
     var det = b.n1[0] * b.n2[1] - b.n1[1] * b.n2[0];
-    function solve(a, c) {
-      return [
-        (a * b.n2[1] - c * b.n1[1]) / det,
-        (b.n1[0] * c - b.n2[0] * a) / det
-      ];
-    }
-    var poly = [
-      solve(st.lo1, st.lo2), solve(st.hi1, st.lo2),
-      solve(st.hi1, st.hi2), solve(st.lo1, st.hi2)
+    return [
+      (d1 * b.n2[1] - d2 * b.n1[1]) / det,
+      (b.n1[0] * d2 - b.n2[0] * d1) / det
     ];
-    var cx = 0, cy = 0;
-    poly.forEach(function (p) { cx += p[0]; cy += p[1]; });
-    cx /= 4; cy /= 4;
-    return poly.sort(function (p, q) {
-      return Math.atan2(p[1] - cy, p[0] - cx) - Math.atan2(q[1] - cy, q[0] - cx);
-    });
+  }
+
+  /* xy point at node (cx,cy) offset by (s1,s2) in slab space of b */
+  function relSlab(cx, cy, b, s1, s2) {
+    return slabXY(b,
+      cx * b.n1[0] + cy * b.n1[1] + s1,
+      cx * b.n2[0] + cy * b.n2[1] + s2);
+  }
+
+  /* corners of parallelogram {lo1,hi1,lo2,hi2} in basis -> 4 pts in a
+   * FIXED canonical order: (lo1,lo2) (hi1,lo2) (hi1,hi2) (lo1,hi2).
+   * No angle sort on purpose: successive fit stages of a node pair up
+   * corner-for-corner in GSAP's points tween, so every intermediate
+   * frame stays a true parallelogram with the node's fixed edge
+   * slopes — the bound only ever GROWS outward on refits, its
+   * orientation never changes. */
+  function corners(st, b) {
+    return [
+      slabXY(b, st.lo1, st.lo2), slabXY(b, st.hi1, st.lo2),
+      slabXY(b, st.hi1, st.hi2), slabXY(b, st.lo1, st.hi2)
+    ];
   }
 
   /* fit verts in basis b with pad -> slab stage {lo1,hi1,lo2,hi2} */
   function fitStage(verts, b, pad) {
     var e1 = extents(verts, b.n1), e2 = extents(verts, b.n2);
     return { lo1: e1[0] - pad, hi1: e1[1] + pad, lo2: e2[0] - pad, hi2: e2[1] + pad };
-  }
-
-  /* invalid-init ghost: collapsed fit around a center point */
-  function ghostStage(cx, cy, b) {
-    var c1 = cx * b.n1[0] + cy * b.n1[1];
-    var c2 = cx * b.n2[0] + cy * b.n2[1];
-    return { lo1: c1 - 3, hi1: c1 + 3, lo2: c2 - 3, hi2: c2 + 3 };
   }
 
   function mergeStages(a, b) {
@@ -181,176 +216,98 @@
     return true;
   }
 
-  function unionVerts(a, b) { return a.concat(b); }
-
   /* ==================== derived layout (computed once at load) ==================== */
 
-  /* leaf-local triangle geometry (relative to leaf center) */
+  var leafBasis = [];
+  for (var lbi = 0; lbi < 8; lbi++) {
+    leafBasis.push(basis(100 + JA[lbi], 160 + JB[lbi]));
+  }
+
+  /* leaf-local triangle geometry: 2-3 triangles as a diagonal chain
+   * along the leaf's own slab axes so the leaf parallelogram wraps
+   * them snugly */
   var leafTris = [];   // [leaf] -> array of 3-pt arrays (absolute viewBox)
-  var leafLocal = [];  // same, relative to leaf center (minis derive from this)
   (function () {
     var rng = mulberry32(SEED ^ 0x5eed);
-    var proto = [[-12, -3, 13, 0.9], [10, -8, 12, 2.8], [-1, 9, 11, 4.6]];
+    var proto = [
+      { s: 17, rot: 0.9 }, { s: 15, rot: 2.8 }, { s: 16, rot: 4.6 }
+    ];
     for (var i = 0; i < 8; i++) {
-      var abs = [], rel = [];
-      var n = TRI_LITE.indexOf(i) >= 0 ? 2 : 3;
+      var lite = TRI_LITE.indexOf(i) >= 0;
+      var n = lite ? 2 : 3;
+      var slots = lite ? LEAF_TRI_SLOT2 : LEAF_TRI_SLOT3;
+      var tris = [];
       for (var j = 0; j < n; j++) {
-        var p = proto[j];
-        var s = p[2] * (0.92 + rng() * 0.16);
-        var rot = p[3] + (rng() - 0.5) * 0.5;
-        var ox = p[0] + (rng() - 0.5) * 3, oy = p[1] + (rng() - 0.5) * 3;
-        var loc = triVerts(ox, oy, s, rot);
-        rel.push(loc);
-        abs.push(loc.map(function (q) { return [q[0] + LEAF_X[i], q[1] + LEAF_Y]; }));
+        var slot = slots[j];
+        var s = proto[j].s * (0.92 + rng() * 0.16);
+        var rot = proto[j].rot + (rng() - 0.5) * 0.5;
+        var c = relSlab(LEAF_X[i], LEAF_Y, leafBasis[i],
+          slot.s1 * LEAF_A + (rng() - 0.5) * 3,
+          slot.s2 * LEAF_B + (rng() - 0.5) * 3);
+        tris.push(triVerts(c[0], c[1], s, rot));
       }
-      leafLocal.push(rel);
-      leafTris.push(abs);
+      leafTris.push(tris);
     }
   })();
 
-  /* node descriptors: centers, bases, resident clouds, stage fits */
-  function nodeBasis(a1, a2) { return basis(a1, a2); }
+  var midBasis = MIDS.map(function (m) { return basis(m.a1, m.a2); });
+  var ROOT_B = basis(ROOT.a1, ROOT.a2);
 
-  /* minis of leaf i at a node: first two leaf tris scaled into the
-   * leaf's blob slot at that node (blob slot = descendant position) */
-  function miniVertsAt(node, k, i) {
-    var bx = node.cx + node.blobDx * (k - (node === ROOT ? 3.5 : 1.5));
-    var by = node.cy;
+  /* canonical mini pair: two small triangles around a blob center */
+  var BLOB_PROTO = [triVerts(-5, 3, 12, 0.7), triVerts(6, -4, 10.5, 2.9)];
+
+  /* resident blob verts at a node: the descendant-k mini pair, scaled,
+   * centered on the node's slab slot for k */
+  function blobVerts(node, b, k) {
+    var isRoot = node === ROOT;
+    var slot = (isRoot ? ROOT_SLOT : MID_SLOT)[k];
+    var A = isRoot ? ROOT_A : MID_A;
+    var B = isRoot ? ROOT_BH : MID_B;
+    var c = relSlab(node.cx, node.cy, b, slot.s1 * A, slot.s2 * B);
     var out = [];
-    leafLocal[i].slice(0, 2).forEach(function (tri) {
+    BLOB_PROTO.forEach(function (tri) {
       tri.forEach(function (q) {
-        out.push([bx + q[0] * node.scale, by + q[1] * node.scale]);
+        out.push([c[0] + q[0] * node.scale, c[1] + q[1] * node.scale]);
       });
     });
     return out;
   }
 
+  /* blob centers: resident data positions and thread wait spots
+   * (threads hover just above their own blob, inside the node) */
+  var midBlobXY = MIDS.map(function (m, mi) {
+    var out = [];
+    for (var k = 0; k < 4; k++) {
+      out.push(relSlab(m.cx, m.cy, midBasis[mi], MID_SLOT[k].s1 * MID_A, MID_SLOT[k].s2 * MID_B));
+    }
+    return out;
+  });
+  var rootBlobXY = [];
+  for (var rb = 0; rb < 8; rb++) {
+    rootBlobXY.push(relSlab(ROOT.cx, ROOT.cy, ROOT_B, ROOT_SLOT[rb].s1 * ROOT_A, ROOT_SLOT[rb].s2 * ROOT_BH));
+  }
+
+  /* final (all-arrivals) stages — initial, invisible points of the
+   * node parallelograms; per-event stages never exceed these extents */
+  function nodeFinalStage(node, b, n) {
+    var all = [];
+    for (var k = 0; k < n; k++) all = all.concat(blobVerts(node, b, k));
+    return fitStage(all, b, node.pad);
+  }
+  var ROOT_FINAL = nodeFinalStage(ROOT, ROOT_B, 8);
+  var MID_FINAL = MIDS.map(function (m, mi) { return nodeFinalStage(m, midBasis[mi], 4); });
+
   /* leaf-stage fits */
-  var leafBasis = [], leafFit = [], leafGhost = [];
+  var leafFit = [], leafFitStr = [];
   for (var li = 0; li < 8; li++) {
-    var lb = nodeBasis(100 + JA[li], 160 + JB[li]);
-    leafBasis.push(lb);
     var lverts = [];
     leafTris[li].forEach(function (t) { lverts = lverts.concat(t); });
-    leafFit.push(fitStage(lverts, lb, LEAF_PAD));
-    leafGhost.push(ghostStage(LEAF_X[li], LEAF_Y, lb));
+    leafFit.push(fitStage(lverts, leafBasis[li], LEAF_PAD));
+    leafFitStr.push(pts2str(corners(leafFit[li], leafBasis[li])));
   }
 
-  var midBasis = MIDS.map(function (m) { return nodeBasis(m.a1, m.a2); });
-  var midGhost = MIDS.map(function (m) { return ghostStage(m.cx, m.cy, nodeBasis(m.a1, m.a2)); });
-  var ROOT_B = nodeBasis(ROOT.a1, ROOT.a2);
-  var ROOT_GHOST = ghostStage(ROOT.cx, ROOT.cy, ROOT_B);
-
-  /* ==================== DOM refs ==================== */
-
-  var built = false;
-  var svg;
-  var pgEls = { root: null, mids: [], leaves: [] };
-  var miniEls = { mids: [[], []], root: [] };  // per descendant leaf: 2 polys
-  var dotEls = [], ghostEls = [];
-  var tagInitEl, tagAtomicEl, tagPassEl, stampNumEl, stampMeanEl;
-  var tl = null;
-  var SECTIONS = 4;
-
-  /* ==================== build ==================== */
-
-  function build() {
-    var host = document.getElementById('geo-canvas');
-    svg = el('svg', { viewBox: '0 0 1120 520', width: '100%', height: '100%' }, host);
-
-    /* side labels (static paint only -> class is safe) */
-    SIDE_LABELS.forEach(function (l) {
-      var t = el('text', { 'class': 'svg-side-label', x: 18, y: l.y }, svg);
-      t.textContent = l.text;
-    });
-
-    /* edges (static, behind everything) */
-    MIDS.forEach(function (m, mi) {
-      el('line', { x1: ROOT.cx, y1: ROOT.cy + 46, x2: m.cx, y2: m.cy - 40, stroke: EDGE, 'stroke-width': 1.6 }, svg);
-      for (var k = 0; k < 4; k++) {
-        var i = mi * 4 + k;
-        el('line', { x1: m.cx, y1: m.cy + 40, x2: LEAF_X[i], y2: LEAF_Y - 30, stroke: EDGE, 'stroke-width': 1.6 }, svg);
-      }
-    });
-
-    /* node parallelograms — ALL animated paint as attributes */
-    pgEls.root = el('polygon', {
-      points: pts2str(corners(ROOT_GHOST, ROOT_B)),
-      fill: '#ffffff', stroke: FAINT, 'stroke-width': 2.4, 'stroke-dasharray': '7 5',
-      'stroke-linejoin': 'round'
-    }, svg);
-    MIDS.forEach(function (m, mi) {
-      pgEls.mids.push(el('polygon', {
-        points: pts2str(corners(midGhost[mi], midBasis[mi])),
-        fill: '#ffffff', stroke: FAINT, 'stroke-width': 2, 'stroke-dasharray': '7 5',
-        'stroke-linejoin': 'round'
-      }, svg));
-    });
-    for (var i = 0; i < 8; i++) {
-      pgEls.leaves.push(el('polygon', {
-        points: pts2str(corners(leafGhost[i], leafBasis[i])),
-        fill: '#ffffff', stroke: FAINT, 'stroke-width': 1.6, 'stroke-dasharray': '6 4',
-        'stroke-linejoin': 'round'
-      }, svg));
-    }
-
-    /* leaf cluster triangles (full strength, static paint attrs) */
-    leafTris.forEach(function (tris) {
-      tris.forEach(function (t) {
-        el('polygon', { points: pts2str(t), fill: LIGHT, stroke: INK, 'stroke-width': 1.1, 'stroke-linejoin': 'round' }, svg);
-      });
-    });
-
-    /* node-resident minis: pending-faint until their thread is tested */
-    function addMini(verts) {
-      return el('polygon', {
-        points: pts2str(verts), fill: MINI_FILL, stroke: MINI_INK,
-        'stroke-width': 0.8, 'stroke-linejoin': 'round', opacity: OP_PENDING
-      }, svg);
-    }
-    MIDS.forEach(function (m, mi) {
-      for (var k = 0; k < 4; k++) {
-        var li2 = mi * 4 + k;
-        var polys = [];
-        var blob = miniVertsAt(m, k, li2);
-        /* 2 tris of 3 verts each */
-        polys.push(addMini(blob.slice(0, 3)));
-        polys.push(addMini(blob.slice(3, 6)));
-        miniEls.mids[mi].push(polys);
-      }
-    });
-    for (var r = 0; r < 8; r++) {
-      var rb = miniVertsAt(ROOT, r, r);
-      var rp = [];
-      rp.push(el('polygon', {
-        points: pts2str(rb.slice(0, 3)), fill: MINI_FILL, stroke: MINI_INK,
-        'stroke-width': 0.65, 'stroke-linejoin': 'round', opacity: OP_PENDING
-      }, svg));
-      rp.push(el('polygon', {
-        points: pts2str(rb.slice(3, 6)), fill: MINI_FILL, stroke: MINI_INK,
-        'stroke-width': 0.65, 'stroke-linejoin': 'round', opacity: OP_PENDING
-      }, svg));
-      miniEls.root.push(rp);
-    }
-
-    /* threads + per-thread carried-geometry ghosts */
-    for (var d = 0; d < 8; d++) {
-      dotEls.push(el('circle', { cx: LEAF_X[d], cy: 436, r: 0, fill: GREEN, opacity: 0 }, svg));
-      ghostEls.push(el('polygon', {
-        points: '0,0 0,0 0,0', fill: 'none', stroke: GREEN,
-        'stroke-width': 1.4, 'stroke-linejoin': 'round', opacity: 0
-      }, svg));
-    }
-
-    /* tags + stamps */
-    tagInitEl = text(TAG_INIT, { x: 1105, y: 470, 'text-anchor': 'end', 'font-size': 22, fill: FAINT, opacity: 0 }, svg);
-    tagAtomicEl = text(TAG_ATOMIC, { x: 1010, y: 178, 'text-anchor': 'end', 'font-size': 22, fill: ATOMIC_RED, opacity: 0 }, svg);
-    tagPassEl = text(TAG_PASS, { x: 795, y: 70, 'text-anchor': 'start', 'font-size': 22, fill: FAINT, opacity: 0 }, svg);
-    stampNumEl = text(STAMP_NUM, { x: 560, y: 492, 'text-anchor': 'middle', 'font-size': 25, fill: FAINT, opacity: 0 }, svg);
-    stampMeanEl = text(STAMP_MEAN, { x: 560, y: 464, 'text-anchor': 'middle', 'font-size': 25, fill: INK, opacity: 0 }, svg);
-
-    built = true;
-  }
+  var ROOT_FINAL_STR = pts2str(corners(ROOT_FINAL, ROOT_B));
+  var MID_FINAL_STR = MID_FINAL.map(function (st, mi) { return pts2str(corners(st, midBasis[mi])); });
 
   /* ==================== schedule (seeded sim, runs per start) ==================== */
 
@@ -375,7 +332,7 @@
     for (var i = 0; i < 8; i++) {
       th.push({
         leaf: i,
-        depart: rankOf[i] * STAG + rng() * 0.1,
+        depart: rankOf[i] * STAG + rng() * 0.4,
         h1: HOP1 * (0.85 + rng() * 0.3),
         h2: HOP2 * (0.85 + rng() * 0.3)
       });
@@ -390,7 +347,7 @@
       arrivals.forEach(function (t) {
         var mi = m, k = t.leaf - m * 4;
         var at = t.depart + t.h1;
-        var verts = miniVertsAt(MIDS[mi], k, t.leaf);
+        var verts = blobVerts(MIDS[mi], midBasis[mi], k);
         var ev = { node: 'm' + mi, leaf: t.leaf, k: k, at: at };
         if (!midState[mi]) {
           midState[mi] = fitStage(verts, midBasis[mi], MIDS[mi].pad);
@@ -415,7 +372,7 @@
     });
     rootArrivals.forEach(function (t) {
       var at = t.midEvent.at + t.midEvent.dur + t.h2;
-      var verts = miniVertsAt(ROOT, t.leaf, t.leaf);
+      var verts = blobVerts(ROOT, ROOT_B, t.leaf);
       var ev = { node: 'root', leaf: t.leaf, at: at };
       if (!rootState) {
         rootState = fitStage(verts, ROOT_B, ROOT.pad);
@@ -435,25 +392,222 @@
     return { threads: th, midEvents: midEvents, rootEvents: rootEvents };
   }
 
-  /* ==================== state / reset ==================== */
+  /* ==================== badges (comic starbursts) ====================
+   * One badge per arrival event. Strong = commit/pop (atomic write),
+   * weak = pass. Layout is pure seeded data so build() and the _test
+   * bounds probe agree. */
+  function computeBadges(sim) {
+    var rng = mulberry32(SEED ^ 0xbada09);
+    var badges = [];
 
-  function ghostify(pg, st, b, w) {
-    pg.setAttribute('points', pts2str(corners(st, b)));
-    pg.setAttribute('stroke', FAINT);
-    pg.setAttribute('stroke-dasharray', '7 5');
-    pg.setAttribute('stroke-width', w);
+    /* Deterministic per-node badge slots (offsets from node center).
+     * Root arrivals bunch within ~1.5s, so simultaneous bursts must be
+     * separated by construction, not by retry: every slot pair is far
+     * apart, and rng only shuffles the slot assignment and jitters
+     * placement/rotation/size. */
+    var MID_BADGE_SLOTS = [
+      [-108, -42], [110, -38], [-104, 44], [106, 40]
+    ];
+    var ROOT_BADGE_SLOTS = [
+      [-115, -38], [-40, -44], [40, -38], [115, -42],
+      [-111, 40], [-36, 44], [36, 40], [111, 38]
+    ];
+
+    function mk(node, ev, slot) {
+      var strong = ev.kind !== 'pass';
+      var R = strong ? 22 + rng() * 4 : 14 + rng() * 3;
+      var bx = Math.max(80, Math.min(1040, node.cx + slot[0] + (rng() * 2 - 1) * 8));
+      var by = Math.max(58, Math.min(468, node.cy + slot[1] + (rng() * 2 - 1) * 8));
+      var rot = (rng() * 2 - 1) * 24;
+      var spikes = strong ? 9 : 7;
+      var pts = [];
+      for (var i = 0; i < spikes * 2; i++) {
+        var a = i * Math.PI / spikes;
+        var r = (i % 2 === 0) ? R * (1 + (rng() - 0.5) * 0.3) : R * 0.55;
+        pts.push([Math.cos(a) * r, Math.sin(a) * r]);
+      }
+      var bd = {
+        strong: strong, bx: bx, by: by, rot: rot, R: R, pts: pts,
+        hold: strong ? 1.15 : 0.8,
+        label: strong ? 'BANG!' : 'pew'
+      };
+      badges.push(bd);
+      ev.bidx = badges.length - 1;
+    }
+    sim.midEvents.forEach(function (evs, mi) {
+      var slots = shuffled(MID_BADGE_SLOTS, rng);
+      evs.forEach(function (ev, j) { mk(MIDS[mi], ev, slots[j]); });
+    });
+    var rootSlots = shuffled(ROOT_BADGE_SLOTS, rng);
+    sim.rootEvents.forEach(function (ev, j) { mk(ROOT, ev, rootSlots[j]); });
+    sim.badges = badges;
   }
+
+  /* shared deterministic sim + badges (build, timeline, _test all agree) */
+  var PRE = null;
+  function sim() {
+    if (!PRE) {
+      PRE = simulate();
+      computeBadges(PRE);
+    }
+    return PRE;
+  }
+
+  /* ==================== DOM refs ==================== */
+
+  var built = false;
+  var svg;
+  var pgEls = { root: null, mids: [], leaves: [] };
+  var miniEls = { mids: [[], []], root: [] };  // per descendant leaf: 2 polys
+  var dotEls = [], ghostEls = [];
+  var badgeEls = [];                           // by ev.bidx
+  var persistEl = null;                        // atomic min/max legend badge
+  var tl = null;
+  var SECTIONS = 2;
+
+  /* ==================== build ==================== */
+
+  function build() {
+    var host = document.getElementById('geo-canvas');
+    svg = el('svg', { viewBox: '0 0 1120 520', width: '100%', height: '100%' }, host);
+
+    /* side labels (static paint only -> class is safe) */
+    SIDE_LABELS.forEach(function (l) {
+      var t = el('text', { 'class': 'svg-side-label', x: 18, y: l.y }, svg);
+      t.textContent = l.text;
+    });
+
+    /* edges (static, behind everything) */
+    MIDS.forEach(function (m, mi) {
+      el('line', { x1: ROOT.cx, y1: ROOT.cy + 46, x2: m.cx, y2: m.cy - 40, stroke: EDGE, 'stroke-width': 1.6 }, svg);
+      for (var k = 0; k < 4; k++) {
+        var i = mi * 4 + k;
+        el('line', { x1: m.cx, y1: m.cy + 40, x2: LEAF_X[i], y2: LEAF_Y - 30, stroke: EDGE, 'stroke-width': 1.6 }, svg);
+      }
+    });
+
+    /* node parallelograms — ALL animated paint as attributes. No ghost
+     * state: they are invisible until the first write pops them in. */
+    pgEls.root = el('polygon', {
+      points: ROOT_FINAL_STR,
+      fill: '#ffffff', stroke: BLUE, 'stroke-width': ROOT.w,
+      'stroke-linejoin': 'round', opacity: 0
+    }, svg);
+    MIDS.forEach(function (m, mi) {
+      pgEls.mids.push(el('polygon', {
+        points: MID_FINAL_STR[mi],
+        fill: '#ffffff', stroke: BLUE, 'stroke-width': m.w,
+        'stroke-linejoin': 'round', opacity: 0
+      }, svg));
+    });
+    for (var i = 0; i < 8; i++) {
+      pgEls.leaves.push(el('polygon', {
+        points: leafFitStr[i],
+        fill: '#ffffff', stroke: BLUE, 'stroke-width': LEAF_W,
+        'stroke-linejoin': 'round', opacity: 0
+      }, svg));
+    }
+
+    /* leaf cluster triangles (full strength, static paint attrs) */
+    leafTris.forEach(function (tris) {
+      tris.forEach(function (t) {
+        el('polygon', { points: pts2str(t), fill: LIGHT, stroke: INK, 'stroke-width': 1.1, 'stroke-linejoin': 'round' }, svg);
+      });
+    });
+
+    /* node-resident minis: pending-faint until their thread is tested */
+    function addMini(verts, sw) {
+      return el('polygon', {
+        points: pts2str(verts), fill: MINI_FILL, stroke: MINI_INK,
+        'stroke-width': sw, 'stroke-linejoin': 'round', opacity: OP_PENDING
+      }, svg);
+    }
+    MIDS.forEach(function (m, mi) {
+      for (var k = 0; k < 4; k++) {
+        var blob = blobVerts(m, midBasis[mi], k);
+        miniEls.mids[mi].push([
+          addMini(blob.slice(0, 3), 0.8),
+          addMini(blob.slice(3, 6), 0.8)
+        ]);
+      }
+    });
+    for (var r = 0; r < 8; r++) {
+      var rb = blobVerts(ROOT, ROOT_B, r);
+      miniEls.root.push([
+        addMini(rb.slice(0, 3), 0.65),
+        addMini(rb.slice(3, 6), 0.65)
+      ]);
+    }
+
+    /* threads + per-thread carried-geometry ghosts */
+    for (var d = 0; d < 8; d++) {
+      dotEls.push(el('circle', { cx: LEAF_X[d], cy: 454, r: 0, fill: GREEN, opacity: 0 }, svg));
+      ghostEls.push(el('polygon', {
+        points: '0,0 0,0 0,0', fill: 'none', stroke: GREEN,
+        'stroke-width': 1.4, 'stroke-linejoin': 'round', opacity: 0
+      }, svg));
+    }
+
+    /* comic atomic badges — on top of the geometry */
+    sim().badges.forEach(function (bd) {
+      var g = el('g', {
+        transform: 'translate(' + bd.bx + ',' + bd.by + ') rotate(' + bd.rot + ')',
+        opacity: 0
+      }, svg);
+      var inner = el('g', { transform: 'scale(0)' }, g);
+      el('polygon', {
+        points: pts2str(bd.pts), fill: '#ffffff',
+        stroke: bd.strong ? ATOMIC_RED : PASS_INK,
+        'stroke-width': bd.strong ? 2.6 : 1.7,
+        'stroke-linejoin': 'miter'
+      }, inner);
+      /* comic lettering: thick white stroke behind the glyphs so the
+       * text stays readable where it crosses the star's spikes */
+      text(bd.label, {
+        x: 0, y: bd.strong ? 5 : 4, 'text-anchor': 'middle',
+        'font-size': bd.strong ? 15 : 12, 'font-weight': 700,
+        fill: bd.strong ? ATOMIC_RED : PASS_INK,
+        stroke: '#ffffff', 'stroke-width': 5, 'paint-order': 'stroke'
+      }, inner);
+      badgeEls.push({ outer: g, inner: inner });
+    });
+
+    /* persistent red atomic badge, middle of the canvas — appears when
+     * the first thread reaches an internal node, stays until the end */
+    persistEl = el('g', { opacity: 0 }, svg);
+    el('rect', {
+      x: ATOMIC_LX - 92, y: ATOMIC_LY - 17, width: 184, height: 34, rx: 17,
+      fill: '#ffffff', stroke: ATOMIC_RED, 'stroke-width': 2.4
+    }, persistEl);
+    text(ATOMIC_LABEL, {
+      x: ATOMIC_LX, y: ATOMIC_LY + 6, 'text-anchor': 'middle',
+      'font-size': 18, 'font-weight': 700, fill: ATOMIC_RED
+    }, persistEl);
+
+    built = true;
+  }
+
+  /* ==================== state / reset ==================== */
 
   function resetDom() {
     gsap.killTweensOf(pgEls.root);
-    ghostify(pgEls.root, ROOT_GHOST, ROOT_B, 2.4);
+    pgEls.root.setAttribute('points', ROOT_FINAL_STR);
+    pgEls.root.setAttribute('opacity', 0);
+    pgEls.root.setAttribute('stroke', BLUE);
+    pgEls.root.setAttribute('stroke-width', ROOT.w);
     pgEls.mids.forEach(function (pg, mi) {
       gsap.killTweensOf(pg);
-      ghostify(pg, midGhost[mi], midBasis[mi], 2);
+      pg.setAttribute('points', MID_FINAL_STR[mi]);
+      pg.setAttribute('opacity', 0);
+      pg.setAttribute('stroke', BLUE);
+      pg.setAttribute('stroke-width', MIDS[mi].w);
     });
     pgEls.leaves.forEach(function (pg, i) {
       gsap.killTweensOf(pg);
-      ghostify(pg, leafGhost[i], leafBasis[i], 1.6);
+      pg.setAttribute('points', leafFitStr[i]);
+      pg.setAttribute('opacity', 0);
+      pg.setAttribute('stroke', BLUE);
+      pg.setAttribute('stroke-width', LEAF_W);
     });
     miniEls.mids.forEach(function (per) {
       per.forEach(function (polys) {
@@ -472,7 +626,7 @@
     dotEls.forEach(function (d, i) {
       gsap.killTweensOf(d);
       d.setAttribute('cx', LEAF_X[i]);
-      d.setAttribute('cy', 436);
+      d.setAttribute('cy', 454);
       d.setAttribute('r', 0);
       d.setAttribute('opacity', 0);
     });
@@ -480,42 +634,75 @@
       gsap.killTweensOf(g);
       g.setAttribute('opacity', 0);
     });
-    [tagInitEl, tagAtomicEl, tagPassEl, stampNumEl, stampMeanEl].forEach(function (t) {
-      gsap.killTweensOf(t);
-      t.setAttribute('opacity', 0);
+    badgeEls.forEach(function (b) {
+      gsap.killTweensOf(b.outer);
+      gsap.killTweensOf(b.inner);
+      b.outer.setAttribute('opacity', 0);
+      b.inner.setAttribute('transform', 'scale(0)');
     });
+    if (persistEl) {
+      gsap.killTweensOf(persistEl);
+      persistEl.setAttribute('opacity', 0);
+    }
   }
 
   /* ==================== timeline ==================== */
 
   function flashCommit(pg, at, w) {
-    tl.set(pg, { attr: { stroke: ATOMIC_RED, 'stroke-dasharray': 'none' } }, at);
-    tl.to(pg, { attr: { 'stroke-width': w + 1.3 }, duration: 0.18, ease: 'power1.out' }, at);
-    tl.to(pg, { attr: { 'stroke-width': w }, duration: 0.5, ease: 'power1.inOut' }, at + 0.2);
-    tl.to(pg, { attr: { stroke: BLUE }, duration: 0.55, ease: 'power1.inOut' }, at + 0.45);
+    tl.set(pg, { attr: { stroke: ATOMIC_RED } }, at);
+    tl.to(pg, { attr: { 'stroke-width': w + 2.2 }, duration: 0.35, ease: 'power1.out' }, at);
+    tl.to(pg, { attr: { 'stroke-width': w }, duration: 1.0, ease: 'power1.inOut' }, at + 0.45);
+    tl.to(pg, { attr: { stroke: BLUE }, duration: 1.0, ease: 'power1.inOut' }, at + 0.9);
+  }
+
+  /* comic badge: pop in, hold briefly, pop out */
+  function bang(ev, at) {
+    var b = badgeEls[ev.bidx];
+    if (!b) return;
+    var bd = sim().badges[ev.bidx];
+    tl.set(b.outer, { attr: { opacity: bd.strong ? 1 : 0.9 } }, at);
+    tl.fromTo(b.inner,
+      { attr: { transform: 'scale(0)' } },
+      { attr: { transform: 'scale(1)' }, duration: 0.34, ease: 'back.out(3.2)' }, at);
+    tl.to(b.outer, { attr: { opacity: 0 }, duration: 0.5, ease: 'power1.in' }, at + 0.34 + bd.hold);
+  }
+
+  /* thread wait spot: a bit inward of its blob, safely inside the node
+   * (blobs sit near the skewed bound's corners; a fixed -y offset can
+   * cross the sloped edges) */
+  function waitSpot(blob, node) {
+    return [blob[0] + (node.cx - blob[0]) * 0.28, blob[1] + (node.cy - blob[1]) * 0.28];
   }
 
   function buildTimeline() {
-    var S = simulate();
+    var S = sim();
     tl = gsap.timeline({ paused: true });
 
-    /* ---- s1: spawn — dots appear, leaf SOBBs pop invalid -> fitted ---- */
+    /* ---- s1: spawn — dots appear, leaf SOBBs pop into existence ---- */
     tl.to({}, { duration: 0.25 }, '>');
     var a1 = tl.duration();
     dotEls.forEach(function (d, i) {
-      tl.to(d, { attr: { opacity: 1, r: 5.5 }, duration: 0.45, ease: 'back.out(2)' }, a1 + i * 0.06);
+      tl.to(d, { attr: { opacity: 1, r: 5.5 }, duration: 0.45, ease: 'back.out(2)' }, a1 + i * 0.07);
       var pg = pgEls.leaves[i];
-      var t0 = a1 + 0.3 + i * 0.06;
-      tl.to(pg, { attr: { points: pts2str(corners(leafFit[i], leafBasis[i])) }, duration: 0.5, ease: 'power2.out' }, t0);
-      tl.set(pg, { attr: { stroke: BLUE, 'stroke-dasharray': 'none' } }, t0 + 0.05);
+      var t0 = a1 + 0.3 + i * 0.07;
+      tl.fromTo(pg,
+        { attr: { opacity: 0, 'stroke-width': 0.8 } },
+        { attr: { opacity: 1, 'stroke-width': LEAF_W }, duration: 0.55, ease: 'back.out(2.2)' }, t0);
     });
-    tl.to(tagInitEl, { attr: { opacity: 1 }, duration: 0.5 }, a1 + 0.6);
     tl.addLabel('s1', tl.duration());
 
     /* ---- s2: the climb — shuffled departures, local test per arrival ---- */
     tl.to({}, { duration: 0.3 }, '>');
     var a2 = tl.duration();
-    var atomicTagged = false, passTagged = false;
+
+    /* first thread to reach an internal node wakes the atomic legend */
+    var firstMidAt = Infinity;
+    S.midEvents.forEach(function (evs) {
+      evs.forEach(function (e) { if (e.at < firstMidAt) firstMidAt = e.at; });
+    });
+    tl.fromTo(persistEl,
+      { attr: { opacity: 0 } },
+      { attr: { opacity: 1 }, duration: 0.55, ease: 'power2.out' }, a2 + firstMidAt);
 
     S.threads.forEach(function (t) {
       var i = t.leaf;
@@ -523,78 +710,69 @@
       var k = i - mi * 4;
       var dot = dotEls[i], ghost = ghostEls[i];
       var dep = a2 + t.depart;
-      var slotMx = MIDS[mi].cx + (k - 1.5) * 38;
-      var slotRx = ROOT.cx + (i - 3.5) * 26;
+      var midBlob = midBlobXY[mi][k];
+      var rootBlob = rootBlobXY[i];
 
-      /* hop 1: leaf -> mid wait slot */
-      tl.to(dot, { attr: { cx: slotMx, cy: 300 }, duration: t.h1, ease: 'power1.inOut' }, dep);
+      /* hop 1: leaf -> just inside the mid node, near its own blob */
+      tl.to(dot, {
+        attr: { cx: waitSpot(midBlob, MIDS[mi])[0], cy: waitSpot(midBlob, MIDS[mi])[1] },
+        duration: t.h1, ease: 'power1.inOut'
+      }, dep);
 
       /* mid test */
       var mev = t.midEvent, mt = a2 + mev.at;
-      ghostRefit(ghost, miniVertsAt(MIDS[mi], k, i).slice(0, 3));
-      tl.to(ghost, { attr: { opacity: 0.8 }, duration: 0.22 }, mt);
+      ghostRefit(ghost, blobVerts(MIDS[mi], midBasis[mi], k).slice(0, 3));
+      tl.to(ghost, { attr: { opacity: 0.85 }, duration: 0.4 }, mt);
       if (mev.kind === 'pass') {
-        tl.to(ghost, { attr: { opacity: 0 }, duration: 0.3 }, mt + 0.24);
+        tl.to(ghost, { attr: { opacity: 0 }, duration: 0.6 }, mt + 0.5);
       } else {
         var mpg = pgEls.mids[mi];
-        tl.to(mpg, { attr: { points: mev.stageStr }, duration: 0.5, ease: 'power2.inOut' }, mt + 0.08);
-        flashCommit(mpg, mt + 0.08, 2);
-        tl.to(ghost, { attr: { opacity: 0 }, duration: 0.3 }, mt + 0.42);
-        if (mev.kind === 'commit' && !atomicTagged) {
-          atomicTagged = true;
-          tl.to(tagAtomicEl, { attr: { opacity: 1 }, duration: 0.35 }, mt + 0.15);
-          tl.to(tagAtomicEl, { attr: { opacity: 0 }, duration: 0.5 }, mt + 1.7);
+        if (mev.kind === 'pop') {
+          tl.set(mpg, { attr: { points: mev.stageStr } }, mt);
+          tl.fromTo(mpg,
+            { attr: { opacity: 0 } },
+            { attr: { opacity: 1 }, duration: 0.35, ease: 'power2.out' }, mt);
+        } else {
+          tl.to(mpg, { attr: { points: mev.stageStr }, duration: 1.1, ease: 'power2.inOut' }, mt + 0.15);
         }
+        flashCommit(mpg, mt + 0.1, MIDS[mi].w);
+        tl.to(ghost, { attr: { opacity: 0 }, duration: 0.6 }, mt + 1.0);
       }
-      brighten(miniEls.mids[mi][k], OP_MINI, mt + 0.1);
+      bang(mev, mt + 0.1);
+      brighten(miniEls.mids[mi][k], OP_MINI, mt + 0.2);
 
-      /* hop 2: mid -> root wait slot */
+      /* hop 2: mid blob -> just inside the root, near its own blob */
       var dep2 = mt + mev.dur;
-      tl.to(dot, { attr: { cx: slotRx, cy: 192 }, duration: t.h2, ease: 'power1.inOut' }, dep2);
+      tl.to(dot, {
+        attr: { cx: waitSpot(rootBlob, ROOT)[0], cy: waitSpot(rootBlob, ROOT)[1] },
+        duration: t.h2, ease: 'power1.inOut'
+      }, dep2);
 
       /* root test */
       var rev = t.rootEvent, rt = a2 + rev.at;
-      ghostRefit(ghost, miniVertsAt(ROOT, i, i).slice(0, 3));
-      tl.to(ghost, { attr: { opacity: 0.8 }, duration: 0.22 }, rt);
+      ghostRefit(ghost, blobVerts(ROOT, ROOT_B, i).slice(0, 3));
+      tl.to(ghost, { attr: { opacity: 0.85 }, duration: 0.4 }, rt);
       if (rev.kind === 'pass') {
-        tl.to(ghost, { attr: { opacity: 0 }, duration: 0.3 }, rt + 0.24);
-        if (!passTagged) {
-          passTagged = true;
-          tl.to(tagPassEl, { attr: { opacity: 1 }, duration: 0.35 }, rt + 0.15);
-          tl.to(tagPassEl, { attr: { opacity: 0 }, duration: 0.5 }, rt + 1.9);
-        }
+        tl.to(ghost, { attr: { opacity: 0 }, duration: 0.6 }, rt + 0.5);
       } else {
-        tl.to(pgEls.root, { attr: { points: rev.stageStr }, duration: 0.5, ease: 'power2.inOut' }, rt + 0.08);
-        flashCommit(pgEls.root, rt + 0.08, 2.4);
-        tl.to(ghost, { attr: { opacity: 0 }, duration: 0.3 }, rt + 0.42);
+        if (rev.kind === 'pop') {
+          tl.set(pgEls.root, { attr: { points: rev.stageStr } }, rt);
+          tl.fromTo(pgEls.root,
+            { attr: { opacity: 0 } },
+            { attr: { opacity: 1 }, duration: 0.35, ease: 'power2.out' }, rt);
+        } else {
+          tl.to(pgEls.root, { attr: { points: rev.stageStr }, duration: 1.1, ease: 'power2.inOut' }, rt + 0.15);
+        }
+        flashCommit(pgEls.root, rt + 0.1, ROOT.w);
+        tl.to(ghost, { attr: { opacity: 0 }, duration: 0.6 }, rt + 1.0);
       }
-      brighten(miniEls.root[i], OP_MICRO, rt + 0.1);
+      bang(rev, rt + 0.1);
+      brighten(miniEls.root[i], OP_MICRO, rt + 0.2);
 
       /* thread done */
       tl.to(dot, { attr: { opacity: 0 }, duration: 0.3 }, rt + rev.dur + 0.1);
     });
-    /* init note retires as the climb settles — s3's stamps take over */
-    tl.to(tagInitEl, { attr: { opacity: 0 }, duration: 0.5 }, tl.duration() - 0.6);
     tl.addLabel('s2', tl.duration());
-
-    /* ---- s3: numbers stamp ----
-     * EXPLICIT times below (no phantom-spacer + '>' chaining): the stop
-     * labels must sit exactly past real tweens. */
-    var t3 = tl.duration();
-    tl.to(stampNumEl, { attr: { opacity: 1 }, duration: 0.6 }, t3 + 0.25);
-    tl.addLabel('s3', t3 + 0.85);
-
-    /* ---- s4: meaning stamp + root emphasis ---- */
-    var a4 = t3 + 0.85 + 0.25;
-    tl.to(stampMeanEl, { attr: { opacity: 1 }, duration: 0.6 }, a4);
-    tl.to(pgEls.root, { attr: { 'stroke-width': 3.4 }, duration: 0.35, ease: 'power1.out' }, a4);
-    tl.to(pgEls.root, { attr: { 'stroke-width': 2.4 }, duration: 0.6, ease: 'power1.inOut' }, a4 + 0.4);
-    miniEls.root.forEach(function (polys) {
-      polys.forEach(function (p) {
-        tl.to(p, { attr: { opacity: 0.9 }, duration: 0.6 }, a4);
-      });
-    });
-    tl.addLabel('s4', tl.duration());
   }
 
   /* position a carried-geometry ghost onto a mini slot */
@@ -604,7 +782,7 @@
 
   function brighten(polys, to, at) {
     polys.forEach(function (p) {
-      tl.to(p, { attr: { opacity: to }, duration: 0.35 }, at);
+      tl.to(p, { attr: { opacity: to }, duration: 0.8 }, at);
     });
   }
 
@@ -628,7 +806,19 @@
 
     step: function (fragStep) {
       if (!tl) return;
-      tl.tweenTo(D.stopsFor(tl, SECTIONS)[fragStep], { ease: 'none' });
+      var target = D.stopsFor(tl, SECTIONS)[fragStep];
+      var cur = tl.time();
+      if (Math.abs(target - cur) < 0.02) {
+        tl.pause(target); // zero-distance tweenTo would resume free playback
+        return;
+      }
+      if (target < cur) {
+        /* backward rewinds at capped speed — the climb is ~15s now and
+         * a real-time reverse would stall the presenter */
+        tl.tweenTo(target, { duration: Math.min(2.5, cur - target), ease: 'none' });
+      } else {
+        tl.tweenTo(target, { ease: 'none' });
+      }
     },
 
     stop: function () {
@@ -640,10 +830,11 @@
   animator._tl = function () { return tl; };
 
   /* pure layout exposure for headless smoke tests: every parallelogram
-   * stage (ghost + per-event fits + leaf fits) must sit well inside the
-   * viewBox — SVG clips silently at the edge. */
+   * stage (per-event fits + final fits + leaf fits), every leaf triangle,
+   * every badge and the persistent atomic badge must sit well inside
+   * the viewBox — SVG clips silently at the edge. */
   animator._test = (function () {
-    var S = simulate();
+    var S = sim();
     var stageStrs = [S.rootEvents, S.midEvents[0], S.midEvents[1]].reduce(function (acc, evs) {
       return acc.concat(evs.filter(function (e) { return e.stageStr; }).map(function (e) { return e.stageStr; }));
     }, []);
@@ -657,7 +848,14 @@
     leafFit.forEach(function (st, i) {
       all = all.concat(corners(st, leafBasis[i]));
     });
-    all = all.concat(corners(ROOT_GHOST, ROOT_B));
+    leafTris.forEach(function (tris) {
+      tris.forEach(function (t) { all = all.concat(t); });
+    });
+    S.badges.forEach(function (bd) {
+      var r = bd.R * 1.2;
+      all = all.concat([[bd.bx - r, bd.by - r], [bd.bx + r, bd.by + r]]);
+    });
+    all = all.concat([[ATOMIC_LX - 92, ATOMIC_LY - 17], [ATOMIC_LX + 92, ATOMIC_LY + 17]]);
     var box = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
     all.forEach(function (p) {
       box.x0 = Math.min(box.x0, p[0]); box.y0 = Math.min(box.y0, p[1]);
@@ -671,6 +869,7 @@
       sections: SECTIONS,
       stageCount: stageStrs.length,
       commits: commits, passes: passes,
+      badgeCount: S.badges.length,
       bounds: box,
       viewBox: [1120, 520]
     };

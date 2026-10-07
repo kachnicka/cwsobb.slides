@@ -84,7 +84,9 @@
     { text: 'leaves', y: 336 }
   ];
 
-  var BOX_PAD = 12; // visual padding around each bound
+  /* Bounds must read as TIGHT fits (user request): 2px is just stroke
+   * clearance so the box line doesn't sit on the triangle edges. */
+  var BOX_PAD = 2;
 
   /* s2: after the leaf refit, the triangles fade to this opacity —
    * faintly visible, but the message is that their information is
@@ -263,11 +265,7 @@
         width: NODE_W, height: NODE_H
       }, g);
       nodeEls[id] = rect;
-      var label = LEAVES.indexOf(id) >= 0 ? '△ ' + id : id;
-      var t = el('text', {
-        'class': 'svg-node-text', x: p.x, y: p.y + 5.5, 'text-anchor': 'middle'
-      }, g);
-      t.textContent = label;
+      /* no node name labels (user request — they carried no meaning) */
     });
   }
 
@@ -283,19 +281,27 @@
     r.setAttribute('stroke-dasharray', 'none');
   }
 
-  /* Flash tree nodes + incoming edges blue (transient eye candy).
-   * Uses CSS fill/stroke so GSAP tweens the color; reset() clears it. */
-  function pulseNodes(ids) {
+  /* Flash incoming edges blue (transient eye candy). Uses CSS stroke
+   * so GSAP tweens the color; resetDom() clears it. */
+  function pulseEdges(ids) {
     ids.forEach(function (id) {
-      gsap.fromTo(nodeEls[id],
-        { fill: '#bcd6f8' },
-        { fill: '#ffffff', duration: 0.9, ease: 'power1.out' });
       var e = edgeForChild[id];
       if (!e) return;
       gsap.fromTo(e,
         { stroke: BLUE },
         { stroke: EDGE, duration: 0.9, ease: 'power1.out' });
     });
+  }
+
+  /* Mark a level's refit as DONE: nodes flash a brighter blue, then
+   * settle to a steady #bcd6f8 and STAY blue (user request). Timeline
+   * set+to (not a callback), so backward stepping scrubs the blue away
+   * and forward re-applies it. Fill is a CSS inline style — .svg-node's
+   * fill comes from a CSS class, an attribute tween would lose to it. */
+  function addNodesDone(timeline, ids, at) {
+    var rects = ids.map(function (id) { return nodeEls[id]; });
+    timeline.set(rects, { fill: '#8db9f5' }, at);
+    timeline.to(rects, { fill: '#bcd6f8', duration: 0.9, ease: 'power1.out' }, at);
   }
 
   /* Tween a set of boxes to their moved bounds. */
@@ -364,8 +370,9 @@
     // then the triangles fade: above the leaves, only the boundary is
     // needed. The spacer keeps the label clear of the refit stroke .set.
     tl.to({}, { duration: 0.3 }, '>');
-    tl.add(function () { pulseNodes(LEAVES); }, '>');
+    tl.add(function () { pulseEdges(LEAVES); }, '>');
     var leafAt = tl.duration();
+    addNodesDone(tl, LEAVES, leafAt);
     addBoxRefit(tl, LEAVES, '>');
     var triEls = polyEls.map(function (p) { return p.el; });
     tl.to(triEls, {
@@ -376,13 +383,15 @@
 
     // s3: bounds propagate — internal level re-fits (parents union children).
     tl.to({}, { duration: 0.3 }, '>');
-    tl.add(function () { pulseNodes(['M0', 'M1']); }, '>');
+    tl.add(function () { pulseEdges(['M0', 'M1']); }, '>');
+    addNodesDone(tl, ['M0', 'M1'], tl.duration());
     addBoxRefit(tl, ['M0', 'M1'], '>');
     tl.addLabel('s3', tl.duration());
 
     // s4: root re-fits — the tree settles, hierarchy valid again.
     tl.to({}, { duration: 0.3 }, '>');
-    tl.add(function () { pulseNodes(['R']); }, '>');
+    tl.add(function () { pulseEdges(['R']); }, '>');
+    addNodesDone(tl, ['R'], tl.duration());
     addBoxRefit(tl, ['R'], '>');
     tl.addLabel('s4', tl.duration());
   }

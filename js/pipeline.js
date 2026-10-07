@@ -27,10 +27,12 @@
  *     s2 AABB BVH₈   — identical collapse
  *     s3 SOBB BVH₈   — wide nodes get skewed parallelogram SOBB proxies at
  *                      independent orientations (overlay; rects stay)
- *     s4 quantization — LEAD-IN ONLY: chip goes active, slots fall quiet,
- *                      the leaves dim so the wide root carries the
- *                      hand-off to #slide-sharedbasis (skewed-space
- *                      quantization is the next two slides' story)
+ *     s4 quantization — LEAD-IN + HAND-OFF: chip goes active, the proxies
+ *                      and wide leaves fade away, and the wide root slides
+ *                      left into its stored slot-strip pose while its
+ *                      bounds region opens on the right — C's final frame
+ *                      IS the entry frame of #slide-sharedbasis,
+ *                      pixel-for-pixel (same idiom as B → aabbquant)
  *
  * Chip strip on B ends: AABB BVH₂ / AABB BVH₈ done, quantization ACTIVE —
  * exactly the entry state on aabbquant, whose chip row mirrors B's geometry
@@ -60,7 +62,10 @@
   }
   var rand = mulberry32(20260922);
 
-  /* ==================== SHARED LAYOUT DATA (viewBox 0 0 1120 520) ========== */
+  /* ==================== SHARED LAYOUT DATA (viewBox 0 0 1120×520;
+   * pipesobb8 alone is 1120×560 — its hand-off target #slide-sharedbasis
+   * renders at 560, and the C→sharedbasis cut needs the shared strip/
+   * panel geometry to land at identical screen positions) ========== */
 
   var SQ = 26;
   /* UNBALANCED binary layout: left side carries the deep chain r-u-a-b-s0/s1
@@ -291,12 +296,26 @@
       [[710, 170], [784, 162], [750, 238]],
       [[812, 166], [888, 158], [854, 232]],
       [[878, 180], [946, 174], [916, 240]],
-      [[600, 330], [676, 320], [640, 390]],
+      [[567, 403], [643, 393], [607, 463]],
       [[706, 328], [782, 318], [746, 388]],
       [[814, 332], [890, 324], [856, 394]],
       [[884, 326], [952, 318], [922, 386]]
     ],
     MINICAP: 'one wide node · eight child AABBs'
+  };
+
+  /* ---- slide C hand-off geometry: EXACTLY the entry state of
+   * js/sharedbasis.js (constants duplicated on purpose, parity via
+   * _test.handoff vs sharedbasis._test). C's final frame resolves into
+   * this — strip pose, dots, connector, bounds panel, minicap; NO slot
+   * glyphs and NO child bounds (sharedbasis keeps both hidden at s0,
+   * its tangle fades in during its own s1). Connector numbers are
+   * sharedbasis's settled connector, not slide B's (tip at P.x-14). ---- */
+  var HANDOFF_SOBB = {
+    STRIP: { x: 80, y: 130, w: 360, h: 64 },   // = sharedbasis WIDE
+    SLOT_N: 8,
+    P: { x: 560, y: 90, w: 440, h: 380 },      // = sharedbasis P
+    CONN: { x2: 538, head: '536,157 536,167 546,162' } // = sharedbasis conn
   };
 
   var CFG_SOBB8 = {
@@ -308,7 +327,8 @@
       X: [144, 358, 572, 786],
       ARROW_X: [335, 549, 763]
     },
-    beats: ['build', 'collapse', 'parwide', 'quantlead'],
+    beats: ['build', 'collapse', 'parwide', 'quanthandsobb'],
+    vbH: 560,   // = sharedbasis viewBox height (hand-off parity)
     captions: [
       'Wide SOBB BVH construction.',
       'Start with a pre-existing binary AABB BVH (any builder).',
@@ -337,7 +357,8 @@
     var hexWraps = {}, hexPolys = {};   // slide A: per binary node
     var parWraps = {}, parPolys = {};   // slide A: per binary node
     var parWWraps = {}, parWPolys = {}; // slide C: per wide node
-    /* slide B hand-off gear (aabbquant entry frame, mirrored exactly) */
+    /* slide B/C hand-off gear (each's next-slide entry frame, mirrored
+     * exactly) */
     var handDots = [], handGlyphs = [], handMinicap, handConn, handHead;
     var handPanel, handTights = [];
     var chipRects = [], chipTexts = [];
@@ -364,7 +385,9 @@
 
     function build() {
       var host = document.getElementById(cfg.host);
-      svg = el('svg', { viewBox: '0 0 1120 520', width: '100%', height: '100%' }, host);
+      svg = el('svg', {
+        viewBox: '0 0 1120 ' + (cfg.vbH || 520), width: '100%', height: '100%'
+      }, host);
       var i;
 
       /* stage chips — static row, sequential activation only */
@@ -516,9 +539,46 @@
           handTights.push(el('rect', {
             'class': 'hand-tight',
             x: tb.x, y: tb.y, width: tb.w, height: tb.h,
-            fill: 'none', stroke: INK, 'stroke-width': 1.4, opacity: 0
+            fill: 'none', stroke: INK, 'stroke-width': 2.4, opacity: 0
           }, svg));
         });
+      }
+
+      /* slide C hand-off gear: hidden until the s4 lead-in, when the wide
+       * root slides into this strip pose and the bounds region opens.
+       * Attribute-for-attribute identical to js/sharedbasis.js's s0
+       * frame (parity via _test): dots + connector + panel + minicap,
+       * but NO slot glyphs and NO child bounds — sharedbasis opens with
+       * those hidden (its tangle fades in during its own s1). */
+      if (has('quanthandsobb')) {
+        var CS = HANDOFF_SOBB.STRIP, CP = HANDOFF_SOBB.P;
+        var ccy = CS.y + CS.h / 2;
+        for (i = 0; i < HANDOFF_SOBB.SLOT_N; i++) {
+          var cgx = CS.x + (CS.w / HANDOFF_SOBB.SLOT_N) * (i + 0.5);
+          handDots.push(el('circle', {
+            'class': 'hand-dot', cx: cgx, cy: ccy, r: 2.2, fill: INK, opacity: 0
+          }, svg));
+        }
+        handMinicap = text('one wide node · 8 child SOBBs', {
+          'class': 'hand-minicap',
+          x: CS.x + CS.w / 2, y: CS.y + CS.h + 34,
+          'text-anchor': 'middle', 'font-size': 25, fill: FAINT, opacity: 0
+        }, svg);
+        handConn = el('line', {
+          'class': 'hand-conn',
+          x1: CS.x + CS.w + 14, y1: ccy, x2: HANDOFF_SOBB.CONN.x2, y2: ccy,
+          stroke: EDGE, 'stroke-width': 1.4, 'stroke-dasharray': '4 4', opacity: 0
+        }, svg);
+        handHead = el('polygon', {
+          'class': 'hand-head',
+          points: HANDOFF_SOBB.CONN.head,
+          fill: EDGE, opacity: 0
+        }, svg);
+        handPanel = el('rect', {
+          'class': 'hand-panel',
+          x: CP.x, y: CP.y, width: CP.w, height: CP.h,
+          fill: 'none', stroke: INK, 'stroke-width': 1.8, opacity: 0
+        }, svg);
       }
 
       captionEl = document.getElementById(cfg.caption);
@@ -710,21 +770,51 @@
       });
     }
 
-    /* slide C final: quantization lead-in — chip ACTIVE, stage quiets
-     * down to the one wide node whose quantization the next slide tells
-     * (C → #slide-sharedbasis skew) */
-    function sQuantLead() {
+    /* slide C final: quantization lead-in + HAND-OFF — the same idiom as
+     * slide B's sQuantHandoffAabb: the SOBB proxies, wide leaves and
+     * edges dissolve, the wide root slides left into its stored
+     * slot-strip pose (dividers ride along, dots light up inside), and
+     * the node-bounds region opens on the right. The end frame is
+     * #slide-sharedbasis's entry frame, pixel-for-pixel — the
+     * data-transition="none" cut between the slides reads as one story.
+     * (No slot glyphs and no child bounds here: sharedbasis opens with
+     * those hidden and fades its tangle in during its own s1.) */
+    function sQuantHandoffSobb() {
       var at = tl.duration();
-      tl.to(slotLines, { attr: { opacity: 0 }, duration: 0.3 }, at);
-      /* leaves fall quiet so the wide root carries the hand-off */
+      var HS = HANDOFF_SOBB.STRIP, HP = HANDOFF_SOBB.P;
+      /* the approximate tree dissolves — only the wide root survives */
+      tl.to(wideEdgeEls, { attr: { opacity: 0 }, duration: 0.35 }, at);
       WIDE_ORDER.slice(0, 4).forEach(function (wid, i) {
-        tl.to(wideLeafRects[wid], { attr: { stroke: FAINT }, duration: 0.35 }, at + 0.05 + i * 0.04);
-        if (has('parwide')) {
-          tl.to(parWPolys[wid], { attr: { stroke: FAINT }, duration: 0.35 }, at + 0.05 + i * 0.04);
-        }
+        var w = at + i * 0.04;
+        tl.to(wideLeafRects[wid], { attr: { opacity: 0 }, duration: 0.4 }, w);
+        tl.to(parWPolys[wid], { attr: { opacity: 0 }, duration: 0.4 }, w);
       });
-      tl.to(wideEdgeEls, { attr: { stroke: FAINT }, duration: 0.35 }, at + 0.1);
-      /* quantization chip stays ACTIVE — hand-off to the next slide */
+      /* the root's own SOBB proxy dissolves with the tree */
+      tl.to(parWPolys.root, { attr: { opacity: 0 }, duration: 0.4 }, at);
+      /* the wide root slides into its stored pose: the 8-slot strip */
+      tl.to(nodeEls.r, {
+        attr: { x: HS.x, y: HS.y, width: HS.w, height: HS.h, rx: 8, 'stroke-width': 1.8 },
+        duration: 0.85, ease: 'power2.inOut'
+      }, at + 0.15);
+      slotLines.forEach(function (l, i) {
+        var k = i + 1, sx = HS.x + (HS.w / SLOTS) * k;
+        tl.to(l, {
+          attr: { x1: sx, x2: sx, y1: HS.y + 7, y2: HS.y + HS.h - 7 },
+          duration: 0.85, ease: 'power2.inOut'
+        }, at + 0.15);
+        tl.to(l, { attr: { stroke: EDGE }, duration: 0.4 }, at + 0.4);
+      });
+      /* the node-bounds region opens on the right */
+      tl.fromTo(handPanel,
+        { attr: { x: HP.x + HP.w / 2, y: HP.y + HP.h / 2, width: 0, height: 0, opacity: 0 } },
+        { attr: { x: HP.x, y: HP.y, width: HP.w, height: HP.h, opacity: 1 },
+          duration: 0.55, ease: 'power2.out' }, at + 0.65);
+      tl.to([handConn, handHead], { attr: { opacity: 1 }, duration: 0.35 }, at + 0.85);
+      /* its stored self-description: 8 slots (bounds hidden — the tangle
+       * is the next slide's first beat) */
+      tl.to(handDots, { attr: { opacity: 1 }, duration: 0.3, stagger: 0.03 }, at + 0.85);
+      tl.to(handMinicap, { attr: { opacity: 1 }, duration: 0.35 }, at + 1.05);
+      /* quantization chip stays ACTIVE — the next slide continues here */
     }
 
     /* slide B final: quantization lead-in + HAND-OFF — the stage doesn't
@@ -776,8 +866,8 @@
 
     var STAGE_FN = {
       build: sBuild, hexbin: sHexBin, parbin: sParBin,
-      collapse: sCollapse, parwide: sParWide, quantlead: sQuantLead,
-      quantleadabb: sQuantHandoffAabb
+      collapse: sCollapse, parwide: sParWide,
+      quantleadabb: sQuantHandoffAabb, quanthandsobb: sQuantHandoffSobb
     };
 
     /* -------------------- timeline -------------------- */
@@ -824,9 +914,12 @@
       beats: cfg.beats.slice(),
       captions: cfg.captions.slice(),
       sections: NSEC,
-      /* slide B only: the hand-off frame geometry, mirrored from
-       * js/aabbquant.js so the join parity is machine-checkable */
-      handoff: has('quantleadabb') ? HANDOFF : null
+      viewBox: [0, 0, 1120, cfg.vbH || 520],
+      /* hand-off frame geometry per slide, mirrored from the target
+       * animator (js/aabbquant.js / js/sharedbasis.js) so the join
+       * parity is machine-checkable */
+      handoff: has('quantleadabb') ? HANDOFF
+        : has('quanthandsobb') ? HANDOFF_SOBB : null
     };
     return animator;
   }
@@ -847,8 +940,7 @@
     geom: {
       kSides: 6, parSides: 4,
       hexB: HEXB, parB: PARB, parW: PARW,
-      sweptAbs: sweptAbs,
-      viewBox: [0, 0, 1120, 520]
+      sweptAbs: sweptAbs
     }
   };
   sobb2._test.shared = SHARED_TEST;

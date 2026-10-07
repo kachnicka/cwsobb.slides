@@ -141,16 +141,27 @@
   min-width: 0;
 }
 
+/* Refit slides: tighter head gap so the panels start higher (user
+   request — scoped to these two slides, other slides keep 18px). */
+.reveal .slides #slide-refit-problem .slide-head,
+.reveal .slides #slide-sobbrefit-problem .slide-head {
+  margin-bottom: 4px;
+}
+
 /* Legend-only row: sits tight under the visualization (the user asked
-   for it adjacent to the drawing), left-aligned in the shared gutter. */
+   for it adjacent to the drawing), left-aligned in the shared gutter.
+   flex: 0.18 lets the row absorb a slice of the column's free space so
+   the caption row is pushed to the bottom — opening a wide gap between
+   the legend and the caption while the legend itself stays glued under
+   the panels (content top-aligned in the taller row). */
 .refit-status {
   display: flex;
   justify-content: flex-start;
-  align-items: baseline;
+  align-items: flex-start;
   margin: 4px 95px 0;
   min-height: 32px;
   font-size: 26px;
-  flex: none;
+  flex: 0.18;
 }
 
 .legend { color: var(--ink-soft); white-space: nowrap; }
@@ -185,47 +196,8 @@
   max-width: 100%;
 }
 
-/* Outline slide */
-
-/* Specificity lifted over white.css `.reveal ol` so the flex slot wins */
-.reveal .slides .outline-list {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  text-align: left;
-  flex: 1;
-  min-height: 0;
-  align-self: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.outline-list li {
-  font-size: 30px;
-  color: var(--ink);
-  padding: 9px 0;
-  border-bottom: 1px solid var(--hairline);
-  display: flex;
-  align-items: baseline;
-  gap: 26px;
-}
-
-/* Takeaway numbering picks up the accent — same cascade voice as the
-   payoff-card numbers on L10. */
-.ol-num {
-  font-size: 20px;
-  color: var(--blue);
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  min-width: 34px;
-}
-
-/* Lead phrase of each takeaway carries the weight; the number payload
-   stays regular so the claims scan fast. */
-.tk-lead {
-  font-weight: 650;
-}
+/* (Old outline-list/tk-lead rules removed — conclusion was their only
+   user; the L11 block lives at the bottom of this file.) */
 
 /* Fixed slide chrome template */
 
@@ -668,8 +640,71 @@
   flex: none;
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 37px;
   margin-top: 14px;
   margin-bottom: 10px;
+}
+
+/* L10 hard-numbers panel: in-flow beside the 688px video so the video+panel
+   group (975px) centers as a unit — symmetric ~152px gutters, no overshoot
+   past the stat-card grid. Last fragment of the section — appears after the
+   five stat cards. Recessive caption treatment: hairline top rule echoes
+   the cards' blue accent. */
+.reveal .slides .video-facts {
+  flex: none;
+  width: 250px;
+  box-sizing: border-box;
+  border-top: 3px solid var(--blue);
+  padding-top: 14px;
+  text-align: left;
+}
+
+.reveal .slides .video-facts .vf-scene {
+  font-size: 20px;
+  font-weight: 650;
+  color: var(--ink-soft);
+  letter-spacing: 0.01em;
+  margin-bottom: 12px;
+}
+
+.reveal .slides .video-facts .vf-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.reveal .slides .video-facts .vf-label {
+  font-size: 18px;
+  color: var(--ink-faint);
+  line-height: 1.3;
+}
+
+.reveal .slides .video-facts .vf-by {
+  display: block;
+  font-size: 15px;
+  color: #8a8a8a;
+}
+
+/* Hardware caveat: quiet footnote under the timing rows — subordinate to
+   the numbers, same ink level as the .vf-by sublabels. */
+.reveal .slides .video-facts .vf-gpu {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline);
+  font-size: 14px;
+  color: #8a8a8a;
+}
+
+.reveal .slides .video-facts .vf-ms {
+  font-size: 22px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--blue);
+  white-space: nowrap;
 }
 
 /* Reserved-but-recessive placeholder, now replaced by .slide-video. */
@@ -718,66 +753,216 @@
 
 /* ---------- Conclusion (L11) ---------- */
 
-/* Lifts the footer content clear of the 8px progress bar and gives the
-   QR slot breathing room (this row is not a harness footer anchor). */
-.concl-footer {
-  flex: none;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 30px;
+/* Middle region: takeaway rows left, QR column right. The list holds
+   the fragments; the QR column is static chrome, never a fragment. */
+/* Grid (not flex) so the QR column can stretch to the list's exact row
+   height: the row height is the max of the two items — the list — and
+   .qr-col's align-self: stretch pins the QR box top to row 1's top. */
+.concl-main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 64px;
+  align-items: center;
+  /* Implicit row defaults to align-content: stretch → the row fills the
+     whole flex:1 region and the stretched .qr-col tops out at the region
+     top (17px under the title rule), not at row 1. center hugs the row
+     to max-content (= list height) and centers it — the list keeps its
+     current vertical balance and .qr-col now spans exactly the list, so
+     the QR box top snaps to row 1's eyebrow top. */
+  align-content: center;
   box-sizing: border-box;
-  margin: 12px 95px 24px;
+  margin: 0 95px;
 }
 
-/* Specificity lifted over white.css `.reveal p` (font-size/margin).
-   text-align must be explicit: reveal.css centers all slide text by
-   viewport inheritance, and a footer blob of centered prose looks lost. */
-.reveal .slides .concl-notes p {
-  font-size: 22px;
-  margin: 4px 0;
-  line-height: 1.45;
+/* Specificity lifted over white.css `.reveal ol` (margin/font-size). */
+.reveal .slides .concl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   text-align: left;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.reveal .slides .concl-notes p strong {
+/* Row = eyebrow label stacked over the number+body line. Padding
+   trimmed 22→16 to buy back the ~20px the eyebrow adds per row. */
+.reveal .slides .concl-list li {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--hairline);
+  /* Anchor for row 2's .tk-note-arrow. */
+  position: relative;
+}
+
+/* Method attribution micro-label — same voice as .qr-tag (small,
+   letterspaced caps) but one ink tier stronger so it survives
+   projection at this size. Tracking trimmed 0.18em→0.12em and size
+   14→13px: the long "Wide SOBB BVH construction" label ran flush
+   against the claim column's left edge with zero gutter. */
+.tk-eyebrow {
+  font-size: 13px;
   font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
 
-.mentions { color: var(--ink-faint); }
-.future   { color: var(--ink-soft); }
+/* The former li flex row, now a wrapper under the eyebrow. */
+.tk-row {
+  display: flex;
+  align-items: center;
+  gap: 34px;
+}
 
-/* Square placeholder slot, same dashed-placeholder voice as .todo-panel:
-   paper tint, dashed hairline, micro caps tag above the URL. */
-.qr-box {
+.reveal .slides .concl-list li:first-child { padding-top: 0; }
+.reveal .slides .concl-list li:last-child { border-bottom: none; padding-bottom: 0; }
+
+/* Big-number treatment echoing L10's .num-big, but left-aligned and
+   larger — the headline result carries each row. Fixed min-width keeps
+   claim baselines aligned across rows. */
+.tk-num {
   flex: none;
-  width: 112px;
-  height: 112px;
-  box-sizing: border-box;
-  border: 1.5px dashed var(--hairline);
-  background: #fbfcfe;
+  min-width: 252px;
+  font-size: 46px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--blue);
+  white-space: nowrap;
+}
+
+/* The cost row is not a win — deliberately muted so the de-emphasis
+   reads intentional, not like a missing accent. One step darker than
+   the .tk-sub/.tk-eyebrow gray (#5b6068) so the big number doesn't
+   collapse into the micro-label tier. */
+.tk-num-cost { color: #454a52; }
+
+.tk-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.tk-claim {
+  font-size: 27px;
+  font-weight: 650;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.tk-sub {
+  font-size: 20px;
+  color: var(--ink-soft);
+  line-height: 1.3;
+}
+
+/* Inline accent inside a sub line — the Sheep peak number pops in the
+   win-number blue without leaving the sub's size/voice. Plain span,
+   no underline/weight shift, so it can't read as a link. */
+.tk-accent {
+  color: var(--blue);
+}
+
+/* Row-2 annotation note: sub-tier voice, one size down. Lives inside
+   .tk-body as the third line, flush with claim/sub (no indent — the
+   arrow now reaches it via the long elbow, not via proximity to the
+   left margin). Also a fragment (step 2), revealed after the row. */
+.tk-note {
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+
+/* Connector from the note up to row 1's 1.09–1.85× number. Absolute,
+   so zero layout bulk. Geometry is measured against the rendered li:
+   li content edge = slide x117 (number ink x118), li-2 top ≈ y295,
+   note text left edge = claim column x≈403 (117 + 252 num + 34 gap),
+   note top ≈ y405. left:-22px puts the shaft (path x7) at x102 — 16px
+   clear of the number column. top:-53px lands the arrowhead tip (path
+   y4) at y250, the number's midline. height 171 turns the shaft at
+   y413 — the note line's vertical midline (~8px below its top) — and
+   the elbow (path H304 from svg origin x95) runs right to x399, 4px
+   short of the note text: a leader into the note's side-middle, not a
+   line skimming its top. Tuned to the current row pitch — nudge
+   top/height together if row heights change. */
+.tk-note-arrow {
+  position: absolute;
+  left: -22px;
+  top: -53px;
+  width: 310px;
+  height: 171px;
+}
+
+/* QR column: the real code image with the URL legible beneath. */
+/* Stretch + flex-start: box top snaps to row 1's top (eyebrow line)
+   and box+URL hang together as one unit with a tight 18px caption gap.
+   (space-between stranded the URL at the column bottom, 12px above the
+   footer — it read as a second footer line, not the box's caption.) */
+.qr-col {
+  width: 248px;
+  align-self: stretch;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
+  justify-content: flex-start;
+  gap: 18px;
+}
+
+/* Real QR image in the slot the placeholder reserved: same 232px
+   square, same grid anchoring (top snapped to row 1 via the stretched
+   .qr-col), URL caption 18px beneath. Fixed px display size is fine —
+   static content asset, not a fluid canvas host. Specificity lifted
+   (.reveal .slides) to beat vendor `.reveal img` (margin, max-width/
+   max-height 95% — the margin would break the 18px caption gap and the
+   max caps would shrink the square). White matte + hairline: the PNG
+   is RGBA, so transparent pixels get a clean quiet zone and the square
+   keeps definition at projection distance. */
+.reveal .slides .qr-img {
+  width: 232px;
+  height: 232px;
+  margin: 0;
+  max-width: none;
+  max-height: none;
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 1px solid var(--hairline);
+}
+
+/* 18px at 232px width: the full URL fits on one line in Helvetica
+   metrics (~32 chars × ~8.6px avg ≈ 275px — wraps to two clean lines
+   after the "/" if a wider fallback font is in play). */
+/* Specificity lifted (.reveal .slides): the bare .qr-url color rule
+   lost in render (measured ≈#7f8389 instead of #5b6068). */
+.reveal .slides .qr-url {
+  font-size: 18px;
+  line-height: 1.35;
+  /* Call-to-action, not chrome — pinned to the ~6:1 ink tier, explicit
+     so it can't drift back toward footer faintness. */
+  color: #5b6068;
   text-align: center;
-  padding: 10px;
-}
-
-.qr-tag {
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.18em;
-  color: var(--ink-faint);
-}
-
-.qr-url {
-  font-size: 9.5px;
-  line-height: 1.4;
-  color: var(--ink-faint);
-  /* Break at the <wbr> points inline (after each "/") — break-all would
-     otherwise slice a mid-word, e.g. "proje-cts". overflow-wrap is a
-     fallback only, in case a single segment is somehow still too wide. */
+  /* Never wider than the QR box above it; <wbr> after ".cz/" gives a
+     clean two-line break instead of an arbitrary mid-word wrap. */
+  max-width: 232px;
   overflow-wrap: break-word;
+}
+
+/* Single recessive footer line, pinned bottom, clear of the 8px
+   progress bar. Specificity lifted over reveal.css centering. */
+.reveal .slides .concl-foot {
+  flex: none;
+  margin: 8px 95px 26px;
+  font-size: 19px;
+  /* ink-faint was ~3.5:1 on white — too light for projection. */
+  color: var(--ink-soft);
+  text-align: left;
+  white-space: nowrap;
 }

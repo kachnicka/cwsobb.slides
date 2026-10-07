@@ -87,6 +87,12 @@
     margin: 0.04,
     hash: true,
     center: false,
+    /* true (boolean): Reveal's slideContent calls play() on every
+       slide ENTER, not just the first load. Videos carry the plain
+       HTML autoplay attribute, which the browser honors only once —
+       without this, re-entering a video slide after going back leaves
+       it paused. Reveal still pauses media on slide leave. */
+    autoPlayMedia: true,
     /* Reveal's slideContent.load() writes this value as an INLINE
        display style on every loaded slide — an inline style beats any
        stylesheet display rule, so the config value itself must be flex

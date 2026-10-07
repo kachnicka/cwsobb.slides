@@ -38,8 +38,8 @@
  *           blend inside an isolated group — the blend overlap IS the
  *           SOBB), the solid SOBB outline sweeps on via
  *           stroke-dashoffset; fan lines and k-DOP recede. The settled
- *           SOBB is intentionally unlabeled.
- *   s4:     promise beat — fills #kdop-promise and fades it in
+ *           SOBB is intentionally unlabeled. The timeline ends here —
+ *           3 fragments, no trailing beat.
  *
  * Geometry is fixed and precomputed: slab extents measured on all
  * cluster vertices, candidate parallelograms = ±1e5 rect clipped by the
@@ -83,7 +83,7 @@
  * screen coordinates — they never scale, so their px sizes stay in
  * deck range regardless of Z; candidate tags are placed at the scaled
  * screen position of their world anchor (toScreen uses ZOOM).
- * Host: #kdop-canvas. Fragments: 4 (s1..s4).
+ * Host: #kdop-canvas. Fragments: 3 (s1..s3).
  */
 (function () {
   'use strict';
@@ -116,8 +116,6 @@
   var SOBB_INDEX = 5;            // 100/160: teal + amber, matches L2
 
   function isAabbPair(pair) { return pair[0] === 0 && pair[1] === 90; }
-
-  var PROMISE_TEXT = '';
 
   /* ==================== pure helpers ==================== */
 
@@ -261,7 +259,7 @@
 
   var built = false;
   var svg, worldG, kdopEl, candEl, sobbEl, candTagEls, candTagAt, stripsG;
-  var labelNewG, promiseEl;
+  var labelNewG;
   var allLines, linesByAng, aabbLines;
   var sobbPathLen = 0;
   var kdopPts = null, candidates = null;
@@ -540,7 +538,6 @@
       candTagAt[i] = el;
     });
 
-    promiseEl = document.getElementById('kdop-promise');
     updateWorld();
     built = true;
   }
@@ -554,7 +551,7 @@
 
   function resetState() {
     gsap.killTweensOf(allLines);
-    gsap.killTweensOf([kdopEl, candEl, sobbEl, stripsG, promiseEl]);
+    gsap.killTweensOf([kdopEl, candEl, sobbEl, stripsG]);
     gsap.killTweensOf(candTagEls);
     // entrance tweens: kill before re-armering any start() path
     gsap.killTweensOf(proxy);
@@ -574,8 +571,6 @@
     sobbEl.setAttribute('stroke-dashoffset', sobbPathLen);
     candTagEls.forEach(function (t) { t.setAttribute('opacity', 0); });
     stripsG.setAttribute('opacity', 0);
-    promiseEl.textContent = PROMISE_TEXT;
-    gsap.set(promiseEl, { opacity: 0 });
   }
 
   /* One tween per pair per step, active or dim — never both — so
@@ -665,13 +660,6 @@
     }, 's2+=0.45');
     // no label: the settled SOBB (strips + outline) reads on its own
     tl.addLabel('s3', 's2+=1.65');
-
-    // ---- section 4 (s3 → s4): promise beat (HTML caption element) ----
-    tl.fromTo(promiseEl,
-      { opacity: 0 },
-      { opacity: 1, duration: 0.55, ease: 'power1.out', immediateRender: false },
-      's3+=0.2');
-    tl.addLabel('s4', 's3+=0.85');
   }
 
   var animator = {
@@ -685,7 +673,7 @@
         proxy.z = ZOOM;
         updateWorld();
         labelNewG.setAttribute('opacity', 1);
-        tl.seek(D.stopsFor(tl, 4)[fragStep], true);
+        tl.seek(D.stopsFor(tl, 3)[fragStep], true);
       } else {
         // entrance choreography (NOT the fragment timeline), and the
         // ONLY entrance: zoom out about the cluster center while the
@@ -704,7 +692,7 @@
 
     step: function (fragStep) {
       if (!tl) return;
-      tl.tweenTo(D.stopsFor(tl, 4)[fragStep], { ease: 'none' });
+      tl.tweenTo(D.stopsFor(tl, 3)[fragStep], { ease: 'none' });
     },
 
     stop: function () {

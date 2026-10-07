@@ -1,14 +1,15 @@
 /* Wide-node quantization animator — paper Sec. 3.3, second half.
  *
  * SEAMLESS JOIN: this slide's entry state IS #slide-sharedbasis's settled
- * state, pixel-for-pixel — same 5-chip final row (shared basis DONE,
- * quantization ACTIVE), same wide-node strip, same 8 tight shared-basis
- * parallelograms — and the section carries data-transition="none" (the
- * C→sharedbasis hard-cut idiom), so the cut reads as a continuation.
+ * state, pixel-for-pixel — same 4-chip row (quantization ACTIVE; the
+ * shared basis is a node property, never a chip), same wide-node strip,
+ * same 8 tight shared-basis parallelograms, same basis callout — and the
+ * section carries data-transition="none" (the C→sharedbasis hard-cut
+ * idiom), so the cut reads as a continuation.
  * The story then focuses purely on quantization of the skewed space.
  *
  * s0: hand-off — the wide node with its 8 child SOBBs already on the
- *     shared basis, tight
+ *     shared basis, tight; the basis callout still up
  * s1: the node-bounds frame morphs from the entry AABB into a
  *     parallelogram on the shared basis, and the skewed slab grid
  *     appears inside it — two wire families whose lines ARE the frame's
@@ -20,10 +21,15 @@
  * s2: quantization — every bound snaps OUTWARD onto the skewed cells,
  *     conservative by construction (slab-space floor/ceil)
  * s3: closer — the grid falls quiet; 8 tight quantized shared-basis
- *     bounds remain: this is what the shared basis enables
+ *     bounds remain: this is what the shared basis enables. Then the
+ *     memory punchline: aabbquant's bar comparison (same sizes, same
+ *     3× ratio) grows in the retired-callout spot, absolute byte
+ *     counts deliberately omitted
  *
  * Children, bounds and quantized results are ALL parallelograms on the
- * shared frame — no axis-aligned rects anywhere in the quantization story.
+ * shared frame — no axis-aligned rects anywhere in the quantization
+ * story. The bottom-left child starts at the anchor (tight corner just
+ * inside it, snapped corner exactly on it).
  *
  * Layout note: WIDE strip / P panel / CHILD_TRIS / slab frame / chip row
  * are numerically identical to js/sharedbasis.js (the settle state there)
@@ -46,17 +52,18 @@
 
   /* ==================== LAYOUT DATA (viewBox 0 0 1120 560) ==================== */
 
-  /* stage chips — sharedbasis's FINAL row (post-insertion), exactly as that
-   * slide settled: stages done, "shared basis" done, quantization ACTIVE.
-   * Mirrored constants (js/sharedbasis.js FINAL_*), row order written out:
-   * "shared basis" sits in the inserted slot, "quantization" last. */
+  /* stage chips — sharedbasis's row, exactly as that slide settled:
+   * pipesobb8's 4-chip strip, stages done, quantization ACTIVE. The
+   * shared basis is a property of the wide node, not a pipeline phase,
+   * so it never appears as a chip. Mirrored constants
+   * (js/sharedbasis.js CHIP_*, = js/pipeline.js CFG_SOBB8). */
   var SUB2 = '₂', SUB8 = '₈';
-  var CHIP_TXT = ['AABB BVH' + SUB2, 'AABB BVH' + SUB8, 'SOBB BVH' + SUB8, 'shared basis', 'quantization'];
-  var CHIP_W = [168, 168, 168, 182, 190];
+  var CHIP_TXT = ['AABB BVH' + SUB2, 'AABB BVH' + SUB8, 'SOBB BVH' + SUB8, 'quantization'];
+  var CHIP_W = [168, 168, 168, 190];
   var CHIP_H = 44, CHIP_Y = 14;
-  var CHIP_X = [42, 250, 458, 666, 888];
-  var CHIP_ARROW_X = [230, 438, 646, 868];
-  var CHIP_STATE = ['done', 'done', 'done', 'done', 'active']; // static per chip
+  var CHIP_X = [144, 358, 572, 786];
+  var CHIP_ARROW_X = [335, 549, 763];
+  var CHIP_STATE = ['done', 'done', 'done', 'active']; // static per chip
   var CHIP_STYLE = {
     todo:   { fill: '#ffffff', stroke: EDGE, txt: FAINT },
     active: { fill: '#eaf2fd', stroke: BLUE, txt: INK },
@@ -79,8 +86,28 @@
   /* 8 child source triangles inside P — geometry only (tight-box
    * derivation), never rendered; sized ~80x75 so a ~10-cell skewed grid
    * reads as *refining* each bound, not swallowing it; positioned with
-   * margin so snapped parallelograms stay inside the node bounds */
+   * margin so snapped parallelograms stay inside the node bounds.
+   * Child 4 (the bottom-left box) starts AT the anchor: its tight
+   * parallelogram's anchor-side corner sits ~3px inside the frame
+   * corner, so the conservative slab-space floor/ceil snap lands its
+   * quantized corner exactly ON the anchor (integer 0,0) — an
+   * exact-on-line corner would snap one cell past the frame (the lo/hi
+   * epsilon). */
   var CHILD_TRIS = [
+    [[604, 168], [680, 158], [642, 234]],
+    [[710, 170], [784, 162], [750, 238]],
+    [[812, 166], [888, 158], [854, 232]],
+    [[878, 180], [946, 174], [916, 240]],
+    [[595.6, 337], [671.6, 327], [635.6, 397]],
+    [[706, 328], [782, 318], [746, 388]],
+    [[814, 332], [890, 324], [856, 394]],
+    [[884, 326], [952, 318], [922, 386]]
+  ];
+
+  /* the frame/grid derivation source, FROZEN at the original (pre-anchor)
+   * child positions — the moved child 4 must not drag the grid or the
+   * frame along with it (only the box moves, nothing else). */
+  var FRAME_TRIS = [
     [[604, 168], [680, 158], [642, 234]],
     [[710, 170], [784, 162], [750, 238]],
     [[812, 166], [888, 158], [854, 232]],
@@ -102,12 +129,46 @@
   var CELLS = 10;               // skewed grid cells per family (11 wires each)
   var GLYPH_DEG = 10;           // slot glyphs sit on the shared basis
 
+  /* basis callout — handed over from sharedbasis's settled frame
+   * (identical geometry there); retired at s1 as the skewed grid, the
+   * basis made visible, arrives */
+  var CALLOUT = { x: 250, y: 296 };
+  var CALLOUT_PTS = '48,15.6 -30,15.6 -48,-15.6 30,-15.6';  // MINI_PTS × 3
+
   var CAPTIONS = [
     'With shared basis, quantization is as efficient as with AABBs.',
     'Local skewed grid: anchor + integer coordinates.',
     'Quantize: every bound snaps onto the grid cells conservatively.',
     'Bounds are slightly inflated, memory footprint is down.'
   ];
+
+  /* s3: memory footprint bars, bottom-left region (the retired basis
+   * callout's spot — it steps aside at s1 and the punchline lands here).
+   * Lengths mirror js/aabbquant.js exactly (2 px per byte: 192 B → 384,
+   * 63 B → 126, ratio ≈ 3.05:1) so both quantization slides show the
+   * same win; absolute byte counts are deliberately NOT rendered here —
+   * only the bar sizes and the ratio carry the point. */
+  var MEM = {
+    x: 80,
+    titleY: 296,
+    barH: 22,
+    scale: 2,                       // px per byte (sizing only, unlabeled)
+    full: { bytes: 192, labelY: 330, barY: 336 },
+    quant: { bytes: 63, labelY: 384, barY: 390 }
+  };
+  var MEM_FULL_W = MEM.full.bytes * MEM.scale;   // 384
+  var MEM_QUANT_W = MEM.quant.bytes * MEM.scale; // 126
+
+  /* connector: wide node → its bounds frame. ENTRY pose is
+   * sharedbasis's settled connector pixel-for-pixel (the 12→13
+   * data-transition="none" cut must not move the dashed arrow); s1
+   * then retargets it along with the frame morph onto the settled
+   * frame's left edge: the n2=g2hi slab line crosses the connector
+   * height (y=156) at x≈498.3 — tip sits just short of it. Raised 6px
+   * above the node centerline so the dashed line clears the '7' tick
+   * label (top y≈163.4) in the settled pose. */
+  var CONN_IN = { x2: 538, y: 162, head: '536,157 536,167 546,162' };
+  var CONN_AIM = { x2: 488, y: 156, head: '486,151 486,161 496,156' };
 
   /* ==================== pure math (exported for tests) ==================== */
 
@@ -153,7 +214,7 @@
    * inside the slab span. */
   var FRAME_EXT = (function () {
     var lo1 = Infinity, hi1 = -Infinity, lo2 = Infinity, hi2 = -Infinity;
-    CHILD_TRIS.forEach(function (tri) {
+    FRAME_TRIS.forEach(function (tri) {
       var eb = D.inflate(D.aabb(tri), BOX_PAD);
       var r1 = project(boxCorners(eb), N1), r2 = project(boxCorners(eb), N2);
       lo1 = Math.min(lo1, r1[0]); hi1 = Math.max(hi1, r1[1]);
@@ -247,9 +308,12 @@
   var svg;
   var chipRects = [], chipTexts = [];
   var wideRect, wideSlots = [], slotDots = [], slotGlyphs = [];
+  var calloutG;
   var miniCapEl, connLine, connHead;
   var parentRect, skewLines1 = [], skewLines2 = [];  var ghostParas = [], quantParas = [];
   var anchorDot, anchorLbl, tick1 = [], tick2 = [];
+  var memTitle, memFullLabel, memFullBar,
+      memQuantLabel, memQuantBar, memRatioVal;
   var CHILD = null;
   var captionEl;
   var tl = null;
@@ -317,18 +381,35 @@
       'text-anchor': 'middle', 'font-size': 25, fill: FAINT
     }, svg);
 
-    /* connector: wide node → its bounds frame. Aims at the frame's
-     * settled (morphed) left edge: the n2=g2hi slab line crosses the
-     * connector height (y=156) at x≈498.3 — tip sits just short of it.
-     * Raised 6px above the node centerline so the dashed line clears
-     * the '7' tick label (top y≈163.4) instead of grazing it. */
-    var connY = WIDE.y + WIDE.h / 2 - 6;
+    /* basis callout — static at entry (sharedbasis's settled frame,
+     * pixel-for-pixel); s1 fades it out as the skewed grid arrives */
+    calloutG = el('g', { opacity: 1 }, svg);
+    var calloutGlyph = el('g', {
+      transform: 'translate(' + CALLOUT.x + ' ' + CALLOUT.y + ') rotate(' + GLYPH_DEG + ')'
+    }, calloutG);
+    el('polygon', {
+      points: CALLOUT_PTS,
+      fill: 'none', stroke: INK, 'stroke-width': 1.6,
+      'stroke-linejoin': 'round'
+    }, calloutGlyph);
+    text('one shared basis', {
+      x: CALLOUT.x, y: CALLOUT.y + 62,
+      'text-anchor': 'middle', 'font-size': 25, 'font-weight': 600, fill: INK
+    }, calloutG);
+    text('a property of the wide node', {
+      x: CALLOUT.x, y: CALLOUT.y + 94,
+      'text-anchor': 'middle', 'font-size': 20, fill: FAINT
+    }, calloutG);
+
+    /* connector: wide node → its bounds frame. Built at the ENTRY pose
+     * (sharedbasis's settled connector, pixel-for-pixel) so the 12→13
+     * hard cut does not move it; s1 tweens it onto the morphed frame. */
     connLine = el('line', {
-      x1: WIDE.x + WIDE.w + 14, y1: connY, x2: 488, y2: connY,
+      x1: WIDE.x + WIDE.w + 14, y1: CONN_IN.y, x2: CONN_IN.x2, y2: CONN_IN.y,
       stroke: EDGE, 'stroke-width': 1.4, 'stroke-dasharray': '4 4'
     }, svg);
     connHead = el('polygon', {
-      points: '486,' + (connY - 5) + ' 486,' + (connY + 5) + ' 496,' + connY,
+      points: CONN_IN.head,
       fill: EDGE
     }, svg);
 
@@ -406,7 +487,7 @@
     CHILD.forEach(function (c, i) {
       ghostParas.push(el('polygon', {
         points: pts2str(c.tight),
-        fill: 'none', stroke: INK, 'stroke-width': 1.4,
+        fill: 'none', stroke: INK, 'stroke-width': 2.4,
         'stroke-linejoin': 'round'
       }, stageG));
       quantParas.push(el('polygon', {
@@ -415,6 +496,32 @@
         'stroke-linejoin': 'round', opacity: 0
       }, stageG));
     });
+
+    /* s4: memory footprint comparison — two horizontal bars, lengths
+     * exactly proportional to stored bytes (aabbquant's sizing, no
+     * absolute numbers). Full precision in quiet ink, quantized in
+     * blue (the stored representation); the ratio is the punchline. */
+    memTitle = text('memory per wide node', {
+      x: MEM.x, y: MEM.titleY, 'font-size': 22, fill: FAINT, opacity: 0
+    }, svg);
+    memFullLabel = text('full precision', {
+      x: MEM.x, y: MEM.full.labelY, 'font-size': 25, fill: INK, opacity: 0
+    }, svg);
+    memFullBar = el('rect', {
+      x: MEM.x, y: MEM.full.barY, width: 0, height: MEM.barH, rx: 3,
+      fill: INK, opacity: 0
+    }, svg);
+    memQuantLabel = text('quantized', {
+      x: MEM.x, y: MEM.quant.labelY, 'font-size': 25, fill: INK, opacity: 0
+    }, svg);
+    memQuantBar = el('rect', {
+      x: MEM.x, y: MEM.quant.barY, width: 0, height: MEM.barH, rx: 3,
+      fill: BLUE, opacity: 0
+    }, svg);
+    memRatioVal = text('3× smaller', {
+      x: MEM.x + MEM_QUANT_W + 10, y: MEM.quant.barY + MEM.barH - 5,
+      'font-size': 17, fill: BLUE, opacity: 0
+    }, svg);
 
     captionEl = document.getElementById('wide-caption');
     built = true;
@@ -440,7 +547,15 @@
     gsap.killTweensOf(miniCapEl);
     gsap.killTweensOf(connLine);
     gsap.killTweensOf(connHead);
+    /* connector restores the ENTRY pose (sharedbasis's settled
+     * connector) — s1 may have tweened it onto the morphed frame */
+    connLine.setAttribute('y1', CONN_IN.y);
+    connLine.setAttribute('y2', CONN_IN.y);
+    connLine.setAttribute('x2', CONN_IN.x2);
+    connHead.setAttribute('points', CONN_IN.head);
     gsap.killTweensOf(parentRect);
+    gsap.killTweensOf(calloutG);
+    calloutG.setAttribute('opacity', 1);
     parentRect.setAttribute('stroke', INK);
     parentRect.setAttribute('points', P_PTS);
     skewLines1.concat(skewLines2).forEach(function (l) {
@@ -464,6 +579,15 @@
       quantParas[i].setAttribute('opacity', 0);
       quantParas[i].setAttribute('points', pts2str(c.tight));
     });
+    [memTitle, memFullLabel, memQuantLabel, memRatioVal].forEach(function (t) {
+      gsap.killTweensOf(t);
+      t.setAttribute('opacity', 0);
+    });
+    [memFullBar, memQuantBar].forEach(function (b) {
+      gsap.killTweensOf(b);
+      b.setAttribute('opacity', 0);
+      b.setAttribute('width', 0);
+    });
   }
 
   /* ==================== timeline ==================== */
@@ -484,6 +608,20 @@
       attr: { points: FRAME_PTS },
       duration: 0.55, ease: 'power2.inOut'
     }, at);
+    /* the connector retargets along with the frame morph: from the
+     * entry pose (sharedbasis's settled arrow) onto the settled
+     * frame's left edge */
+    tl.to(connLine, {
+      attr: { y1: CONN_AIM.y, y2: CONN_AIM.y, x2: CONN_AIM.x2 },
+      duration: 0.55, ease: 'power2.inOut'
+    }, at);
+    tl.to(connHead, {
+      attr: { points: CONN_AIM.head },
+      duration: 0.55, ease: 'power2.inOut'
+    }, at);
+    /* retire the handed-over basis callout — the skewed grid arriving
+     * below IS the basis made visible, so the annotation steps aside */
+    tl.to(calloutG, { attr: { opacity: 0 }, duration: 0.45, ease: 'power1.inOut' }, at + 0.3);
     tl.to(skewLines1, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at + 0.35);
     tl.to(skewLines2, { attr: { opacity: 0.4 }, duration: 0.45, stagger: 0.03 }, at + 0.6);
     /* anchor + integer coordinates ride in once the morph has settled
@@ -509,14 +647,32 @@
     });
     tl.addLabel('s2', tl.duration());
 
-    /* s3 — closer: grid falls quiet, 8 tight quantized shared-basis
-     * bounds remain; the node + its bounds go blue (one stored frame) */
+    /* s3 — closer + memory punchline: grid falls quiet, 8 tight
+     * quantized shared-basis bounds remain; the node + its bounds go
+     * blue (one stored frame); then aabbquant's memory bar comparison
+     * grows in the retired-callout spot — byte counts omitted, only
+     * the bar sizes and the ratio carry the point. */
     tl.to({}, { duration: 0.2 }, '>');
     at = tl.duration();
     tl.to(skewLines1.concat(skewLines2), { attr: { opacity: 0.18 }, duration: 0.5 }, at);
     tl.to(tick1.concat(tick2), { attr: { opacity: 0.35 }, duration: 0.5 }, at);
     tl.to(ghostParas, { attr: { opacity: 0.55 }, duration: 0.4 }, at);
     tl.to([wideRect, parentRect], { attr: { stroke: BLUE }, duration: 0.5 }, at + 0.25);
+    /* memory footprint rides the same beat: the full-precision bar
+     * grows first, then the quantized bar grows to its much shorter
+     * final length — the ratio lands as the punchline */
+    tl.to(memTitle, { attr: { opacity: 1 }, duration: 0.35 }, at + 0.7);
+    tl.to(memFullLabel, { attr: { opacity: 1 }, duration: 0.3 }, at + 0.85);
+    tl.to(memFullBar, { attr: { opacity: 1 }, duration: 0.15 }, at + 1.0);
+    tl.to(memFullBar, {
+      attr: { width: MEM_FULL_W }, duration: 0.7, ease: 'power2.out'
+    }, at + 1.05);
+    tl.to(memQuantLabel, { attr: { opacity: 1 }, duration: 0.3 }, at + 1.6);
+    tl.to(memQuantBar, { attr: { opacity: 1 }, duration: 0.15 }, at + 1.75);
+    tl.to(memQuantBar, {
+      attr: { width: MEM_QUANT_W }, duration: 0.5, ease: 'power2.out'
+    }, at + 1.8);
+    tl.to(memRatioVal, { attr: { opacity: 1 }, duration: 0.3 }, at + 2.2);
     tl.addLabel('s3', tl.duration());
   }
 
@@ -530,8 +686,11 @@
       buildTimeline();
       captionEl.textContent = CAPTIONS[fragStep] || CAPTIONS[0];
       if (fragStep > 0) tl.seek(D.stopsFor(tl, SECTIONS)[fragStep], true);
-      gsap.fromTo(svg, { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out', overwrite: 'auto' });
+      /* NO entrance fade/rise: this slide opens pixel-identical to
+       * sharedbasis's settled frame (data-transition="none" hard cut) —
+       * a fromTo here was the "bounce" on the 12→13 cut: identical
+       * content dropped to opacity 0 / y+14 and animated back. */
+      gsap.set(svg, { opacity: 1, y: 0 });
     },
     step: function (fragStep) {
       if (!tl) return;
@@ -562,13 +721,21 @@
       TXT: CHIP_TXT, X: CHIP_X, W: CHIP_W, Y: CHIP_Y, H: CHIP_H,
       ARROW_X: CHIP_ARROW_X, STATE: CHIP_STATE, STYLE: CHIP_STYLE
     },
+    CALLOUT: CALLOUT, CALLOUT_PTS: CALLOUT_PTS,
     N1: N1, N2: N2, E1: E1, E2: E2,
     GLYPH_DEG: GLYPH_DEG,
     CHILD_TRIS: CHILD_TRIS,
     WIDE: WIDE,
     P: P, CELLS: CELLS,
     CAPTIONS: CAPTIONS,
-    sections: SECTIONS
+    sections: SECTIONS,
+    memory: {
+      MEM: MEM,
+      fullWidth: MEM_FULL_W,
+      quantWidth: MEM_QUANT_W,
+      ratio: MEM.full.bytes / MEM.quant.bytes
+    },
+    connector: { CONN_IN: CONN_IN, CONN_AIM: CONN_AIM }
   };
 
   window.DeckAnimators = window.DeckAnimators || {};

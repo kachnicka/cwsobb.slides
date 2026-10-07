@@ -26,8 +26,10 @@
  *     up its integer coordinate (0 at the anchor, increasing outward)
  * s2: quantization — every bound snaps OUTWARD onto the grid cells,
  *     conservative by construction (axis-space floor/ceil)
- * s3: closer — the grid falls quiet; eight crisp quantized AABBs remain;
- *     terse caption, no numeric readouts
+ * s3: closer + memory punchline — the grid falls quiet; eight crisp
+ *     quantized AABBs remain; then the memory bars grow in the blank
+ *     lower-left region (byte-for-byte proportional lengths) — terse
+ *     caption, the ratio is the punchline
  *
  * Layout note: WIDE strip / P panel / CHILD_TRIS are numerically identical
  * to js/widenode.js + js/sharedbasis.js so the two quantization slides are
@@ -72,13 +74,18 @@
   var BOX_PAD = 4;
 
   /* 8 child source triangles inside P — geometry only (tight-box
-   * derivation), never rendered; identical to widenode.js/grid mirror */
+   * derivation), never rendered; identical to widenode.js/grid mirror.
+   * Child 4 (the bottom-left box) starts AT the anchor: its tight box's
+   * bottom-left corner sits 3px inside the anchor so the conservative
+   * floor/ceil snap lands its quantized corner exactly ON the anchor
+   * (integer 0,0) — an exact-on-line corner would snap one cell past
+   * the node bounds (the lo/hi epsilon). */
   var CHILD_TRIS = [
     [[604, 168], [680, 158], [642, 234]],
     [[710, 170], [784, 162], [750, 238]],
     [[812, 166], [888, 158], [854, 232]],
     [[878, 180], [946, 174], [916, 240]],
-    [[600, 330], [676, 320], [640, 390]],
+    [[567, 403], [643, 393], [607, 463]],
     [[706, 328], [782, 318], [746, 388]],
     [[814, 332], [890, 324], [856, 394]],
     [[884, 326], [952, 318], [922, 386]]
@@ -93,11 +100,10 @@
     'Quantization: the eight child bounds snap onto the local orthogonal grid.',
     'Local orthogonal grid: anchor + integer coordinates.',
     'Quantize: every bound snaps onto the grid cells conservatively.',
-    'Bounds are slightly inflated, memory footprint is down.',
-    'Stored per wide node: 192 bytes at f32, 63 bytes quantized — 3× smaller.'
+    'Bounds are slightly inflated, memory footprint is down.'
   ];
 
-  /* s4: memory footprint bars, bottom-left blank region (x 80..540,
+  /* s3: memory footprint bars, bottom-left blank region (x 80..540,
    * y 260..500). Lengths exactly proportional to bytes: 2 px per byte,
    * 192 B → 384 px, 63 B → 126 px (ratio 192:63 ≈ 3.05:1). */
   var MEM = {
@@ -295,7 +301,7 @@
       tightRects.push(el('rect', {
         'class': 'aabb-tight',
         x: ta.x, y: ta.y, width: ta.width, height: ta.height,
-        fill: 'none', stroke: INK, 'stroke-width': 1.4
+        fill: 'none', stroke: INK, 'stroke-width': 2.4
       }, svg));
       quantRects.push(el('rect', {
         'class': 'aabb-quant',
@@ -402,7 +408,7 @@
 
   /* ==================== timeline ==================== */
 
-  var SECTIONS = 4;
+  var SECTIONS = 3;
 
   function buildTimeline() {
     tl = gsap.timeline({ paused: true });
@@ -436,35 +442,34 @@
     });
     tl.addLabel('s2', tl.duration());
 
-    /* s3 — closer: grid falls quiet, eight crisp quantized AABBs remain;
-     * the node + its bounds go blue (the stored representation) */
+    /* s3 — closer + memory punchline: grid falls quiet, eight crisp
+     * quantized AABBs remain; the node + its bounds go blue (the stored
+     * representation); then the memory bars grow in the blank region
+     * below the wide node — byte-for-byte proportional lengths, the
+     * ratio lands as the punchline; labels fade in near their bars. */
     tl.to({}, { duration: 0.2 }, '>');
     at = tl.duration();
     tl.to(gridV.concat(gridH), { attr: { opacity: 0.18 }, duration: 0.5 }, at);
     tl.to(tickX.concat(tickY), { attr: { opacity: 0.35 }, duration: 0.5 }, at);
     tl.to(tightRects, { attr: { opacity: 0.55 }, duration: 0.4 }, at);
     tl.to([wideRect, parentRect], { attr: { stroke: BLUE }, duration: 0.5 }, at + 0.25);
-    tl.addLabel('s3', tl.duration());
-
-    /* s4 — memory footprint: the full-precision bar grows first, then the
-     * quantized bar grows to its much shorter final length — the ratio
-     * lands as the punchline; labels fade in near their bars. */
-    tl.to({}, { duration: 0.2 }, '>');
-    at = tl.duration();
-    tl.to(memTitle, { attr: { opacity: 1 }, duration: 0.35 }, at);
-    tl.to(memFullLabel, { attr: { opacity: 1 }, duration: 0.3 }, at + 0.15);
-    tl.to(memFullBar, { attr: { opacity: 1 }, duration: 0.15 }, at + 0.3);
+    /* memory footprint rides the same beat: the full-precision bar
+     * grows first, then the quantized bar grows to its much shorter
+     * final length — the ratio lands as the punchline */
+    tl.to(memTitle, { attr: { opacity: 1 }, duration: 0.35 }, at + 0.7);
+    tl.to(memFullLabel, { attr: { opacity: 1 }, duration: 0.3 }, at + 0.85);
+    tl.to(memFullBar, { attr: { opacity: 1 }, duration: 0.15 }, at + 1.0);
     tl.to(memFullBar, {
       attr: { width: MEM_FULL_W }, duration: 0.7, ease: 'power2.out'
-    }, at + 0.35);
-    tl.to(memFullVal, { attr: { opacity: 1 }, duration: 0.3 }, at + 0.95);
-    tl.to(memQuantLabel, { attr: { opacity: 1 }, duration: 0.3 }, at + 1.0);
-    tl.to(memQuantBar, { attr: { opacity: 1 }, duration: 0.15 }, at + 1.15);
+    }, at + 1.05);
+    tl.to(memFullVal, { attr: { opacity: 1 }, duration: 0.3 }, at + 1.55);
+    tl.to(memQuantLabel, { attr: { opacity: 1 }, duration: 0.3 }, at + 1.6);
+    tl.to(memQuantBar, { attr: { opacity: 1 }, duration: 0.15 }, at + 1.75);
     tl.to(memQuantBar, {
       attr: { width: MEM_QUANT_W }, duration: 0.5, ease: 'power2.out'
-    }, at + 1.2);
-    tl.to(memQuantVal, { attr: { opacity: 1 }, duration: 0.3 }, at + 1.6);
-    tl.addLabel('s4', tl.duration());
+    }, at + 1.8);
+    tl.to(memQuantVal, { attr: { opacity: 1 }, duration: 0.3 }, at + 2.2);
+    tl.addLabel('s3', tl.duration());
   }
 
   /* ==================== animator ==================== */

@@ -93,9 +93,9 @@
                Sabino stacked quieter just below it (same year, same lane;
                no link drawn, the shared cell is the relation) -->
           <g class="fragment">
-            <rect x="97" y="100" width="296" height="40" rx="20" class="svg-rw-node"/>
+            <rect x="108.5" y="100" width="273" height="40" rx="20" class="svg-rw-node"/>
             <text x="245" y="125" text-anchor="middle" class="svg-rw-title">Vitsas et al. ’23 OBB</text>
-            <rect x="84" y="152" width="322" height="40" rx="20" class="svg-rw-node svg-rw-node-soft"/>
+            <rect x="95.5" y="152" width="299" height="40" rx="20" class="svg-rw-node svg-rw-node-soft"/>
             <text x="245" y="177" text-anchor="middle" class="svg-rw-title svg-rw-title-soft">Sabino et al. ’23 oDOP</text>
           </g>
 
@@ -150,7 +150,7 @@
       </div>
       <!-- Gated lines below the image: family containment, then the
            minimal-SA consequence. Both start hidden; the animator
-           reveals them (kdop-promise pattern). -->
+           reveals them. -->
       <div class="cap-extra-row"><span class="cap" id="sobb-ineq">AABB ⊆ OBB ⊆ SOBB — every AABB is an OBB; every OBB is a SOBB</span></div>
       <div class="cap-extra-row"><span class="cap" id="sobb-saineq">SA(AABB) ≥ SA(OBB) ≥ SA(SOBB)</span></div>
       <div class="status-row"><span class="cap">A SOBB allows non-orthogonal basis — same memory as an OBB, same slab intersection test.</span></div>
@@ -186,10 +186,11 @@
       <!-- Two caption lines: line 2 lives in the footer status-row (single
            line keeps the footer y identical across slides), line 1 sits in
            an extra flex-none row just above it. -->
-      <div class="cap-extra-row"><span class="cap" id="kdop-promise"></span></div>
-      <div class="cap-extra-row"><span class="cap"></span></div>
+      <!-- Two empty cap-extra rows: match slide-kdop's canvas-row height
+           so the hard cut between the two slides holds pixel-for-pixel. -->
+      <div class="cap-extra-row"></div>
+      <div class="cap-extra-row"></div>
       <div class="status-row"><span class="cap">2.6× faster to build than DiTO-based OBB fitting — comparable or faster tracing.</span></div>
-      <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
@@ -234,12 +235,14 @@
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
-      <span class="fragment"></span>
     </section>
 
     <!-- L4c. Pipeline 3 of 3: our SOBB BVH₈ chain (quantization lead-in,
-         hands off to the shared-basis slide) -->
-    <section id="slide-pipeline-sobb8" data-animator="pipesobb8">
+         hands off to the shared-basis slide; data-transition="none": its
+         OWN transition governs the outgoing side of the cut — without it,
+         Reveal cross-fades this section out over the next slide and the
+         pixel-identical chip-row hand-off ghosts) -->
+    <section id="slide-pipeline-sobb8" data-animator="pipesobb8" data-transition="none">
       <h2 class="slide-head">SOBB BVH₈ — our pipeline</h2>
       <div class="canvas-row">
         <div id="pipe-sobb8-canvas" class="panel"></div>
@@ -251,9 +254,10 @@
       <span class="fragment"></span>
     </section>
 
-    <!-- L4.5. Shared basis insertion -->
+    <!-- L4.5. The shared basis — a PROPERTY of the wide node (annotation
+         on the node, not a pipeline build-phase chip) -->
     <section id="slide-sharedbasis" data-animator="sharedbasis" data-transition="none">
-      <h2 class="slide-head">Wide SOBB node quantization</h2>
+      <h2 class="slide-head">One shared basis per wide node</h2>
       <div class="canvas-row">
         <div id="sb-canvas" class="panel"></div>
       </div>
@@ -264,8 +268,8 @@
     </section>
 
     <!-- L5. Wide node quantization in the skewed space — opens EXACTLY where
-         sharedbasis settled (chip row, strip, 8 shared-basis parallelograms),
-         hard cut, no rebuild -->
+         sharedbasis settled (chip row, strip, 8 shared-basis parallelograms,
+         basis callout), hard cut, no rebuild -->
     <section id="slide-quant" data-animator="widenode" data-transition="none">
       <h2 class="slide-head">Quantization with a shared basis</h2>
       <div class="canvas-row">
@@ -564,8 +568,6 @@
       <div class="status-row"><span class="cap">Propagate geometry, not bounds — leaf threads test locally, write only on change.</span></div>
       <span class="fragment"></span>
       <span class="fragment"></span>
-      <span class="fragment"></span>
-      <span class="fragment"></span>
     </section>
 
     <!-- L9.5. Atomics — pressure self-balances (animated) -->
@@ -591,26 +593,68 @@
         <div class="num-card fragment"><div class="num-big">1.5×</div><div class="num-small">avg. traversal speed retained thanks to SOBB</div></div>
         <div class="num-card fragment"><div class="num-big num-big-long">2–5%</div><div class="num-small">degradation over the sequence — same rate as AABB BVH8</div></div>
       </div>
-      <div class="video-row"><video class="slide-video wide" src="video/main_raw_small.mp4" autoplay muted loop playsinline></video></div>
+      <div class="video-row">
+        <video class="slide-video wide" src="video/main_raw_small.mp4" autoplay muted loop playsinline></video>
+        <div class="video-facts fragment">
+          <div class="vf-scene">Bistro ext. · 3.2M△</div>
+          <div class="vf-row"><span class="vf-label">AABB8 refit<span class="vf-by">by node</span></span><span class="vf-ms">1.13 ms</span></div>
+          <div class="vf-row"><span class="vf-label">SOBB8 refit<span class="vf-by">by geometry</span></span><span class="vf-ms">1.66 ms</span></div>
+          <div class="vf-gpu">measured on RTX 3080Ti</div>
+        </div>
+      </div>
     </section>
 
     <!-- L11. Takeaways (static) -->
     <section id="slide-conclusion">
       <h2 class="slide-head">Takeaways</h2>
-      <ol class="outline-list">
-        <li class="fragment"><span class="ol-num">01</span><span><span class="tk-lead">Static:</span> 1.09–1.85× faster secondary-ray traversal than state-of-the-art compressed 8-ary AABB BVH (BVH8) — Sheep: 7.4×.</span></li>
-        <li class="fragment"><span class="ol-num">02</span><span><span class="tk-lead">Dynamic:</span> SOBB refit ≈ 1.5× an AABB refit — the trace advantage survives.</span></li>
-        <li class="fragment"><span class="ol-num">03</span><span><span class="tk-lead">Modest costs:</span> +10–18% build, +5% memory, 7–15 bits/node.</span></li>
-      </ol>
-      <div class="concl-footer">
-        <div class="concl-notes">
-          <p class="mentions"><strong>Also in the paper:</strong> greedy-swaps child ordering · basis pruning · k²/k³ candidate exploration · node layout</p>
-          <p class="future"><strong>Next:</strong> two-level TLAS/BLAS, motion-aware slabs.</p>
+      <div class="concl-main">
+        <ol class="concl-list">
+          <li class="fragment" data-fragment-index="0">
+            <span class="tk-eyebrow">Wide Compressed SOBB BVH</span>
+            <div class="tk-row">
+              <span class="tk-num">1.09–1.85×</span>
+              <span class="tk-body"><span class="tk-claim">Faster secondary-ray traversal</span><span class="tk-sub">vs. AABB BVH8 — up to <span class="tk-accent">7.4×</span> on Sheep</span></span>
+            </div>
+          </li>
+          <li class="fragment" data-fragment-index="1">
+            <span class="tk-eyebrow">Refit by geometry</span>
+            <div class="tk-row">
+              <span class="tk-num">3×</span>
+              <span class="tk-body"><span class="tk-claim">Faster than previous SOBB refit</span><span class="tk-sub">≈1.5× an AABB refit</span><span class="tk-note fragment" data-fragment-index="2">Refit keeps SOBB traversal characteristics</span></span>
+            </div>
+            <!-- Annotation: the refit win keeps SOBB traversal, i.e. it
+                 still earns row 1's speedup. Separate fragment step —
+                 note and arrow share data-fragment-index 2 so both fade
+                 in on one click, after row 2 (index 1), before row 3
+                 (index 3). All four steps carry explicit indices:
+                 Reveal 6 buckets explicit-index fragments first and
+                 appends auto-indexed ones after, so mixing auto and
+                 explicit scrambles the order. Arrow is absolute against
+                 the li; the fragment class doesn't re-anchor it. Shaft
+                 at x102 (clear of number ink x118), tip at row-1 number
+                 midline y250, elbow at the note's vertical midline
+                 running right to just before the note text. Stroke
+                 lives in attributes per deck rule. -->
+            <svg class="tk-note-arrow fragment" data-fragment-index="2" viewBox="0 0 310 171" aria-hidden="true">
+              <path d="M7 171 V12" fill="none" stroke="#9aa1ad" stroke-width="1.4"/>
+              <path d="M7 171 H304" fill="none" stroke="#9aa1ad" stroke-width="1.4"/>
+              <path d="M2 15 L7 4 L12 15" fill="none" stroke="#9aa1ad" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </li>
+          <li class="fragment" data-fragment-index="3">
+            <span class="tk-eyebrow">Wide Compressed SOBB BVH</span>
+            <div class="tk-row">
+              <span class="tk-num tk-num-cost">+10–18%</span>
+              <span class="tk-body"><span class="tk-claim">Build time</span><span class="tk-sub">+5% memory, 7–15 bits per node</span></span>
+            </div>
+          </li>
+        </ol>
+        <div class="qr-col">
+          <img class="qr-img" src="img/qr.png" alt="QR code — project page">
+          <span class="qr-url">dcgi.fel.cvut.cz/<wbr>projects/cwsobb/</span>
         </div>
-        <!-- Same URL as before, restructured: "QR" tag above the address,
-             arrow dropped. Placeholder for the real code image. -->
-        <div class="qr-box"><span class="qr-tag">QR</span><span class="qr-url">dcgi.fel.cvut.cz/<wbr>projects/<wbr>cwsobb/</span></div>
       </div>
+      <div class="concl-foot"><span>Also in the paper: greedy-swaps ordering · basis pruning · node layout</span></div>
     </section>
 
     <!-- L12. Closing -->
