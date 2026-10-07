@@ -279,6 +279,40 @@
   width: auto;
   flex: 1 1 auto;
   min-width: 0;
+  position: relative; /* anchor for the s5 3D overlay */
+}
+
+/* s5 overlay: 3D render of the skewed frame, covering the 2D morph.
+   Hidden by default; the sobbmorph animator fades/rises it in.
+   Size comes from the panel slot (inset: 0) — no px pins. */
+.sobb3d-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2; /* above the lazily-built morph SVG (appended after it) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: var(--paper);
+  opacity: 0;
+}
+
+/* Static tilt: makes the render's x axis read as mis-aligned too.
+   Max sizes shrunk so the rotated bounding box (≈ +3% wide, +13% tall
+   at 4° for this 1.93:1 image) stays inside the overlay — no clipping. */
+.sobb3d-overlay img {
+  max-width: 82%;
+  max-height: 64%;
+  object-fit: contain;
+  transform: rotate(-4deg);
+}
+
+.sobb3d-tag {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--teal);
 }
 
 .bv-rows {

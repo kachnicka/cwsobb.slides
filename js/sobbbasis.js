@@ -26,8 +26,6 @@
  *            shared frame n1=100°/n2=160°; its BASIS is handed back and
  *            refit per child: 8 tight BLUE parallelograms, ✓, and the
  *            three-way summary chips appear.
- *   s4 closer: avg locks (parallelograms thicken), slot glyphs tilt onto
- *            the shared frame — hand-off to results.
  *
  * Every approach beat re-establishes the SAME clean baseline node at its
  * start (losing tweens at the section boundary), so backward walks and
@@ -38,7 +36,7 @@
  * use a fixed 6-corner slab parametrization (kdop6) so point-counts are
  * ALWAYS equal for morphs. GSAP-animated paint props are SVG attributes
  * only. Pure math exported via _test.
- * Host: #sobb-canvas + #sobb-caption. Fragments: 5 (f0 + s1..s4).
+ * Host: #sobb-canvas + #sobb-caption. Fragments: 4 (f0 + s1..s3).
  */
 (function () {
   'use strict';
@@ -79,8 +77,6 @@
    * kdopfan: normals n1=100° teal pair, n2=160° amber pair) */
   var N1 = [Math.cos(rad(100)), Math.sin(rad(100))];
   var N2 = [Math.cos(rad(160)), Math.sin(rad(160))];
-  var GLYPH_DEG = 10;                // slot glyphs settle on the frame
-  var MINI_PTS = '16,5.2 -10,5.2 -16,-5.2 10,-5.2';
 
   /* k-DOP slab normal directions: 40°/100°/160° — the children's k-DOPs
    * share the shared-basis frame's own normals (SOBB = k-DOP on a shared
@@ -112,8 +108,7 @@
     'One wide node — eight children must be tightly bounded with a single basis.',
     'Sum — score every candidate basis on every child at once: exact, but slow.',
     'Union — merge the children into one k-DOP, then fit once: cheap, but the union is loose.',
-    'Average — one mean k-DOP, one fit: cheap and tight enough. Our choice.',
-    'Locked: one stored frame, eight tight shared-basis SOBBs.'
+    'Average — one mean k-DOP, one fit: cheap and tight enough. Our choice.'
   ];
 
   /* ==================== pure math ==================== */
@@ -375,20 +370,13 @@
 
   var built = false;
   var svg;
-  var slotGlyphs = [];
   var hexGs = [], hexPolys = [], paras = [];
   var proxyG, unionPoly, avgPoly, fitCand;
-  var sumBadge, stageBadge, closerCue;
+  var sumBadge, stageBadge;
   var sumDotG, stageDotG, sumDots = [], stageDots = [];
   var sumG;
   var captionEl;
   var tl = null;
-
-  function glyphTransform(i, deg) {
-    var gx = WIDE.x + (WIDE.w / SLOT_N) * (i + 0.5);
-    var gy = WIDE.y + WIDE.h / 2 - 14;
-    return 'translate(' + gx + ' ' + gy + ') rotate(' + deg + ')';
-  }
 
   /* dot row: wordless candidate-progress indicator (replaces the old
    * numeric Σ/∪/avg read-outs) */
@@ -447,12 +435,6 @@
       el('circle', {
         cx: WIDE.x + (WIDE.w / SLOT_N) * (i + 0.5), cy: cy, r: 2.2, fill: INK
       }, svg);
-      var g = el('g', { transform: glyphTransform(i, GLYPH_DEG), opacity: 0 }, svg);
-      el('polygon', {
-        points: MINI_PTS, fill: 'none', stroke: INK,
-        'stroke-width': 1.3, 'stroke-linejoin': 'round'
-      }, g);
-      slotGlyphs.push(g);
     }
     /* connector: strip → its extent frame */
     el('line', {
@@ -509,10 +491,6 @@
       x: STAGE[0], y: 100, 'text-anchor': 'middle', 'font-size': 27,
       'font-weight': 650, fill: INK, opacity: 0
     }, svg);
-    closerCue = text('one stored frame', {
-      x: 446, y: 56, 'text-anchor': 'middle', 'font-size': 26,
-      'font-weight': 650, fill: INK, opacity: 0
-    }, svg);
     var r1 = dotRow(SUM_CANDS.length, 446, 390, svg);
     sumDotG = r1.g; sumDots = r1.dots;
     var r2 = dotRow(UNION_CANDS.length, STAGE[0], 128, svg);
@@ -560,7 +538,7 @@
     fitCand.setAttribute('points', pts2str(UNION_CANDS[0].corners));
     fitCand.setAttribute('opacity', 0);
     [
-      sumBadge, stageBadge, closerCue, sumDotG, stageDotG, sumG
+      sumBadge, stageBadge, sumDotG, stageDotG, sumG
     ].forEach(function (n) {
       gsap.killTweensOf(n);
       n.setAttribute('opacity', 0);
@@ -569,11 +547,6 @@
     sumDots.concat(stageDots).forEach(function (d) {
       gsap.killTweensOf(d);
       d.setAttribute('fill', '#ffffff');
-    });
-    slotGlyphs.forEach(function (g, k) {
-      gsap.killTweensOf(g);
-      g.setAttribute('opacity', 0);
-      g.setAttribute('transform', glyphTransform(k, GLYPH_DEG));
     });
   }
 
@@ -584,7 +557,7 @@
    * duration() when a label sits past the last tween, so a running
    * tl.duration() would drift behind the labels. */
 
-  var SECTIONS = 4;
+  var SECTIONS = 3;
   /* SUM: slow candidate exploration (four candidates);
    * FLY: one child arrival per 0.42s, 0.5s flight, morph on landing;
    * FIT: single-proxy candidate morph pacing */
@@ -744,21 +717,6 @@
     tl.to(sumG, { attr: { opacity: 1 }, duration: 0.45 }, tDistAEnd + 0.15);
     T = tDistAEnd + 0.7;
     tl.addLabel('s3', T);   /* avg distributed, marked, summary up */
-
-    /* ---- s4 — closer: the avg winner locks ---- */
-    tl.to(proxyG, { attr: { opacity: 0 }, duration: 0.4 }, T);
-    tl.to(fitCand, { attr: { opacity: 0 }, duration: 0.35 }, T);
-    tl.to(stageBadge, { attr: { opacity: 0 }, duration: 0.3 }, T);
-    tl.to(stageDotG, { attr: { opacity: 0 }, duration: 0.3 }, T);
-    tl.to(paras, {
-      attr: { 'stroke-width': 2.4 }, duration: 0.55, ease: 'power2.inOut'
-    }, T + 0.2);
-    tl.to(closerCue, { attr: { opacity: 1 }, duration: 0.4 }, T + 0.3);
-    tl.to(slotGlyphs, {
-      attr: { opacity: 1 }, duration: 0.35, stagger: 0.04
-    }, T + 0.5);
-    T += 0.5 + 0.35 + 0.4;
-    tl.addLabel('s4', T);
   }
 
   /* ==================== animator ==================== */
@@ -829,7 +787,6 @@
     N1: N1, N2: N2,
     HEX_DIRS: HEX_DIRS,
     WIDE: WIDE, FRAME: FRAME, STAGE: STAGE,
-    GLYPH_DEG: GLYPH_DEG,
     CHIPS: CHIPS,
     CHIP_FS: CHIP_FS,
     CAPTIONS: CAPTIONS,

@@ -9,8 +9,9 @@
  *         the OBB recedes
  *   s3:   #sobb-ineq caption (AABB ⊆ OBB ⊆ SOBB)
  *   s4:   #sobb-saineq caption (SA(AABB) ≥ SA(OBB) ≥ SA(SOBB))
+ *   s5:   #sobb3d overlay — the same skewed frame rendered in 3D
  * The right-column rows #bv-obb / #bv-sobb fade in at s1 / s2 with
- * computed area percentages. Host: #morph-canvas. Fragments: 4 (s1..s4).
+ * computed area percentages. Host: #morph-canvas. Fragments: 5 (s1..s5).
  */
 (function () {
   'use strict';
@@ -92,7 +93,7 @@
 
   var built = false;
   var svg, aabbEl, obbEl, obbLabelEl, sobbEl, sobbLabelEl;
-  var bvObb, bvSobb, bvObbSa, bvSobbSa, capIneq, capSa;
+  var bvObb, bvSobb, bvObbSa, bvSobbSa, capIneq, capSa, overlay3d;
   var aabbC, obbC, sobbC, areaStrs;
   var obbLen = 0, sobbLen = 0;
   var tl = null;
@@ -180,6 +181,7 @@
     bvSobbSa = document.getElementById('bv-sobb-sa');
     capIneq = document.getElementById('sobb-ineq');
     capSa = document.getElementById('sobb-saineq');
+    overlay3d = document.getElementById('sobb3d');
     bvObbSa.textContent = areaStrs[1];
     bvSobbSa.textContent = areaStrs[2];
 
@@ -188,7 +190,7 @@
 
   function resetState() {
     var animEls = [aabbEl, obbEl, obbLabelEl, sobbEl, sobbLabelEl,
-      bvObb, bvSobb, capIneq, capSa];
+      bvObb, bvSobb, capIneq, capSa, overlay3d];
     gsap.killTweensOf(animEls);
     aabbEl.setAttribute('stroke-opacity', 1);
     obbEl.setAttribute('opacity', 0);
@@ -201,6 +203,7 @@
     sobbEl.setAttribute('fill-opacity', 0);
     sobbLabelEl.setAttribute('opacity', 0);
     gsap.set([bvObb, bvSobb, capIneq, capSa], { opacity: 0, y: 0 });
+    gsap.set(overlay3d, { opacity: 0, y: 0 });
   }
 
   function buildTimeline() {
@@ -260,6 +263,13 @@
       { opacity: 1, y: 0, duration: 0.5, ease: 'power1.out', immediateRender: false },
       's3+=0.2');
     tl.addLabel('s4', 's3+=0.8');
+
+    // s5: the 3D render rises in over the 2D morph — closing beat
+    tl.fromTo(overlay3d,
+      { opacity: 0, y: 16 },
+      { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', immediateRender: false },
+      's4+=0.2');
+    tl.addLabel('s5', 's4+=0.9');
   }
 
   var animator = {
@@ -268,7 +278,7 @@
       animator.stop();
       resetState();
       buildTimeline();
-      if (fragStep > 0) tl.seek(D.stopsFor(tl, 4)[fragStep], true);
+      if (fragStep > 0) tl.seek(D.stopsFor(tl, 5)[fragStep], true);
       gsap.fromTo(svg,
         { opacity: 0, y: 14 },
         { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out', overwrite: 'auto' });
@@ -276,7 +286,7 @@
 
     step: function (fragStep) {
       if (!tl) return;
-      tl.tweenTo(D.stopsFor(tl, 4)[fragStep], { ease: 'none' });
+      tl.tweenTo(D.stopsFor(tl, 5)[fragStep], { ease: 'none' });
     },
 
     stop: function () {

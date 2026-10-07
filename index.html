@@ -140,7 +140,15 @@
     <section id="slide-sobb" data-animator="sobbmorph">
       <h2 class="slide-head">SOBB - Skewed Oriented Bounding Box</h2>
       <div class="canvas-row sobb-row">
-        <div id="morph-canvas" class="panel"></div>
+        <div id="morph-canvas" class="panel">
+          <!-- s5 overlay: the same skewed frame rendered in 3D.
+               Absolutely positioned inside the panel; revealed by the
+               sobbmorph animator at the last fragment. -->
+          <div class="sobb3d-overlay" id="sobb3d">
+            <img src="img/sobb.svg.webp" alt="A skewed oriented bounding box in 3D">
+            <span class="sobb3d-tag">in 3D</span>
+          </div>
+        </div>
         <div class="bv-rows">
           <div class="bv-col-label">SURFACE AREA</div>
           <div class="bv-row" id="bv-aabb"><span class="bv-sw bv-sw-ink"></span><span class="bv-name">AABB</span><span class="bv-sa">SA = 100%</span></div>
@@ -154,6 +162,7 @@
       <div class="cap-extra-row"><span class="cap" id="sobb-ineq">AABB ⊆ OBB ⊆ SOBB — every AABB is an OBB; every OBB is a SOBB</span></div>
       <div class="cap-extra-row"><span class="cap" id="sobb-saineq">SA(AABB) ≥ SA(OBB) ≥ SA(SOBB)</span></div>
       <div class="status-row"><span class="cap">A SOBB allows non-orthogonal basis — same memory as an OBB, same slab intersection test.</span></div>
+      <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
@@ -291,7 +300,6 @@
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
-      <span class="fragment"></span>
     </section>
 
     <!-- L7. Static scenes results (static Pareto scatter), 38-DOP.
@@ -397,9 +405,8 @@
               <text x="152" y="194" text-anchor="end" class="svg-val">1.20</text>
 
               <!-- axis metric labels -->
-              <text x="522" y="504" text-anchor="middle" class="svg-faint">relative secondary rays traversal speed (absolute: hundreds of MRps)</text>
-              <text transform="rotate(-90 52 321)" x="52" y="321" text-anchor="middle" class="svg-faint">relative build time</text>
-              <text transform="rotate(-90 78 321)" x="78" y="321" text-anchor="middle" class="svg-faint">(absolute: ~5ms per 1M &#9651;)</text>
+              <text x="522" y="520" text-anchor="middle" class="svg-faint">relative traversal speed · secondary rays</text>
+              <text transform="rotate(-90 78 321)" x="78" y="321" text-anchor="middle" class="svg-faint">relative build time</text>
 
               <!-- AABB8 reference at (1,1): ink diamond on the guide crossing -->
               <polygon points="182,431 191,440 182,449 173,440" class="svg-dot-ref"/>
@@ -410,10 +417,10 @@
                  below the X-axis label, red = costlier (worse) in the left
                  margin, left of the rotated Y-axis label -->
             <g class="fragment" data-fragment-index="1">
-              <line x1="392" y1="526" x2="562" y2="526" class="svg-arrow-good" marker-end="url(#arr-good)"/>
-              <text x="578" y="531" class="svg-cap-good">better</text>
+              <line x1="392" y1="546" x2="562" y2="546" class="svg-arrow-good" marker-end="url(#arr-good)"/>
+              <text x="578" y="550" class="svg-cap-good">better</text>
               <line x1="16" y1="420" x2="16" y2="230" class="svg-arrow-bad" marker-end="url(#arr-bad)"/>
-              <text transform="rotate(-90 28 168)" x="28" y="168" text-anchor="middle" class="svg-cap-bad">worse</text>
+              <text transform="rotate(-90 28 168)" x="23" y="161" text-anchor="middle" class="svg-cap-bad">worse</text>
             </g>
 
             <!-- f2: the 7 in-range SOBB8 dots, staggered via CSS delays.
@@ -514,9 +521,9 @@
             </g>
           </svg>
         </div>
-        <div class="cost-strip fragment" data-fragment-index="3"><span>+10–18% build</span><span>·</span><span>≤+5% memory</span></div>
       </div>
-      <div class="status-row"><span class="cap results-note">SOBB8 38-DOP vs AABB BVH8 reference.</span></div>
+      <div class="status-row"><span class="cap results-note">SOBB BVH8 vs. AABB BVH8 &emsp; &emsp; &emsp; C++ · Vulkan · RTX 3080Ti</span></div>
+      <!-- <div class="status-row"><span class="cap results-note">absolute build times · ~5ms per 1M &#9651; &emsp; &emsp; &emsp; absolute traversal speeds · hundreds of MRps</span></div> -->
     </section>
 
     <!-- L8. Refit — the standard procedure -->
