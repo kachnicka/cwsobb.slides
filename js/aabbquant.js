@@ -99,7 +99,7 @@
   var CAPTIONS = [
     'Quantization: the eight child bounds snap onto the local orthogonal grid.',
     'Local orthogonal grid: anchor + integer coordinates.',
-    'Quantize: every bound snaps onto the grid cells conservatively.',
+    'Local orthogonal grid: anchor + integer coordinates.',
     'Bounds are slightly inflated, memory footprint is down.'
   ];
 

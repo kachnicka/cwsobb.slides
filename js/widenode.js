@@ -138,7 +138,7 @@
   var CAPTIONS = [
     'With shared basis, quantization is as efficient as with AABBs.',
     'Local skewed grid: anchor + integer coordinates.',
-    'Quantize: every bound snaps onto the grid cells conservatively.',
+    'Local skewed grid: anchor + integer coordinates.',
     'Bounds are slightly inflated, memory footprint is down.'
   ];
 

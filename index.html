@@ -43,6 +43,37 @@
       <span class="fragment"></span>
     </section>
 
+    <!-- L0.6. State-of-the-art wide AABB BVH (pipeline slide B, moved
+         forward — establishes the wide-node + quantization baseline before
+         the teaser; data-transition="none": its OWN transition governs the
+         outgoing side of the cut — without this, Reveal cross-fades this
+         section out over the next slide for ~250ms and the hand-off ghosts
+         as a double exposure) -->
+    <section id="slide-pipeline-aabb8" data-animator="pipeaabb8" data-transition="none">
+      <h2 class="slide-head">Wide AABB BVH — state-of-the-art</h2>
+      <div class="canvas-row">
+        <div id="pipe-aabb8-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="pipe-aabb8-caption" class="cap"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L0.7. AABB quantization to the ALIGNED (orthogonal) grid — mirror of
+         the quant slide; picks B's lead-in up (chip row pixel-identical,
+         quantization chip ACTIVE, hard cut; moved forward together with B) -->
+    <section id="slide-aabb-quant" data-animator="aabbquant" data-transition="none">
+      <h2 class="slide-head">AABB quantization</h2>
+      <div class="canvas-row">
+        <div id="aabbquant-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="aabbquant-caption" class="cap"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
     <!-- L1. Teaser: one cloud, AABB → OBB in place, and a ray that hits one but not the other -->
     <section id="slide-why" data-animator="teaser">
       <h2 class="slide-head">Why tight bounds?</h2>
@@ -133,7 +164,7 @@
           </g>
         </svg>
       </figure>
-      <div class="status-row"><span class="cap">This work stands where the three lines meet.</span></div>
+      <div class="status-row"><span class="cap">This work expands the original SOBB approach.</span></div>
     </section>
 
     <!-- L2. What is a SOBB? -->
@@ -212,35 +243,6 @@
         <div id="pipe-sobb2-canvas" class="panel"></div>
       </div>
       <div class="status-row"><span id="pipe-sobb2-caption" class="cap"></span></div>
-      <span class="fragment"></span>
-      <span class="fragment"></span>
-      <span class="fragment"></span>
-    </section>
-
-    <!-- L4b. Pipeline 2 of 3: state-of-the-art AABB BVH₈ (data-transition="none":
-         its OWN transition governs the outgoing side of the cut — without this,
-         Reveal cross-fades this section out over the next slide for ~250ms and
-         the hand-off ghosts as a double exposure) -->
-    <section id="slide-pipeline-aabb8" data-animator="pipeaabb8" data-transition="none">
-      <h2 class="slide-head">Wide AABB BVH — state-of-the-art</h2>
-      <div class="canvas-row">
-        <div id="pipe-aabb8-canvas" class="panel"></div>
-      </div>
-      <div class="status-row"><span id="pipe-aabb8-caption" class="cap"></span></div>
-      <span class="fragment"></span>
-      <span class="fragment"></span>
-      <span class="fragment"></span>
-    </section>
-
-    <!-- L4b+. AABB quantization to the ALIGNED (orthogonal) grid — mirror of
-         the quant slide; picks B's lead-in up (chip row pixel-identical,
-         quantization chip ACTIVE, hard cut) -->
-    <section id="slide-aabb-quant" data-animator="aabbquant" data-transition="none">
-      <h2 class="slide-head">AABB quantization — the aligned grid</h2>
-      <div class="canvas-row">
-        <div id="aabbquant-canvas" class="panel"></div>
-      </div>
-      <div class="status-row"><span id="aabbquant-caption" class="cap"></span></div>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>

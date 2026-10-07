@@ -312,7 +312,7 @@
   var CAPTIONS = [
     'Minimal axis-aligned bounding box.',
     'Minimal oriented bounding box.',
-    'A ray can hit the loose box and miss the tight one — smaller bounds, lower hit probability.'
+    'Smaller bounding volume ⇒ lower hit probability.'
   ];
 
   function computeScene() {

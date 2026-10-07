@@ -102,19 +102,62 @@
     ['w2', 's4'], ['w2', 's5'],
     ['w3', 's6'], ['w3', 's7']
   ];
-  /* which wide leaf each binary leaf collapses toward */
-  var LEAF_TARGET = { s0: 'wl0', s1: 'wl0', s2: 'wl1', s3: 'wl1', s4: 'wl2', s5: 'wl2', s6: 'wl3', s7: 'wl3' };
+  /* which wide child each binary leaf collapses toward — 1:1, monotone
+   * in x (children are wl0..wl7 left to right) so the eight flight
+   * paths stay short and never cross */
+  var LEAF_TARGET = { s2: 'wl0', s0: 'wl1', s1: 'wl2', s3: 'wl3', s4: 'wl4', s5: 'wl5', s6: 'wl6', s7: 'wl7' };
 
-  /* wide-node geometry after the collapse — approximate 8-ary layout */
+  /* wide-node geometry after the collapse — approximate 8-ary layout:
+   * ONE regular row of eight identical children under the root.
+   * Uniform pitch 128, width 112, margins 56 both sides, row centered
+   * under the root (centers 112+128k, root center 560 = row center). */
   var WIDE = {
     root: { x: 390, y: 66, w: 340, h: 70 },
-    wl0:  { x: 130, y: 300, w: 200, h: 60 },
-    wl1:  { x: 350, y: 300, w: 200, h: 60 },
-    wl2:  { x: 570, y: 300, w: 200, h: 60 },
-    wl3:  { x: 790, y: 300, w: 200, h: 60 }
+    wl0:  { x: 56,  y: 330, w: 112, h: 56 },  // cx 112
+    wl1:  { x: 184, y: 330, w: 112, h: 56 },  // cx 240
+    wl2:  { x: 312, y: 330, w: 112, h: 56 },  // cx 368
+    wl3:  { x: 440, y: 330, w: 112, h: 56 },  // cx 496
+    wl4:  { x: 568, y: 330, w: 112, h: 56 },  // cx 624
+    wl5:  { x: 696, y: 330, w: 112, h: 56 },  // cx 752
+    wl6:  { x: 824, y: 330, w: 112, h: 56 },  // cx 880
+    wl7:  { x: 952, y: 330, w: 112, h: 56 }   // cx 1008
   };
-  var WIDE_ORDER = ['wl0', 'wl1', 'wl2', 'wl3', 'root']; // bottom-up proxy order
-  var SLOTS = 8;                                        // 8-ary wide root
+  var WIDE_LEAVES = ['wl0', 'wl1', 'wl2', 'wl3', 'wl4', 'wl5', 'wl6', 'wl7']; // left to right
+  var WIDE_ORDER = WIDE_LEAVES.concat(['root']); // bottom-up proxy order
+  var SLOTS = 8;                                 // 8-ary wide root (and wide children)
+  /* straight fan: child top-center ← mid-bottom of the root's slot k.
+   * Each line starts where its own slot segment centers on the root's
+   * bottom edge (x = R.x + (R.w/SLOTS)(k+½) = 411.25 + 42.5k), so the
+   * fan visibly emanates from the eight slots. Angles from vertical
+   * (deg): -57.0 -47.8 -33.5 -12.4 +12.4 +33.5 +47.8 +57.0 —
+   * symmetric about the root center; origins and targets both monotone
+   * in child order, so no two fan lines cross. (Constant-angle steps
+   * would instead bunch the origins toward the edge corners.) */
+  var FAN = (function () {
+    var R = WIDE.root, yb = R.y + R.h;
+    var out = {};
+    WIDE_LEAVES.forEach(function (wid, i) {
+      var w = WIDE[wid], cx = w.x + w.w / 2;
+      out[wid] = {
+        x1: R.x + (R.w / SLOTS) * (i + 0.5), y1: yb,
+        x2: cx, y2: w.y
+      };
+    });
+    return out;
+  })();
+  /* "not expanded" cue: some wide children get short dashed ghost edges
+   * ending in tiny dashed ghost squares — the hierarchy continues below
+   * but is not drawn. Count VARIES per node (1/2/3) so it doesn't read
+   * as a repeated motif; placement roughly symmetric (wl1↔wl6, wl3↔wl4).
+   * All hang from the single row (bottom 386): edges 388→410, glyphs
+   * 410..418 — far above B's 520 floor, clear of the child slot
+   * dividers (which end at y 380) and of each other (pitch 128). */
+  var GHOSTS = {
+    wl1: { yb: 386, dy: 24, pairs: [[-10, -14], [10, 14]] },
+    wl3: { yb: 386, dy: 24, pairs: [[0, -2]] },
+    wl4: { yb: 386, dy: 24, pairs: [[-14, -19], [0, 2], [14, 19]] },
+    wl6: { yb: 386, dy: 24, pairs: [[-10, -14], [10, 14]] }
+  };
 
   /* ---- proxies over the WIDE nodes (slide C overlay; same numbers the
    * old 'form SOBB' beat used — random sizes/rotations, deterministic) ---- */
@@ -127,7 +170,11 @@
       var root = id === 'root';
       /* root parallelogram must clear the chip row above it, INCLUDING the
        * rotate-in transient (chips bottom y=58): root extents are capped
-       * tighter and swing in from only 6 degrees back */
+       * tighter and swing in from only 6 degrees back. Children (one row,
+       * cy 358): swept worst case with the 18° rotate-in (max |angle|
+       * 44°) reaches ≈ cy±64 vertically (bottom 422, top 294 — clears
+       * the 520/560 floor and the root above) and ≈ cx±49 horizontally
+       * (wl7: 1057 < 1120) — all inside 1120×560. */
       var a2 = (W.w / 2) * (root ? 0.48 + 0.08 * rand() : 0.72 + 0.2 * rand());
       var b2 = (W.h / 2) * (root ? 0.5 + 0.12 * rand() : 1.05 + 0.35 * rand());
       /* wl1 carries the one plain rectangle; the rest skew at 65..105 deg */
@@ -275,9 +322,9 @@
     },
     beats: ['build', 'collapse', 'quantleadabb'],
     captions: [
-      'Ylitie et al. 2017: AABB BVH₂ widened to AABB BVH₈, compressed by quantization.',
-      'Start with a pre-existing binary AABB BVH (any builder).',
-      'Interior nodes collapse to 8-ary wide nodes (approximate visualization).',
+      'Ylitie et al. 2017: AABB BVH₂ → AABB BVH₈, compressed by quantization.',
+      'Ylitie et al. 2017: AABB BVH₂ → AABB BVH₈, compressed by quantization.',
+      'Ylitie et al. 2017: AABB BVH₂ → AABB BVH₈, compressed by quantization.',
       'Quantization: the eight child bounds snap onto the local orthogonal grid.'
     ]
   };
@@ -351,9 +398,11 @@
     var svg;
     var nodeEls = {};       // binary squares; r morphs into the wide root
     var binEdgeEls = [];
-    var wideLeafRects = {}; // 4 wide leaves (appear at the collapse)
+    var wideLeafRects = {}; // 8 wide children in one row (appear at the collapse)
     var wideEdgeEls = [];
+    var ghostEdgeEls = [], ghostGlyphEls = []; // "not expanded" cues
     var slotLines = [];     // SLOTS-1 dividers inside the wide root
+    var childSlotLines = []; // lighter dividers inside each wide child
     var hexWraps = {}, hexPolys = {};   // slide A: per binary node
     var parWraps = {}, parPolys = {};   // slide A: per binary node
     var parWWraps = {}, parWPolys = {}; // slide C: per wide node
@@ -453,7 +502,7 @@
 
       /* slides B/C: collapse gear */
       if (has('collapse')) {
-        WIDE_ORDER.slice(0, 4).forEach(function (wid) {
+        WIDE_LEAVES.forEach(function (wid) {
           var w = WIDE[wid];
           wideLeafRects[wid] = el('rect', {
             'class': 'wide-leaf', 'data-node': wid,
@@ -462,13 +511,44 @@
           }, svg);
         });
         var R = WIDE.root;
-        WIDE_ORDER.slice(0, 4).forEach(function (wid) {
-          var w = WIDE[wid];
+        /* one clean straight fan: root bottom edge → each child's top */
+        WIDE_LEAVES.forEach(function (wid) {
+          var f = FAN[wid];
           wideEdgeEls.push(el('line', {
             'class': 'wide-edge',
-            x1: R.x + R.w / 2, y1: R.y + R.h,
-            x2: w.x + w.w / 2, y2: w.y, 'stroke-width': 1.5
+            x1: f.x1, y1: f.y1, x2: f.x2, y2: f.y2, 'stroke-width': 1.5
           }, svg));
+        });
+        /* each wide child is a wide node too: 8 fields, but lighter and
+         * tighter-inset than the root's dividers so the root dominates */
+        WIDE_LEAVES.forEach(function (wid) {
+          var w = WIDE[wid];
+          for (i = 1; i < SLOTS; i++) {
+            childSlotLines.push(el('line', {
+              'class': 'slot-line slot-line-child', 'data-node': wid,
+              x1: w.x + (w.w / SLOTS) * i, y1: w.y + 6,
+              x2: w.x + (w.w / SLOTS) * i, y2: w.y + w.h - 6,
+              stroke: FAINT, 'stroke-width': 0.9, opacity: 0
+            }, svg));
+          }
+        });
+        /* ghost cues: short dashed edges + tiny dashed squares below some
+         * wide children — "continues below, not expanded". Deliberately
+         * quieter than real nodes (FAINT stroke, dashed, small). */
+        Object.keys(GHOSTS).forEach(function (wid) {
+          var w = WIDE[wid], g = GHOSTS[wid], cx = w.x + w.w / 2;
+          g.pairs.forEach(function (pair) {
+            ghostEdgeEls.push(el('line', {
+              'class': 'ghost-edge',
+              x1: cx + pair[0], y1: g.yb + 2, x2: cx + pair[1], y2: g.yb + g.dy,
+              stroke: FAINT, 'stroke-width': 1.1, 'stroke-dasharray': '3 4', opacity: 0
+            }, svg));
+            ghostGlyphEls.push(el('rect', {
+              'class': 'ghost-glyph',
+              x: cx + pair[1] - 4, y: g.yb + g.dy, width: 8, height: 8, rx: 1.5,
+              fill: 'none', stroke: FAINT, 'stroke-width': 1.2, 'stroke-dasharray': '2 2', opacity: 0
+            }, svg));
+          });
         });
         for (i = 1; i < SLOTS; i++) {
           slotLines.push(el('line', {
@@ -621,6 +701,14 @@
         l.setAttribute('opacity', 0);
         l.setAttribute('stroke', EDGE);
       });
+      childSlotLines.forEach(function (l) {
+        gsap.killTweensOf(l);
+        l.setAttribute('opacity', 0);
+      });
+      ghostEdgeEls.concat(ghostGlyphEls).forEach(function (n) {
+        gsap.killTweensOf(n);
+        n.setAttribute('opacity', 0);
+      });
       slotLines.forEach(function (l, i) {
         gsap.killTweensOf(l);
         l.setAttribute('opacity', 0);
@@ -744,16 +832,23 @@
         attr: { x: WIDE.root.x, y: WIDE.root.y, width: WIDE.root.w, height: WIDE.root.h, rx: 10 },
         duration: 0.8, ease: 'power2.inOut'
       }, c0 + 0.45);
-      /* wide leaves open out of nothing (schematic) */
-      WIDE_ORDER.slice(0, 4).forEach(function (wid, i) {
+      /* the single row of wide children opens in one staggered sweep */
+      WIDE_LEAVES.forEach(function (wid, i) {
         var W = WIDE[wid], r = wideLeafRects[wid];
         tl.fromTo(r,
           { attr: { x: W.x + W.w / 2, y: W.y + W.h / 2, width: 0, height: 0, opacity: 0 } },
           { attr: { x: W.x, y: W.y, width: W.w, height: W.h, opacity: 1 }, duration: 0.6, ease: 'power2.out' },
-          c0 + 0.8 + i * 0.09);
+          c0 + 0.8 + i * 0.06);
       });
-      tl.to(wideEdgeEls, { attr: { opacity: 1 }, duration: 0.4 }, c0 + 1.5);
-      tl.to(slotLines, { attr: { opacity: 1 }, duration: 0.4, stagger: 0.03 }, c0 + 1.55);
+      /* the regular fan fades in together */
+      tl.to(wideEdgeEls, { attr: { opacity: 1 }, duration: 0.4, stagger: 0.025 }, c0 + 1.45);
+      tl.to(slotLines, { attr: { opacity: 1 }, duration: 0.4, stagger: 0.03 }, c0 + 1.6);
+      /* children are wide nodes too — their lighter dividers fade in
+       * once the rects have settled (rects open from zero-size) */
+      tl.to(childSlotLines, { attr: { opacity: 0.85 }, duration: 0.35, stagger: 0.008 }, c0 + 1.65);
+      /* quietest last: the "continues below, not expanded" ghost cues */
+      tl.to(ghostEdgeEls, { attr: { opacity: 0.75 }, duration: 0.35, stagger: 0.03 }, c0 + 1.7);
+      tl.to(ghostGlyphEls, { attr: { opacity: 0.55 }, duration: 0.35, stagger: 0.03 }, c0 + 1.75);
     }
 
     /* slide C s3: skewed SOBB parallelograms overlay the wide nodes */
@@ -784,7 +879,9 @@
       var HS = HANDOFF_SOBB.STRIP, HP = HANDOFF_SOBB.P;
       /* the approximate tree dissolves — only the wide root survives */
       tl.to(wideEdgeEls, { attr: { opacity: 0 }, duration: 0.35 }, at);
-      WIDE_ORDER.slice(0, 4).forEach(function (wid, i) {
+      tl.to(childSlotLines, { attr: { opacity: 0 }, duration: 0.3 }, at);
+      tl.to(ghostEdgeEls.concat(ghostGlyphEls), { attr: { opacity: 0 }, duration: 0.3 }, at);
+      WIDE_LEAVES.forEach(function (wid, i) {
         var w = at + i * 0.04;
         tl.to(wideLeafRects[wid], { attr: { opacity: 0 }, duration: 0.4 }, w);
         tl.to(parWPolys[wid], { attr: { opacity: 0 }, duration: 0.4 }, w);
@@ -830,7 +927,9 @@
       var HS = HANDOFF.STRIP, HP = HANDOFF.P;
       /* the approximate tree dissolves — only the wide root survives */
       tl.to(wideEdgeEls, { attr: { opacity: 0 }, duration: 0.35 }, at);
-      WIDE_ORDER.slice(0, 4).forEach(function (wid, i) {
+      tl.to(childSlotLines, { attr: { opacity: 0 }, duration: 0.3 }, at);
+      tl.to(ghostEdgeEls.concat(ghostGlyphEls), { attr: { opacity: 0 }, duration: 0.3 }, at);
+      WIDE_LEAVES.forEach(function (wid, i) {
         tl.to(wideLeafRects[wid], { attr: { opacity: 0 }, duration: 0.4 }, at + i * 0.04);
       });
       /* the wide root slides into its stored pose: the 8-slot strip */
