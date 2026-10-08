@@ -305,9 +305,9 @@
     beats: ['build', 'hexbin', 'parbin'],
     captions: [
       'Binary SOBB BVH construction.',
-      'Start with a pre-existing binary AABB BVH (any builder).',
+      'Binary SOBB BVH construction.',
       'Fit a temporary k-DOP per node.',
-      'Form the SOBB per node — its own basis, its own orientation.'
+      'Find independent SOBBs'
     ]
   };
 
@@ -378,9 +378,9 @@
     vbH: 560,   // = sharedbasis viewBox height (hand-off parity)
     captions: [
       'Wide SOBB BVH construction.',
-      'Start with a pre-existing binary AABB BVH (any builder).',
-      'Interior nodes collapse to 8-ary wide nodes (approximate visualization).',
-      'Form the SOBB per wide node — its own basis, its own orientation.',
+      'Wide SOBB BVH construction.',
+      'Wide SOBB BVH construction.',
+      'Find independent SOBBs for children in wide nodes.',
       'Quantization: the eight child bounds snap onto the local grid.'
     ]
   };
