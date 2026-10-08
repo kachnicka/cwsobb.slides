@@ -23,20 +23,12 @@
  *           below the cluster center — this is the "previously clipped"
  *           region the zoom-out exists to reveal.
  *   s2:     the search: the parallelogram morphs through the remaining
- *           candidates in descending area order (10/160 → 10/70 →
- *           AABB → 10/100 → 100/160), brightening each candidate's slab
- *           pairs as it goes. Only the two named beats carry a tag —
- *           the axis-aligned pair "AABB" and the orthogonal pair
- *           "OBB" — landing with their morph and PERSISTING at full
- *           opacity until the next tag replaces them (AABB → OBB
- *           hand-off; OBB goes out as the final SOBB morph lands, no
- *           successor). The fan candidates and the final SOBB carry no
- *           text: morph + slab highlights carry those beats. The axis
- *           slabs' 4 ink boundary lines (L2's AABB color) fade in only
- *           for the AABB beat, since axis slabs are not in the fan and
- *           the base must keep kdopintro parity.
- *           1.2s morphs with 0.5–1.0s holds: s1→s2 ≈ 9.5s. Ends on the
- *           minimum-area pair = the SOBB (100°/160°, teal/amber)
+ *           fan candidates in descending area order (10/160 → 10/70 →
+ *           100/160), brightening each candidate's slab pairs as it
+ *           goes. No candidate carries text — the morph + slab
+ *           highlights carry every beat. 1.2s morphs with 0.5s holds:
+ *           s1→s2 ≈ 5.1s. Ends on the minimum-area pair = the SOBB
+ *           (100°/160°, teal/amber)
  *   s3:     SOBB settles: teal + amber strip fills fade in (plus-lighter
  *           blend inside an isolated group — the blend overlap IS the
  *           SOBB), the solid SOBB outline sweeps on via
@@ -49,8 +41,7 @@
  * 4 half-planes of the two slabs (clean 4-gons, corners sorted CCW by
  * angle around the centroid so GSAP points morphs stay sane). Areas
  * (viewBox units): 10/40 → 541416, 10/160 → 369747, 10/70 → 250711,
- * 0/90 → 139147 (the AABB, identical to L2's aabbC), 10/100 → 111054
- * (the OBB), 100/160 → 91110 (the SOBB).
+ * 100/160 → 91110 (the SOBB).
  *
  * Zoom depth: Z = 0.26 — the largest value at which the biggest
  * candidate (10/40, world half-extents ±418..422 x / −913..+914 y about
@@ -82,10 +73,9 @@
  *     solid. Dash lengths stay in local units so the SOBB
  *     stroke-dashoffset sweep math is untouched.
  *
- * Text labels (side label, OBB, AABB) live OUTSIDE the world group at
+ * Text labels (the side label) live OUTSIDE the world group at
  * screen coordinates — they never scale, so their px sizes stay in
- * deck range regardless of Z; candidate tags are placed at the scaled
- * screen position of their world anchor (toScreen uses ZOOM).
+ * deck range regardless of Z.
  * Host: #kdop-canvas. Fragments: 3 (s1..s3).
  */
 (function () {
@@ -109,16 +99,10 @@
     100: null, 130: null, 160: null
   };
 
-  // candidate sequence, descending area; last = minimum = the SOBB.
-  // [0,90] = the AABB: axis-aligned normals, NOT in the 6-line fan —
-  // its 4 boundary lines live in a separate ink group that fades in
-  // only for the AABB beat, so the base keeps kdopintro parity.
-  var CANDIDATES = [[10, 40], [10, 160], [10, 70], [0, 90], [10, 100], [100, 160]];
-  var AABB_INDEX = 3;            // [0,90]: ink, matches L2's AABB color
-  var OBB_INDEX = 4;             // 10/100: the orthogonal candidate
-  var SOBB_INDEX = 5;            // 100/160: teal + amber, matches L2
-
-  function isAabbPair(pair) { return pair[0] === 0 && pair[1] === 90; }
+  // candidate sequence, descending area over fan pairs only; last =
+  // minimum = the SOBB.
+  var CANDIDATES = [[10, 40], [10, 160], [10, 70], [100, 160]];
+  var SOBB_INDEX = 3;            // 100/160: teal + amber, matches L2
 
   /* ==================== pure helpers ==================== */
 
@@ -244,26 +228,12 @@
     }).join(' ');
   }
 
-  function topmost(pts) {
-    return pts.reduce(function (a, p) { return p[1] < a[1] ? p : a; });
-  }
-
-  /* world → screen: the entrance zoom maps world coords by Z about the
-   * cluster center; tags/labels outside the world group live in screen
-   * coordinates, so their anchors go through this. */
-  function toScreen(p) {
-    return [
-      CENTER[0] + (p[0] - CENTER[0]) * ZOOM,
-      CENTER[1] + (p[1] - CENTER[1]) * ZOOM
-    ];
-  }
-
   /* ==================== animator ==================== */
 
   var built = false;
-  var svg, worldG, kdopEl, candEl, sobbEl, candTagEls, candTagAt, stripsG;
+  var svg, worldG, kdopEl, candEl, sobbEl, stripsG;
   var labelNewG;
-  var allLines, linesByAng, aabbLines;
+  var allLines, linesByAng;
   var sobbPathLen = 0;
   var kdopPts = null, candidates = null;
   var tl = null;
@@ -332,12 +302,10 @@
     // ALL diagram geometry lives in the world group; text stays outside
     worldG = D.el('g', {}, svg);
 
-    // unique slab pairs, cluster-tight extents over all triangle verts;
-    // + the two AABB slabs (normals 0°/90°) for the AABB candidate —
-    // same clip machinery, but they get no fan lines
+    // unique slab pairs, cluster-tight extents over all triangle verts
     var i, ang;
     var slabs = {};
-    PAIR_ANGLES.concat([0, 90]).forEach(function (a) {
+    PAIR_ANGLES.forEach(function (a) {
       var n = [Math.cos(rad(a)), Math.sin(rad(a))];
       var ext = slabExtents(pts, n);
       slabs[a] = { ang: a, n: n, lo: ext[0], hi: ext[1] };
@@ -369,31 +337,6 @@
           'vector-effect': 'non-scaling-stroke'
         }, worldG);
         linesByAng[a].push(line);
-        allLines.push(line);
-      });
-    });
-
-    // AABB boundary lines (x/y slabs, 2 pairs = 4 segments), ink like
-    // L2's AABB — INVISIBLE at base (opacity 0) for kdopintro parity;
-    // faded in only while the AABB candidate is on stage, receded after.
-    // Same margin-rect clipping + non-scaling-stroke as the fan.
-    aabbLines = [];
-    [slabs[0], slabs[90]].forEach(function (s) {
-      [s.lo, s.hi].forEach(function (m) {
-        var pt = [s.n[0] * m, s.n[1] * m];
-        var t = perp(s.n);
-        var seg = clipSegRect(
-          [pt[0] - 2000 * t[0], pt[1] - 2000 * t[1]],
-          [pt[0] + 2000 * t[0], pt[1] + 2000 * t[1]],
-          RECT
-        );
-        if (!seg) return;
-        var line = D.el('line', {
-          x1: seg[0][0], y1: seg[0][1], x2: seg[1][0], y2: seg[1][1],
-          stroke: D.INK, 'stroke-width': LS_BASE.width, opacity: 0,
-          'vector-effect': 'non-scaling-stroke'
-        }, worldG);
-        aabbLines.push(line);
         allLines.push(line);
       });
     });
@@ -506,40 +449,8 @@
       'class': 'svg-side-label', x: 758, y: 168
     }, labelNewG);
 
-    // candidate tags: ONLY the two named beats carry text — the axis
-    // pair "AABB", the orthogonal pair "OBB". The fan candidates and
-    // the final SOBB get no label (morph + slab highlights carry the
-    // beat). Tags anchor above their shape, screen-space (toScreen) so
-    // they never scale with the world zoom. Timeline behaviour: each
-    // tag lands with its candidate's morph, then PERSISTS at full
-    // opacity until the next tag replaces it (AABB → OBB hand-off;
-    // OBB goes out as the SOBB morph lands, with no successor).
-    candTagEls = [];
-    candTagAt = {};
-    [AABB_INDEX, OBB_INDEX].forEach(function (i) {
-      var ci = candidates[i];
-      var anchor;
-      if (i === AABB_INDEX) {
-        // AABB is a rectangle: anchor above the midpoint of the top
-        // edge (the two corners sharing min y), not above a corner
-        // like the pointed candidates — else the tag overlaps the
-        // top line
-        var ac = ci.corners;
-        var acMinY = Math.min(ac[0][1], ac[1][1], ac[2][1], ac[3][1]);
-        var acTop = ac.filter(function (p) { return Math.abs(p[1] - acMinY) < 0.01; });
-        anchor = [(acTop[0][0] + acTop[1][0]) / 2, acMinY];
-      } else {
-        anchor = topmost(ci.corners);
-      }
-      var s = toScreen(anchor);
-      var el = D.text(i === AABB_INDEX ? 'AABB' : 'OBB', {
-        x: s[0] + 15, y: s[1] - 40, 'text-anchor': 'middle',
-        fill: i === OBB_INDEX ? D.BLUE : D.INK,
-        'font-size': 25, 'font-weight': 600, opacity: 0
-      }, svg);
-      candTagEls.push(el);
-      candTagAt[i] = el;
-    });
+    // candidate tags: no candidate carries text — the fan morph + slab
+    // highlights carry every beat.
 
     updateWorld();
     built = true;
@@ -555,7 +466,6 @@
   function resetState() {
     gsap.killTweensOf(allLines);
     gsap.killTweensOf([kdopEl, candEl, sobbEl, stripsG]);
-    gsap.killTweensOf(candTagEls);
     // entrance tweens: kill before re-armering any start() path
     gsap.killTweensOf(proxy);
     gsap.killTweensOf(labelNewG);
@@ -563,16 +473,11 @@
     updateWorld();
     labelNewG.setAttribute('opacity', 0);
     PAIR_ANGLES.forEach(function (ang) { applyLineState(ang, LS_BASE); });
-    aabbLines.forEach(function (l) {
-      l.setAttribute('opacity', 0);
-      l.setAttribute('stroke-width', LS_BASE.width);
-    });
     kdopEl.setAttribute('opacity', 1);
     candEl.setAttribute('points', pts2str(candidates[0].corners));
     candEl.setAttribute('opacity', 0);
     sobbEl.setAttribute('opacity', 0);
     sobbEl.setAttribute('stroke-dashoffset', sobbPathLen);
-    candTagEls.forEach(function (t) { t.setAttribute('opacity', 0); });
     stripsG.setAttribute('opacity', 0);
   }
 
@@ -602,50 +507,21 @@
     // no tag: the first candidate is a fan pair, unlabeled by design
     tl.addLabel('s1', 1.0);
 
-    // ---- section 2 (s1 → s2): the search over the remaining
+    // ---- section 2 (s1 → s2): the search over the remaining fan
     // candidates, descending area — deliberately slow: 1.2s morphs,
-    // 0.5s holds (~1.5-2x the previous 0.7/0.3), an 0.8s hold on the
-    // AABB (its ink lines fade in/out around the beat) and a 1.0s hold
-    // on the OBB so both tags land and hold at rest.
-    // 5 morphs + 5 holds: s1→s2 = 9.5s. ----
-    var MORPH = 1.2, HOLD = 0.5, AABB_HOLD = 0.8, OBB_HOLD = 1.0;
+    // 0.5s holds (~1.5-2x the previous 0.7/0.3).
+    // 3 morphs + 3 holds: s1→s2 = 5.1s. ----
+    var MORPH = 1.2, HOLD = 0.5;
     tau = 1.0 + 0.2;                     // first morph shortly after s1
     for (i = 1; i < candidates.length; i++) {
       var ci = candidates[i];
-      var aabbNow = isAabbPair([ci.a, ci.b]);
-      var aabbPrev = isAabbPair([candidates[i - 1].a, candidates[i - 1].b]);
-      // AABB step: no fan pair is active — all six recede; the ink
-      // AABB lines take the active state instead (and recede after)
-      tweenPairStates(aabbNow ? -1 : ci.a, aabbNow ? -1 : ci.b, tau, 0.65);
-      if (aabbNow || aabbPrev) {
-        tl.to(aabbLines, {
-          attr: aabbNow
-            ? { opacity: LS_ACTIVE.opacity, 'stroke-width': LS_ACTIVE.width }
-            : { opacity: LS_DIM.opacity, 'stroke-width': LS_DIM.width },
-          duration: 0.65, ease: 'power1.out'
-        }, tau);
-      }
+      tweenPairStates(ci.a, ci.b, tau, 0.65);
       tl.to(candEl, {
         attr: { points: pts2str(ci.corners) },
         duration: MORPH, ease: 'power2.inOut'
       }, tau);
-      // tags: only AABB (i=3) and OBB (i=4) have elements. A tag fades
-      // out exactly as the next candidate's morph lands — the AABB →
-      // OBB hand-off, and the OBB tag going out as the final SOBB morph
-      // lands (no successor: the SOBB stays unlabeled). Fan candidates
-      // add no tweens at all, so nothing dead/orphaned is left behind.
-      if (candTagAt[i - 1]) {
-        tl.to(candTagAt[i - 1], {
-          attr: { opacity: 0 }, duration: 0.3
-        }, tau + MORPH - 0.1);
-      }
-      if (candTagAt[i]) {
-        tl.to(candTagAt[i], {
-          attr: { opacity: 1 }, duration: 0.3
-        }, tau + MORPH - 0.1);
-      }
-      tau += MORPH +
-        (i === OBB_INDEX ? OBB_HOLD : i === AABB_INDEX ? AABB_HOLD : HOLD);
+      // no tags: every candidate is a fan pair, unlabeled by design
+      tau += MORPH + HOLD;
     }
     tl.addLabel('s2', tau);
 
@@ -705,13 +581,12 @@
     }
   };
 
-  // expose pure geometry + tag state for headless smoke/probe tests
+  // expose pure geometry for headless smoke/probe tests
   animator._test = {
     kdopPts: function () { return kdopPts; },
     sobbCorners: function () { return candidates[SOBB_INDEX].corners; },
     candidates: function () { return candidates; },
     zoom: function () { return ZOOM; },
-    tags: function () { return candTagEls; },   // [AABB, OBB] only
     tl: function () { return tl; }
   };
 
