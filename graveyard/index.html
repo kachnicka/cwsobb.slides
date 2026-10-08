@@ -215,6 +215,99 @@
       <span class="fragment"></span>
     </section>
 
+    <!-- L1 (backup). Teaser: one cloud, AABB → OBB in place, and a ray that hits one but not the other -->
+    <section id="slide-why" data-animator="teaser">
+      <h2 class="slide-head">Backup — why tight bounds?</h2>
+      <div class="canvas-row">
+        <div id="teaser-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span class="cap" id="teaser-caption"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
+    <!-- L1.5 (backup). Related work — tight-BVH landscape (static SVG timeline;
+         fragments 1–4 auto-advance via js/related.js, "this work" manual) -->
+    <section id="slide-related" data-animator="related">
+      <h2 class="slide-head">Backup — tight bounds, who’s doing what</h2>
+      <figure class="slide-fig">
+        <!-- Year columns (gridlines) cross three BV-type lanes. Scaffold is
+             always visible; five fragments reveal one pill per work, and each
+             relation arrow rides with its target pill. "This work" carries the
+             accent and lands last. -->
+        <svg viewBox="0 0 1090 480" width="100%" height="100%" role="img" aria-label="Timeline 2023 to 2026 of tight-fitting bounding-volume research in OBB, k-DOP and SOBB lanes: Vitsas and Sabino in 2023, Kacerik and Bittner 2024, Kern 2025, Kacerik and Bittner 2025 SOBB and uBVH, converging on this work — wide SOBB BVH8">
+          <title>Tight-BVH research lines converging on wide SOBB</title>
+          <defs>
+            <marker id="rw-head-blue" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" class="svg-rw-head-blue"/>
+            </marker>
+          </defs>
+
+          <!-- scaffold: year gridlines + labels -->
+          <line x1="200" y1="52" x2="200" y2="448" class="svg-rw-grid"/>
+          <line x1="415" y1="52" x2="415" y2="448" class="svg-rw-grid"/>
+          <line x1="645" y1="52" x2="645" y2="448" class="svg-rw-grid"/>
+          <line x1="910" y1="52" x2="910" y2="448" class="svg-rw-grid"/>
+          <text x="200" y="462" text-anchor="middle" class="svg-rw-year">2023</text>
+          <text x="415" y="462" text-anchor="middle" class="svg-rw-year">2024</text>
+          <text x="645" y="462" text-anchor="middle" class="svg-rw-year">2025</text>
+          <text x="910" y="462" text-anchor="middle" class="svg-rw-year">2026</text>
+
+          <!-- lane labels: BV glyph + name -->
+          <g transform="translate(24,120)"><rect x="-11" y="-7" width="22" height="14" transform="rotate(-16)" class="svg-rw-glyph"/></g>
+          <text x="40" y="125" class="svg-rw-lane">OBB</text>
+          <g transform="translate(24,245)"><polygon points="-13,0 -7,-8 7,-8 13,0 7,8 -7,8" class="svg-rw-glyph"/></g>
+          <text x="40" y="250" class="svg-rw-lane">k-DOP</text>
+          <g transform="translate(24,370)"><polygon points="-6,-8 10,-8 4,8 -12,8" class="svg-rw-glyph"/></g>
+          <text x="40" y="375" class="svg-rw-lane">SOBB</text>
+
+          <!-- frag 1: the 2023 × OBB cell — Vitsas on the lane centerline,
+               Sabino stacked quieter just below it (same year, same lane;
+               no link drawn, the shared cell is the relation) -->
+          <g class="fragment">
+            <rect x="108.5" y="100" width="273" height="40" rx="20" class="svg-rw-node"/>
+            <text x="245" y="125" text-anchor="middle" class="svg-rw-title">Vitsas et al. ’23 OBB</text>
+            <rect x="95.5" y="152" width="299" height="40" rx="20" class="svg-rw-node svg-rw-node-soft"/>
+            <text x="245" y="177" text-anchor="middle" class="svg-rw-title svg-rw-title-soft">Sabino et al. ’23 oDOP</text>
+          </g>
+
+          <!-- frag 2: K&amp;B '24, k-DOP lane -->
+          <g class="fragment">
+            <rect x="312" y="225" width="206" height="40" rx="20" class="svg-rw-node"/>
+            <text x="415" y="250" text-anchor="middle" class="svg-rw-title">K&amp;B ’24 k-DOP</text>
+          </g>
+
+          <!-- frag 3: Kern '25, OBB lane -->
+          <g class="fragment">
+            <rect x="507" y="100" width="276" height="40" rx="20" class="svg-rw-node"/>
+            <text x="645" y="125" text-anchor="middle" class="svg-rw-title">Kern et al. ’25 DOBB</text>
+          </g>
+
+          <!-- frag 4: K&amp;B '25, SOBB lane. uBVH (same authors, published
+               later at HPG) stacks quieter 12px below, matching the 2023 cell. -->
+          <g class="fragment">
+            <rect x="547" y="338" width="196" height="40" rx="20" class="svg-rw-node"/>
+            <text x="645" y="363" text-anchor="middle" class="svg-rw-title">K&amp;B ’25 SOBB</text>
+            <rect x="546" y="390" width="198" height="40" rx="20" class="svg-rw-node svg-rw-node-soft"/>
+            <text x="645" y="415" text-anchor="middle" class="svg-rw-title svg-rw-title-soft">K&amp;B ’25 uBVH</text>
+          </g>
+
+          <!-- frag 5: this work — three accent relations converge -->
+          <g class="fragment">
+            <path d="M 170,97 C 320,4 980,4 995,334" class="svg-rw-link-hl" marker-end="url(#rw-head-blue)"/>
+            <text x="300" y="24" class="svg-rw-rellbl-hl">refit</text>
+            <path d="M 700,143 L 880,334" class="svg-rw-link-hl" marker-end="url(#rw-head-blue)"/>
+            <text x="796" y="240" class="svg-rw-rellbl-hl">shared basis</text>
+            <path d="M 749,358 L 787,358" class="svg-rw-link-main" marker-end="url(#rw-head-blue)"/>
+            <text x="768" y="324" text-anchor="middle" class="svg-rw-rellbl-hl">SOBB fitting</text>
+            <rect x="793" y="338" width="234" height="40" rx="20" class="svg-rw-this"/>
+            <text x="910" y="363" text-anchor="middle" class="svg-rw-title svg-rw-title-this">This work · PG26</text>
+          </g>
+        </svg>
+      </figure>
+      <div class="status-row"><span class="cap">This work expands the original SOBB approach.</span></div>
+    </section>
+
     <!-- L15b. Backup — static scenes results, 38-DOP (build-cost-vs-
          traversal variant; moved out of the main flow, superseded by the
          speed-vs-cost orientation on #slide-results-speed).
@@ -680,7 +773,9 @@
 <script src="../vendor/reveal.js"></script>
 <script src="../vendor/gsap.min.js"></script>
 <script src="../js/common.js"></script>
+<script src="../js/teaser.js"></script>
 <script src="../js/pipeline.js"></script>
+<script src="../js/related.js"></script>
 <script src="../js/deck.js"></script>
 </body>
 </html>
