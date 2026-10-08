@@ -4,7 +4,7 @@
 :root {
   --ink: #14161a;
   --ink-soft: #5b6068;
-  --ink-faint: #9aa1ad;
+  --ink-faint: #828a96;
   --hairline: #d4d8e0;
   --blue: #1f6fe5;
   --red: #d93636;
@@ -244,10 +244,16 @@
   height: 100%;
 }
 
+/* Footer caption row: full-width flex, but the TEXT stays inside the
+   shared 95px gutter — long one-liners otherwise reach the right edge
+   and collide with the slide-number chrome (pixel-confirmed on the
+   SOBB and k-DOP slides). */
 .status-row {
   display: flex;
   justify-content: center;
   margin-top: 8px;
+  padding: 0 95px;
+  box-sizing: border-box;
   min-height: 32px;
   flex: none;
 }
@@ -259,6 +265,8 @@
   display: flex;
   justify-content: center;
   margin-top: 8px;
+  padding: 0 95px;
+  box-sizing: border-box;
   min-height: 32px;
   flex: none;
 }
@@ -365,7 +373,7 @@
 
 /* SVG shared strokes */
 
-.svg-tri       { fill: #edf0f7; stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; }
+.svg-tri       { fill: #e2e8f2; stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; }
 /* Note: box strokes are set as attributes (GSAP attr tweens target attributes,
    and CSS rules would beat presentation attributes). Keep only paint props
    that are never re-animated here. */
@@ -380,7 +388,10 @@
    font bump. */
 .svg-side-label-sm { fill: var(--ink-faint); font-size: 19px; letter-spacing: 0.08em; }
 .svg-dot       { fill: var(--ink); }
-.svg-cloud-box { fill: none; stroke-width: 1.6; }
+/* fill only — the stroke-width moved to a build-time attribute in
+   teaser.js (CSS on a GSAP-touched element family is a frozen-tween
+   trap per the repo paint rule). */
+.svg-cloud-box { fill: none; }
 
 /* Static chart SVGs (L13–L15 backups) — no GSAP here, so CSS rules on
    paint props are safe (the attribute-only rule applies to animated
@@ -720,7 +731,7 @@
 .reveal .slides .video-facts .vf-by {
   display: block;
   font-size: 15px;
-  color: #8a8a8a;
+  color: var(--ink-faint);
 }
 
 /* Hardware caveat: quiet footnote under the timing rows — subordinate to
@@ -730,7 +741,7 @@
   padding-top: 8px;
   border-top: 1px solid var(--hairline);
   font-size: 14px;
-  color: #8a8a8a;
+  color: var(--ink-faint);
 }
 
 .reveal .slides .video-facts .vf-ms {
@@ -873,11 +884,8 @@
   white-space: nowrap;
 }
 
-/* The cost row is not a win — deliberately muted so the de-emphasis
-   reads intentional, not like a missing accent. One step darker than
-   the .tk-sub/.tk-eyebrow gray (#5b6068) so the big number doesn't
-   collapse into the micro-label tier. */
-.tk-num-cost { color: #454a52; }
+/* Cost row uses the same blue emphasis as its siblings (audit D5:
+   the muted dark-gray one-off read as an inconsistency, not intent). */
 
 .tk-body {
   display: flex;
@@ -911,7 +919,7 @@
    arrow now reaches it via the long elbow, not via proximity to the
    left margin). Also a fragment (step 2), revealed after the row. */
 .tk-note {
-  font-size: 15px;
+  font-size: 17px;
   letter-spacing: 0.02em;
   color: var(--ink-soft);
 }
@@ -993,8 +1001,8 @@
    progress bar. Specificity lifted over reveal.css centering. */
 .reveal .slides .concl-foot {
   flex: none;
-  margin: 8px 95px 26px;
-  font-size: 19px;
+  margin: 8px 95px 36px;
+  font-size: 20px;
   /* ink-faint was ~3.5:1 on white — too light for projection. */
   color: var(--ink-soft);
   text-align: left;

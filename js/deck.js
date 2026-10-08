@@ -38,6 +38,8 @@
       stop: function () {
         var lines = document.querySelectorAll(selector + ' .t-line');
         gsap.killTweensOf(lines);
+        var rule = document.querySelector(selector + ' .rule');
+        if (rule) gsap.killTweensOf(rule);
       }
     };
   }

@@ -107,7 +107,7 @@
   var CAPTIONS = [
     'One wide node — eight children must be tightly bounded with a single basis.',
     'Sum — score every candidate basis on every child at once: exact, but slow.',
-    'Union — merge the children into one k-DOP, then fit once: cheap, but the union is loose.',
+    'Union — merge the children into one k-DOP, then fit once: cheap, but loose.',
     'Average — one mean k-DOP, one fit: cheap and tight enough. Our choice.'
   ];
 
@@ -299,6 +299,9 @@
       md = Math.max(md, Math.abs(p[0] - CENTROID[0]));
       nd = Math.max(nd, Math.abs(p[1] - CENTROID[1]));
     });
+    /* clamp the degenerate-proxy case (md/nd == 0) away from Infinity */
+    md = Math.max(md, 1e-6);
+    nd = Math.max(nd, 1e-6);
     return Math.round(Math.min(capH / md, capV / nd) * 1000) / 1000;
   }
   var PROXY_SCALE_U = stageScaleFor(UNION_VERTS, fanFits(FAN_BASES, UNION_VERTS), 150, 116);
@@ -385,7 +388,7 @@
     var dots = [];
     for (var k = 0; k < count; k++) {
       dots.push(el('circle', {
-        cx: cx + (k - (count - 1) / 2) * 22, cy: cy, r: 4.6,
+        cx: cx + (k - (count - 1) / 2) * 22, cy: cy, r: 5.5,
         fill: '#ffffff', stroke: INK, 'stroke-width': 1.4
       }, g));
     }
@@ -715,6 +718,11 @@
     tl.to(avgPoly, { attr: { opacity: 0.55 }, duration: 0.4 }, tDistAEnd - 0.3);
     tl.to(fitCand, { attr: { opacity: 0.4 }, duration: 0.4 }, tDistAEnd - 0.2);
     tl.to(sumG, { attr: { opacity: 1 }, duration: 0.45 }, tDistAEnd + 0.15);
+    /* the "✓ avg" badge + candidate dots retire as the summary chips
+     * land — they duplicated the chips' verdict as an orphaned widget
+     * (audit). Plain attr tweens: scrub-safe in both directions. */
+    tl.to(stageBadge, { attr: { opacity: 0 }, duration: 0.35 }, tDistAEnd + 0.15);
+    tl.to(stageDotG, { attr: { opacity: 0 }, duration: 0.35 }, tDistAEnd + 0.15);
     T = tDistAEnd + 0.7;
     tl.addLabel('s3', T);   /* avg distributed, marked, summary up */
   }

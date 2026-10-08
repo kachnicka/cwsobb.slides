@@ -1,3 +1,4 @@
+/* Archived draft — NOT loaded by any deck (index.html / graveyard/index.html). Unloaded backup with known backward-navigation bugs (left unfixed). */
 /* Greedy swaps animator — paper Fig. 4.
  *
  * 8 slots, node IDs placed by greedy assignment; then the swap

@@ -312,7 +312,7 @@
   var CAPTIONS = [
     'Minimal axis-aligned bounding box.',
     'Minimal oriented bounding box.',
-    'Smaller bounding volume ⇒ lower hit probability.'
+    'Smaller surface area ⇒ lower hit probability (SAH).'
   ];
 
   function computeScene() {
@@ -459,11 +459,21 @@
     }, g);
     setBox(looseRectEl, scene.loose);
     tightGroup = el('g', {}, g);
-    tightRectEl = el('rect', { 'class': 'svg-cloud-box' }, tightGroup);
+    /* stroke-width as a build-time attribute (was the .svg-cloud-box
+     * CSS rule — a frozen-tween trap on a GSAP-touched family). Stroke
+     * color is (re)asserted by resetState/applyStopState. */
+    tightRectEl = el('rect', {
+      'class': 'svg-cloud-box', stroke: INK, 'stroke-width': 1.6
+    }, tightGroup);
     updateTightBox(0);
 
     // ray (on top of the boxes), hidden until s2
     var r = scene.ray;
+    if (!r) {
+      throw new Error('teaser: pickRay found no qualifying ray for seed ' +
+        SEED + ' — no candidate both hits the AABB and misses the OBB ' +
+        'with ' + RAY_CLEARANCE + 'px clearance');
+    }
     rayLineEl = el('line', {
       x1: r.p0[0], y1: r.p0[1], x2: r.p0[0], y2: r.p0[1],
       stroke: INK, 'stroke-width': 2, opacity: 0
@@ -523,8 +533,8 @@
   }
 
   /* Static state for a stop (start() seeks with events suppressed, so
-   * onUpdate-driven geometry and caption callbacks must be applied
-   * directly — same idea as the old startAreaText/endAreaText). */
+   * onUpdate-driven geometry must be applied directly — same idea as
+   * the old startAreaText/endAreaText). */
   function applyStopState(n) {
     proxy.theta = n >= 1 ? scene.thetaStar : 0;
     updateTightBox(proxy.theta);
@@ -565,7 +575,6 @@
       { attr: { opacity: 0 } },
       { attr: { opacity: 1 }, duration: 0.35, stagger: 0.08, ease: 'power1.out' },
       1.3);
-    tl.add(function () { captionEl.textContent = CAPTIONS[1]; }, 1.65);
     tl.addLabel('s1');
 
     // s2: the ray. Linear sweep so the flash/badge times below map
@@ -600,7 +609,6 @@
     tl.fromTo(missBadgeEl,
       { attr: { opacity: 0 } },
       { attr: { opacity: 1 }, duration: 0.3, ease: 'power1.out' }, tBadge);
-    tl.add(function () { captionEl.textContent = CAPTIONS[2]; }, t0 + SWEEP_DUR + 0.1);
     tl.addLabel('s2');
   }
 
@@ -629,6 +637,10 @@
 
     step: function (fragStep) {
       if (!tl) return;
+      // Fragment-driven caption: the timeline carries no caption
+      // callbacks, so backward navigation must re-assert the text
+      // here (same pattern as the sibling animators).
+      captionEl.textContent = CAPTIONS[fragStep] || CAPTIONS[0];
       tl.tweenTo(stopTimes()[fragStep], { ease: 'none' });
     },
 

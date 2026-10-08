@@ -13,6 +13,10 @@
  *                               only the boundary carries information
  *   s3: bounds propagate     -> internal boxes union their (faded) children
  *   s4: tree settles         -> root re-fits, hierarchy valid again
+ *   s5: the GPU reality      -> 8 child threads write the parent BV by
+ *                               atomic min/max; the parent bound stays
+ *                               provisional until ALL 8 have arrived
+ *                               (the sync the later slides remove)
  */
 (function () {
   'use strict';
@@ -98,7 +102,8 @@
     'Geometry moved — every bound is stale; the hierarchy is invalid.',
     'Leaves re-fit from their triangles; above them, only the boundary matters.',
     'Bounds propagate — each internal box unions its children.',
-    'Root refit — the hierarchy is valid again.'
+    'Root refit — the hierarchy is valid again.',
+    'In parallel: 8 child threads write the parent by atomic min/max — its bound is provisional until all 8 arrive.'
   ];
 
   /* ==================== pure geometry helpers ==================== */
@@ -195,6 +200,10 @@
 
   var built = false;
   var sceneSvg, treeSvg;
+  var sceneMainG;            // rest-of-scene group (fades out in s5)
+  var syncG;                 // s5 atomic-sync diagram group
+  var syncParent, syncWaitText, syncFinalText;
+  var syncPulses = [], syncPips = [];
   var polyEls = [];          // {el, rest, moved} in triangle order
   var boxEls = {};           // nodeId -> rect element
   var nodeEls = {};          // nodeId -> node rect element
@@ -209,6 +218,10 @@
       viewBox: '0 0 600 600', width: '100%', height: '100%'
     }, container);
 
+    /* main scene lives in a group so s5 can fade it behind the
+     * atomic-sync diagram */
+    sceneMainG = el('g', {}, sceneSvg);
+
     // triangles (geometry under the boxes)
     CLUSTERS.forEach(function (c) {
       var moved = movedVerts(c);
@@ -217,7 +230,7 @@
         var restTri = tri;
         var movedTri = moved.slice(k, k + tri.length);
         k += tri.length;
-        var p = el('polygon', { 'class': 'svg-tri', points: pts2str(restTri) }, sceneSvg);
+        var p = el('polygon', { 'class': 'svg-tri', points: pts2str(restTri) }, sceneMainG);
         polyEls.push({ el: p, rest: restTri, moved: movedTri });
       });
     });
@@ -229,9 +242,97 @@
       var r = el('rect', {
         'class': 'svg-box' + (id === 'R' ? ' svg-box-root' : ''),
         x: b.x, y: b.y, width: b.w, height: b.h
-      }, sceneSvg);
+      }, sceneMainG);
       boxEls[id] = r;
     });
+  }
+
+  /* s5 diagram: one parent BV, 8 child-thread chips below it, each
+   * firing an atomic-min/max pulse up its edge. Arrival pips under the
+   * parent fill one by one; the parent stays red-dashed (provisional)
+   * until the 8th write lands, then turns solid blue (final).
+   * All s5 state lives in positioned timeline set/tweens on attributes,
+   * so backward scrubbing and direct hash entry re-assert it exactly. */
+  var ATOMIC_RED = '#c23c3c';   // matches refitatomics.js "atomic writes"
+  var SYNC_N = 8;
+
+  function buildSyncDiagram() {
+    syncG = el('g', { opacity: 0 }, sceneSvg);
+
+    var px = 300, py = 130;                 // parent center
+    var PW = 150, PH = 64;
+    var chipW = 52, chipH = 34, chipY = 430;
+    var gap = (600 - 80 - SYNC_N * chipW) / (SYNC_N - 1);
+    var chipX = function (i) { return 40 + i * (chipW + gap); };
+
+    // converging edges (static paint, CSS-free attributes)
+    for (var i = 0; i < SYNC_N; i++) {
+      el('line', {
+        x1: chipX(i) + chipW / 2, y1: chipY,
+        x2: px, y2: py + PH / 2,
+        stroke: EDGE, 'stroke-width': 1.4
+      }, syncG);
+    }
+
+    // parent BV — provisional (red dashed) until all children arrive
+    syncParent = el('rect', {
+      x: px - PW / 2, y: py - PH / 2, width: PW, height: PH, rx: 8,
+      fill: '#ffffff', stroke: ATOMIC_RED, 'stroke-width': 2,
+      'stroke-dasharray': '7 5'
+    }, syncG);
+    var plabel = el('text', {
+      x: px, y: py + 6, 'text-anchor': 'middle', 'font-size': 22, fill: INK
+    }, syncG);
+    plabel.textContent = 'parent BV';
+
+    // arrival pips: one per child write, under the parent
+    var pipGap = 26, pipY = py + PH / 2 + 34;
+    var pipX0 = px - (SYNC_N - 1) * pipGap / 2;
+    for (var q = 0; q < SYNC_N; q++) {
+      syncPips.push(el('circle', {
+        cx: pipX0 + q * pipGap, cy: pipY, r: 6.5,
+        fill: ATOMIC_RED, opacity: 0.18
+      }, syncG));
+    }
+
+    // status line under the pips: waiting <-> final (opacity-toggled)
+    syncWaitText = el('text', {
+      x: px, y: pipY + 36, 'text-anchor': 'middle',
+      'font-size': 20, fill: ATOMIC_RED, opacity: 1
+    }, syncG);
+    syncWaitText.textContent = 'waiting — bound provisional';
+    syncFinalText = el('text', {
+      x: px, y: pipY + 36, 'text-anchor': 'middle',
+      'font-size': 20, fill: BLUE, opacity: 0
+    }, syncG);
+    syncFinalText.textContent = 'all 8 arrived — bound final';
+
+    // child chips (the threads)
+    for (var c = 0; c < SYNC_N; c++) {
+      el('rect', {
+        x: chipX(c), y: chipY, width: chipW, height: chipH, rx: 5,
+        fill: '#ffffff', stroke: INK, 'stroke-width': 1.4
+      }, syncG);
+    }
+    var clabel = el('text', {
+      x: px, y: chipY + chipH + 34, 'text-anchor': 'middle',
+      'font-size': 20, fill: '#5b6068'
+    }, syncG);
+    clabel.textContent = '8 child threads · atomic min/max';
+
+    // pulses: one per edge, parked invisible at the chip end
+    for (var u = 0; u < SYNC_N; u++) {
+      syncPulses.push(el('circle', {
+        cx: chipX(u) + chipW / 2, cy: chipY, r: 5,
+        fill: ATOMIC_RED, opacity: 0
+      }, syncG));
+    }
+
+    // stash chip geometry for the timeline
+    syncG._chipX = chipX;
+    syncG._chipY = chipY;
+    syncG._endX = px;
+    syncG._endY = py + PH / 2;
   }
 
   function buildTree(container) {
@@ -248,9 +349,11 @@
     Object.keys(CHILDREN).forEach(function (parent) {
       CHILDREN[parent].forEach(function (child) {
         var a = NODE_POS[parent], b = NODE_POS[child];
+        /* no .svg-edge class: its CSS stroke would beat the attribute
+         * tweens below (repo rule — animated paint = attributes) */
         var line = el('line', {
-          'class': 'svg-edge',
-          x1: a.x, y1: a.y, x2: b.x, y2: b.y
+          x1: a.x, y1: a.y, x2: b.x, y2: b.y,
+          stroke: EDGE, 'stroke-width': 1.6
         }, treeSvg);
         edgeForChild[child] = line;
       });
@@ -259,10 +362,14 @@
     Object.keys(NODE_POS).forEach(function (id) {
       var p = NODE_POS[id];
       var g = el('g', {}, treeSvg);
+      /* no .svg-node class: its CSS fill/stroke would beat the
+       * attribute tweens below (repo rule — animated paint =
+       * attributes). Values mirror the class defaults. */
       var rect = el('rect', {
-        'class': 'svg-node', rx: 5,
+        rx: 5,
         x: p.x - NODE_W / 2, y: p.y - NODE_H / 2,
-        width: NODE_W, height: NODE_H
+        width: NODE_W, height: NODE_H,
+        fill: '#ffffff', stroke: INK, 'stroke-width': 1.6
       }, g);
       nodeEls[id] = rect;
       /* no node name labels (user request — they carried no meaning) */
@@ -281,27 +388,26 @@
     r.setAttribute('stroke-dasharray', 'none');
   }
 
-  /* Flash incoming edges blue (transient eye candy). Uses CSS stroke
-   * so GSAP tweens the color; resetDom() clears it. */
-  function pulseEdges(ids) {
+  /* Flash incoming edges blue (transient eye candy). Positioned set+to
+   * inside the timeline (pure attribute tweens), so stop() kills the
+   * flash with the timeline and backward stepping scrubs it away. */
+  function addEdgePulse(timeline, ids, at) {
+    var lines = [];
     ids.forEach(function (id) {
-      var e = edgeForChild[id];
-      if (!e) return;
-      gsap.fromTo(e,
-        { stroke: BLUE },
-        { stroke: EDGE, duration: 0.9, ease: 'power1.out' });
+      if (edgeForChild[id]) lines.push(edgeForChild[id]);
     });
+    timeline.set(lines, { attr: { stroke: BLUE } }, at);
+    timeline.to(lines, { attr: { stroke: EDGE }, duration: 0.9, ease: 'power1.out' }, at);
   }
 
   /* Mark a level's refit as DONE: nodes flash a brighter blue, then
-   * settle to a steady #bcd6f8 and STAY blue (user request). Timeline
-   * set+to (not a callback), so backward stepping scrubs the blue away
-   * and forward re-applies it. Fill is a CSS inline style — .svg-node's
-   * fill comes from a CSS class, an attribute tween would lose to it. */
+   * settle to a steady #bcd6f8 and STAY blue (user request). set+to in
+   * the timeline, so backward stepping scrubs the blue away and forward
+   * re-applies it. Fill is an SVG attribute (repo rule). */
   function addNodesDone(timeline, ids, at) {
     var rects = ids.map(function (id) { return nodeEls[id]; });
-    timeline.set(rects, { fill: '#8db9f5' }, at);
-    timeline.to(rects, { fill: '#bcd6f8', duration: 0.9, ease: 'power1.out' }, at);
+    timeline.set(rects, { attr: { fill: '#8db9f5' } }, at);
+    timeline.to(rects, { attr: { fill: '#bcd6f8' }, duration: 0.9, ease: 'power1.out' }, at);
   }
 
   /* Tween a set of boxes to their moved bounds. */
@@ -322,7 +428,7 @@
 
   function stopTimes() {
     var times = [0];
-    for (var i = 1; i <= 4; i++) times.push(tl.labels['s' + i]);
+    for (var i = 1; i <= 5; i++) times.push(tl.labels['s' + i]);
     return times;
   }
 
@@ -339,15 +445,36 @@
       setRect(boxEls[id], BOXES[id].rest);
       boxRestStyle(boxEls[id]);
     });
-    // tree nodes and edges neutral (clear CSS overrides from pulses)
+    // tree nodes and edges neutral (paint is attribute-based now)
     Object.keys(nodeEls).forEach(function (id) {
       gsap.killTweensOf(nodeEls[id]);
-      gsap.set(nodeEls[id], { clearProps: 'fill' });
+      nodeEls[id].setAttribute('fill', '#ffffff');
     });
     Object.keys(edgeForChild).forEach(function (id) {
       gsap.killTweensOf(edgeForChild[id]);
-      gsap.set(edgeForChild[id], { clearProps: 'stroke' });
+      edgeForChild[id].setAttribute('stroke', EDGE);
     });
+    // s5 diagram back to hidden, main scene fully visible
+    gsap.killTweensOf(sceneMainG);
+    sceneMainG.setAttribute('opacity', 1);
+    gsap.killTweensOf(syncG);
+    syncG.setAttribute('opacity', 0);
+    syncPulses.forEach(function (p) {
+      gsap.killTweensOf(p);
+      p.setAttribute('opacity', 0);
+      p.setAttribute('cx', syncG._chipX(syncPulses.indexOf(p)) + 26);
+      p.setAttribute('cy', syncG._chipY);
+    });
+    syncPips.forEach(function (p) {
+      gsap.killTweensOf(p);
+      p.setAttribute('opacity', 0.18);
+      p.setAttribute('fill', ATOMIC_RED);
+    });
+    gsap.killTweensOf(syncParent);
+    syncParent.setAttribute('stroke', ATOMIC_RED);
+    syncParent.setAttribute('stroke-dasharray', '7 5');
+    syncWaitText.setAttribute('opacity', 1);
+    syncFinalText.setAttribute('opacity', 0);
   }
 
   function buildTimeline() {
@@ -370,8 +497,8 @@
     // then the triangles fade: above the leaves, only the boundary is
     // needed. The spacer keeps the label clear of the refit stroke .set.
     tl.to({}, { duration: 0.3 }, '>');
-    tl.add(function () { pulseEdges(LEAVES); }, '>');
     var leafAt = tl.duration();
+    addEdgePulse(tl, LEAVES, leafAt);
     addNodesDone(tl, LEAVES, leafAt);
     addBoxRefit(tl, LEAVES, '>');
     var triEls = polyEls.map(function (p) { return p.el; });
@@ -383,17 +510,50 @@
 
     // s3: bounds propagate — internal level re-fits (parents union children).
     tl.to({}, { duration: 0.3 }, '>');
-    tl.add(function () { pulseEdges(['M0', 'M1']); }, '>');
-    addNodesDone(tl, ['M0', 'M1'], tl.duration());
+    var midAt = tl.duration();
+    addEdgePulse(tl, ['M0', 'M1'], midAt);
+    addNodesDone(tl, ['M0', 'M1'], midAt);
     addBoxRefit(tl, ['M0', 'M1'], '>');
     tl.addLabel('s3', tl.duration());
 
     // s4: root re-fits — the tree settles, hierarchy valid again.
     tl.to({}, { duration: 0.3 }, '>');
-    tl.add(function () { pulseEdges(['R']); }, '>');
-    addNodesDone(tl, ['R'], tl.duration());
+    var rootAt = tl.duration();
+    addEdgePulse(tl, ['R'], rootAt);
+    addNodesDone(tl, ['R'], rootAt);
     addBoxRefit(tl, ['R'], '>');
     tl.addLabel('s4', tl.duration());
+
+    // s5: the GPU reality behind "bounds propagate" — 8 child threads
+    // each write the parent BV by atomic min/max. Pulses arrive one by
+    // one (staggered); the parent stays red-dashed provisional until
+    // the 8th write lands, then turns solid blue = final. Pure
+    // positioned set/tweens on attributes: scrubs cleanly backward and
+    // re-asserts on direct hash entry via seek(label, true).
+    tl.to({}, { duration: 0.3 }, '>');
+    var syncAt = tl.duration();
+    tl.to(sceneMainG, { attr: { opacity: 0.08 }, duration: 0.6, ease: 'power1.inOut' }, syncAt);
+    tl.to(syncG, { attr: { opacity: 1 }, duration: 0.6, ease: 'power1.inOut' }, syncAt);
+    var firstWrite = syncAt + 0.7, stagger = 0.35, fly = 0.35;
+    for (var w = 0; w < SYNC_N; w++) {
+      (function (i) {
+        var at = firstWrite + i * stagger;
+        var sx = syncG._chipX(i) + 26, sy = syncG._chipY;
+        tl.set(syncPulses[i], { attr: { opacity: 1, cx: sx, cy: sy } }, at);
+        tl.to(syncPulses[i], {
+          attr: { cx: syncG._endX, cy: syncG._endY },
+          duration: fly, ease: 'power1.in'
+        }, at);
+        tl.set(syncPulses[i], { attr: { opacity: 0 } }, at + fly);
+        tl.set(syncPips[i], { attr: { opacity: 1 } }, at + fly);
+      })(w);
+    }
+    var finAt = firstWrite + (SYNC_N - 1) * stagger + fly + 0.35;
+    tl.set(syncParent, { attr: { stroke: BLUE, 'stroke-dasharray': 'none' } }, finAt);
+    tl.set(syncPips, { attr: { fill: BLUE } }, finAt);
+    tl.set(syncWaitText, { attr: { opacity: 0 } }, finAt);
+    tl.set(syncFinalText, { attr: { opacity: 1 } }, finAt);
+    tl.addLabel('s5', finAt + 0.6);
   }
 
   var animator = {
@@ -403,6 +563,7 @@
         var sceneHost = document.getElementById('refit-scene');
         var treeHost = document.getElementById('refit-tree');
         buildScene(sceneHost);
+        buildSyncDiagram();
         buildTree(treeHost);
         captionEl = document.getElementById('refit-caption');
         panelEls = [sceneSvg, treeSvg];

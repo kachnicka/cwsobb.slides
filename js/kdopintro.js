@@ -7,10 +7,11 @@
  *         intersection shrinking after each pair lands (GEOMETRY fades)
  *   s2:   remaining three slab pairs (160, 130, 100 deg) accumulate the
  *         same way, ending at the full 12-half-plane k-DOP
- *   s3:   the dashed ink k-DOP outline affirms + the gray side label
- *         "K-DOP = SLAB PAIRS"; the fill fades out and the colored slab
- *         lines recede to 0.55 — the exact base state of the L3 slide
- *         (slide-fit / kdopfan), for a seamless fade across slides
+ *   s3:   the solid ink k-DOP outline affirms; the fill fades out and
+ *         the colored slab lines recede to 0.65 — the base state of
+ *         the L3 slide (slide-fit / kdopfan). No side label is shown
+ *         here, and L3's base does not show one either, so the two
+ *         final frames still match across the hand-off fade
  *
  * Geometry is the shared deterministic cluster (DeckSVG.makeCluster at
  * 470,285); the panel reads as one continuous diagram across the L2.5→L3
@@ -44,7 +45,7 @@
   ];
 
   var LINE_W = 2;                // slab line weight
-  var RECEDE = 0.5;              // slab line opacity at rest (L3 base: LS_BASE 0.5)
+  var RECEDE = 0.65;             // slab line opacity at rest (L3 base: LS_BASE 0.65)
   var FILL_OP = 0.07;            // running-intersection fill opacity
 
   /* ==================== pure helpers ==================== */
@@ -144,7 +145,7 @@
   /* ==================== animator ==================== */
 
   var built = false;
-  var svg, kdopEl, kdopSideLabelEl, geoLabelEl;
+  var svg, kdopEl, geoLabelEl;
   var lineEls = [];        // per pair: [lineLo, lineHi]
   var lineLens = [];       // per pair: [lenLo, lenHi]
   var fillEls = [];        // running-intersection polys, one per pair count
@@ -246,13 +247,6 @@
       opacity: 0
     }, svg);
 
-    // side label EXACTLY as kdopfan's base (gray class styling, 748,88)
-    // — faded in at s3 so the final state matches slide-fit pixel-for-
-    // pixel across the fade transition
-    kdopSideLabelEl = D.text('K-DOP = SLAB PAIRS', {
-      'class': 'svg-side-label', x: 748, y: 88, opacity: 0
-    }, svg);
-
     geoLabelEl = D.text('GEOMETRY', {
       'class': 'svg-side-label', x: 60, y: 82, opacity: 0.85
     }, svg);
@@ -264,7 +258,6 @@
     gsap.killTweensOf(allLines);
     gsap.killTweensOf(fillEls);
     gsap.killTweensOf([kdopEl, geoLabelEl]);
-    // gsap.killTweensOf([kdopEl, kdopSideLabelEl, geoLabelEl]);
     lineEls.forEach(function (pair, i) {
       pair.forEach(function (line, j) {
         line.setAttribute('stroke-dashoffset', lineLens[i][j]);
@@ -274,7 +267,6 @@
     });
     fillEls.forEach(function (f) { f.setAttribute('fill-opacity', 0); });
     kdopEl.setAttribute('opacity', 0);
-    kdopSideLabelEl.setAttribute('opacity', 0);
     geoLabelEl.setAttribute('opacity', 0.85);
   }
 
@@ -316,8 +308,8 @@
     paintPair('s1+=2.1', 5);
     tl.addLabel('s2', 's1+=3.5');
 
-    // s3: name it — dashed outline + K-DOP label carry the meaning,
-    // fill fades out, colored lines recede to their L3 rest state
+    // s3: name it — the solid ink outline carries the payoff, the fill
+    // fades out, colored lines recede to their L3 rest state
     tl.to(fillEls[5], {
       attr: { 'fill-opacity': 0 }, duration: 0.6, ease: 'power1.inOut'
     }, 's2+=0.25');
@@ -326,13 +318,10 @@
     }, 's2+=0.3');
     tl.to(allLines, {
       // opacity AND width: the rest state must equal slide-fit's base
-      // lines (LS_BASE 0.5 / 1.3) for a clean cross-slide handoff
-      attr: { opacity: RECEDE, 'stroke-width': 1.3 },
+      // lines (LS_BASE 0.65 / 1.5) for a clean cross-slide handoff
+      attr: { opacity: RECEDE, 'stroke-width': 1.5 },
       duration: 0.6, ease: 'power1.inOut'
     }, 's2+=0.35');
-    // tl.to(kdopSideLabelEl, {
-    //   attr: { opacity: 1 }, duration: 0.35, ease: 'power1.out'
-    // }, 's2+=0.8');
     tl.addLabel('s3', 's2+=1.35');
   }
 

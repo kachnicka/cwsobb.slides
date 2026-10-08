@@ -186,6 +186,15 @@
   var LEAF_HITS = LEAVES.map(function (lf) { return !!rayBox(lf.box, P0, DIR); });
   var HIT_CHILD_I = CHILD_HITS.indexOf(true);
   var HIT_LEAF_I = LEAF_HITS.indexOf(true);
+  if (HIT_LEAF_I < 0) {
+    throw new Error(
+      'bvhintro: invariant broken — no leaf box is hit by the ray. ' +
+      'BVH traversal expects exactly one leaf inside the hit child to ' +
+      'pass the slab ray–box test (COUNTS.triTestsBVH reads ' +
+      'LEAVES[HIT_LEAF_I].triIdx at load time). Check the authored ' +
+      'triangle groups (LEAVES / CHILDREN geometry) and the ray P0+DIR ' +
+      'so the ray intersects one leaf box.');
+  }
   /* Box-test count: the root itself is excluded — real BVH traversal
    * skips the root test and starts at the root's children (2 tests),
    * then tests both leaves inside the hit child (2 tests). */
@@ -323,6 +332,28 @@
 
   var SECTIONS = 5;
   var SWEEP = 1.7;
+
+  /* Tally is fragment-state-driven, not callback-only: the timeline
+   * callbacks still fire the incremental counts on forward playback,
+   * but step() re-applies the END state for the target fragment so
+   * backward navigation (and direct hash-entry) always lands on the
+   * correct text and color — the s5 summary's raw setAttribute('fill',
+   * RED) is otherwise never reverted by scrubbing. */
+  var TALLY_TEXT = [
+    null,
+    'triangle tests: ' + COUNTS.triTestsBrute,
+    'triangle tests: ' + COUNTS.triTestsBrute,
+    'box tests: ' + CHILDREN.length,
+    'box tests: ' + COUNTS.boxTests,
+    COUNTS.boxTests + ' box + ' + COUNTS.triTestsBVH +
+      ' triangle tests — instead of ' + COUNTS.triTestsBrute
+  ];
+
+  function applyTallyState(fragStep) {
+    if (fragStep <= 0) return; /* hidden at s0 — resetDom owns it */
+    tallyEl.textContent = TALLY_TEXT[fragStep];
+    tallyEl.setAttribute('fill', fragStep === SECTIONS ? RED : INK);
+  }
 
   function buildTimeline() {
     tl = gsap.timeline({ paused: true });
@@ -490,14 +521,23 @@
       captionEl.textContent = CAPTIONS[fragStep] || CAPTIONS[0];
       /* seek without suppressing events so the tally/badge callbacks run
        * on a direct jump into the middle of the deck */
-      if (fragStep > 0) tl.seek(D.stopsFor(tl, SECTIONS)[fragStep], false);
+      if (fragStep > 0) {
+        tl.seek(D.stopsFor(tl, SECTIONS)[fragStep], false);
+        applyTallyState(fragStep);
+      }
       gsap.fromTo(svg, { opacity: 0, y: 14 },
         { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out', overwrite: 'auto' });
     },
     step: function (fragStep) {
       if (!tl) return;
       captionEl.textContent = CAPTIONS[fragStep] || CAPTIONS[0];
-      tl.tweenTo(D.stopsFor(tl, SECTIONS)[fragStep], { ease: 'none' });
+      /* onComplete re-applies the tally END state: scrubbing backward
+       * re-fires the timeline callbacks in reverse, which would
+       * otherwise leave the last forward-fired text standing */
+      tl.tweenTo(D.stopsFor(tl, SECTIONS)[fragStep], {
+        ease: 'none',
+        onComplete: function () { applyTallyState(fragStep); }
+      });
     },
     stop: function () {
       if (tl) { tl.kill(); tl = null; }

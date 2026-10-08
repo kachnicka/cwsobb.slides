@@ -1,3 +1,4 @@
+/* Archived draft — NOT loaded by any deck (index.html / graveyard/index.html). Unloaded backup with known backward-navigation bugs (left unfixed). */
 /* Ordered traversal & early-out animator — paper Sec. 3.4/3.5.
  *
  * One wide node with 8 child AABBs; a ray crosses the node.

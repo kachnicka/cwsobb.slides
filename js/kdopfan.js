@@ -1,16 +1,19 @@
-/* Animator: L3 "Fitting SOBBs — EG25 in one slide".
+/* Animator: L3 "EG25 in two slides — Fitting SOBBs".
  *
  * How a SOBB is fitted from a k-DOP, told as a search over slab-pair
- * candidates:
+ * candidates (the second half of the two-slide EG25 story that the
+ * L2.5 kdopintro slide begins):
  *   entry:  the slide opens PIXEL-IDENTICAL to slide L2.5 (kdopintro)'s
- *           final frame at scale 1.0 — colored slab lines at 1.3/0.5,
- *           solid 2.2 ink k-DOP, side label "K-DOP = SLAB PAIRS". The
- *           section has data-transition="none", so the L2.5→L3 hand-off
- *           is a hard cut between identical frames, and the ONLY
- *           entrance choreography is a 1.3s zoom-out (proxy {z} tween
+ *           final frame at scale 1.0 — colored slab lines at 1.5/0.65,
+ *           solid 2.2 ink k-DOP, no side label (neither slide shows a
+ *           "K-DOP = SLAB PAIRS" label on its final frame, which is
+ *           what makes the parity hold). The section has
+ *           data-transition="none", so the L2.5→L3 hand-off is a hard
+ *           cut between identical frames, and the ONLY entrance
+ *           choreography is a 1.3s zoom-out (proxy {z} tween
  *           1.0 → Z about the cluster center, NOT part of the fragment
- *           timeline) plus the side-label crossfade to
- *           "SOBB = SLAB PAIRS (2D) | SLAB TRIPLETS (3D)". No svg
+ *           timeline) plus the SOBB side label fading in
+ *           ("2D SOBB: SLAB PAIRS / 3D SOBB: SLAB TRIPLETS"). No svg
  *           fade/rise — the first frame must not pop.
  *   base:   zoomed diagram at rest (all six slab pairs visible)
  *   s1:     first candidate (slabs 10°/40° — the BIGGEST parallelogram):
@@ -70,7 +73,7 @@
  * Z=0.26, 2.2 ink → 0.57px, illegible):
  *   - lines, k-DOP, triangles: vector-effect="non-scaling-stroke" — an
  *     ATTRIBUTE (never a CSS rule, never GSAP-tweened), so on-screen
- *     weights stay exactly 1.3/0.5/2.2/1.2 at any z. At entry z=1 the
+ *     weights stay exactly 1.5/0.65/2.2/1.4 at any z. At entry z=1 the
  *     transform is identity, so kdopintro parity holds pixel-for-pixel.
  *     Line-state widths (LS_*) keep their meaning as screen px.
  *   - candidate + SOBB outlines (both invisible at entry, so parity is
@@ -270,8 +273,8 @@
    * expressed only through opacity + width (attributes, GSAP-tweened).
    * Lines have vector-effect="non-scaling-stroke", so widths below are
    * SCREEN px at any zoom. LS_BASE is kdopintro's final frame
-   * (0.5 / 1.3) so the slides match pixel-for-pixel at the hard cut. */
-  var LS_BASE = { opacity: 0.5, width: 1.3 };
+   * (0.65 / 1.5) so the slides match pixel-for-pixel at the hard cut. */
+  var LS_BASE = { opacity: 0.65, width: 1.5 };
   var LS_DIM = { opacity: 0.15, width: 1.1 };
   var LS_ACTIVE = { opacity: 1, width: 2.6 };
   var LS_GONE = { opacity: 0.12, width: 1 };

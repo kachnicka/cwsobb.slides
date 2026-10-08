@@ -136,7 +136,7 @@
   var CALLOUT_PTS = '48,15.6 -30,15.6 -48,-15.6 30,-15.6';  // MINI_PTS × 3
 
   var CAPTIONS = [
-    'With shared basis, quantization is as efficient as with AABBs.',
+    'With shared basis, quantization is as efficient as for AABBs.',
     'Local skewed grid: anchor + integer coordinates.',
     'Local skewed grid: anchor + integer coordinates.',
     'Bounds are slightly inflated, memory footprint is down.'

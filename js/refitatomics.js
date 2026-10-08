@@ -46,7 +46,7 @@
   var RATIO = [3e-6, 1e-5, 4e-4, 0.004, 0.02, 0.08, 0.16, 0.22, 0.24, 0.25, 0.22, 0.20, 0.19, 0.18, 0.17];
   var ATOM = TESTS.map(function (t, d) { return t * RATIO[d]; });
 
-  var WHY1A = 'root side — few nodes per thread';
+  var WHY1A = 'root side — many threads per node';
   var WHY1B = 'tests stay local, atomics nearly vanish';
   var WHY2A = 'leaf side — atomics cluster here';
   var WHY2B = 'many nodes, few contenders per node';

@@ -25,7 +25,7 @@
       <!-- Outside .t-line: plain CSS placement, no entrance stagger. -->
       <div class="title-logos">
         <img src="img/logos/pg26.png" alt="Pacific Graphics 2026">
-        <img src="img/logos/dcgi.png" alt="DCGI">
+        <img src="img/logos/ctu.png" alt="Czech Technical University in Prague">
       </div>
     </section>
 
@@ -169,7 +169,7 @@
 
     <!-- L2. What is a SOBB? -->
     <section id="slide-sobb" data-animator="sobbmorph">
-      <h2 class="slide-head">SOBB - Skewed Oriented Bounding Box</h2>
+      <h2 class="slide-head">SOBB — Skewed Oriented Bounding Box</h2>
       <div class="canvas-row sobb-row">
         <div id="morph-canvas" class="panel">
           <!-- s5 overlay: the same skewed frame rendered in 3D.
@@ -192,7 +192,7 @@
            reveals them. -->
       <div class="cap-extra-row"><span class="cap" id="sobb-ineq">AABB ⊆ OBB ⊆ SOBB — every AABB is an OBB; every OBB is a SOBB</span></div>
       <div class="cap-extra-row"><span class="cap" id="sobb-saineq">SA(AABB) ≥ SA(OBB) ≥ SA(SOBB)</span></div>
-      <div class="status-row"><span class="cap">A SOBB allows non-orthogonal basis — same memory as an OBB, same slab intersection test.</span></div>
+      <div class="status-row"><span class="cap">A SOBB allows non-orthogonal basis — same memory as OBB, same slab test.</span></div>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
@@ -211,7 +211,7 @@
            making the fade into slide-fit visually continuous. -->
       <div class="cap-extra-row"></div>
       <div class="cap-extra-row"></div>
-      <div class="status-row"><span class="cap">Discrete orientation polytope. k-DOP is formed as the intersection of k hyperplanes.</span></div>
+      <div class="status-row"><span class="cap">Discrete orientation polytope — the intersection of k half-spaces (k/2 slab pairs).</span></div>
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
@@ -236,7 +236,7 @@
       <span class="fragment"></span>
     </section>
 
-    <!-- L4a. Pipeline 1 of 3: SOBB construction, the old paper's chain -->
+    <!-- L4a. Pipeline A — SOBB construction, the old paper's chain -->
     <section id="slide-pipeline-sobb2" data-animator="pipesobb2">
       <h2 class="slide-head">EG25 in two slides — SOBB BVH construction</h2>
       <div class="canvas-row">
@@ -248,13 +248,13 @@
       <span class="fragment"></span>
     </section>
 
-    <!-- L4c. Pipeline 3 of 3: our SOBB BVH₈ chain (quantization lead-in,
+    <!-- L4c. Pipeline C — our SOBB BVH8 chain (quantization lead-in,
          hands off to the shared-basis slide; data-transition="none": its
          OWN transition governs the outgoing side of the cut — without it,
          Reveal cross-fades this section out over the next slide and the
          pixel-identical chip-row hand-off ghosts) -->
     <section id="slide-pipeline-sobb8" data-animator="pipesobb8" data-transition="none">
-      <h2 class="slide-head">SOBB BVH₈ — our pipeline</h2>
+      <h2 class="slide-head">SOBB BVH8 — our pipeline</h2>
       <div class="canvas-row">
         <div id="pipe-sobb8-canvas" class="panel"></div>
       </div>
@@ -310,7 +310,7 @@
          (linear 1.00–1.20). Mapping: mainX = 182 + (v-1)*680 (X=1 guide at
          182, 2× boundary at 862, main axis to 868); extX = 897 + (v-2)*15.625
          (tinted extension rect x=872 w=150, break at ~870, 10× tick at 1022);
-         Y = 440 - (v-1)*1450 (gridlines at
+         Y = 440 - (v-1)*1250 (gridlines at
          1.00/1.05/1.10/1.15/1.20 → y 440/367.5/295/222.5/150; plot axis
          x=162, y-axis 150–452).
          Data (paper NEW_RESULTS, tab:sobb_static), speed/build/tris:
@@ -338,7 +338,7 @@
       <h2 class="slide-head">Static scenes — speed vs build cost (38-DOP)</h2>
       <div class="results-col">
         <div class="pareto-fig">
-          <svg viewBox="0 0 1100 560" width="100%" height="100%" role="img" aria-label="Pareto scatter of SOBB8 38-DOP vs AABB8: secondary-ray speed against build time, eight scenes plus Sheep outlier">
+          <svg viewBox="0 0 1100 560" width="100%" height="100%" role="img" aria-label="Pareto scatter of SOBB8 38-DOP vs AABB8: secondary-ray speed against build time, eight scenes including Sheep outlier">
             <title>SOBB8 (38-DOP) vs AABB BVH8 — secondary speed vs build time</title>
 
             <defs>
@@ -545,6 +545,7 @@
       <span class="fragment"></span>
       <span class="fragment"></span>
       <span class="fragment"></span>
+      <span class="fragment"></span>
     </section>
 
     <!-- L8b. SOBB refit — the problem -->
@@ -597,7 +598,7 @@
       <h2 class="slide-head">Refit by geometry — the numbers</h2>
       <div class="num-cards">
         <div class="num-card fragment"><div class="num-big">3×</div><div class="num-small">faster than the original SOBB refit</div></div>
-        <div class="num-card fragment"><div class="num-big">4×</div><div class="num-small">less scratch memory</div></div>
+        <div class="num-card fragment"><div class="num-big">¼</div><div class="num-small">of the scratch memory</div></div>
         <div class="num-card fragment"><div class="num-big">1.5×</div><div class="num-small">slower than an AABB BVH8 refit (down from ~5×)</div></div>
         <div class="num-card fragment"><div class="num-big">1.5×</div><div class="num-small">avg. traversal speed retained thanks to SOBB</div></div>
         <div class="num-card fragment"><div class="num-big num-big-long">2–5%</div><div class="num-small">degradation over the sequence — same rate as AABB BVH8</div></div>
@@ -605,7 +606,7 @@
       <div class="video-row">
         <video class="slide-video wide" src="video/main_raw_small.mp4" autoplay muted loop playsinline></video>
         <div class="video-facts fragment">
-          <div class="vf-scene">Bistro ext. · 3.2M△</div>
+          <div class="vf-scene">Bistro ext. · 3.2M △</div>
           <div class="vf-row"><span class="vf-label">AABB8 refit<span class="vf-by">by node</span></span><span class="vf-ms">1.13 ms</span></div>
           <div class="vf-row"><span class="vf-label">SOBB8 refit<span class="vf-by">by geometry</span></span><span class="vf-ms">1.66 ms</span></div>
           <div class="vf-gpu">measured on RTX 3080Ti</div>
@@ -651,10 +652,10 @@
             </svg>
           </li>
           <li class="fragment" data-fragment-index="3">
-            <span class="tk-eyebrow">Wide Compressed SOBB BVH</span>
+            <span class="tk-eyebrow">Wide Compressed SOBB BVH — the cost</span>
             <div class="tk-row">
-              <span class="tk-num tk-num-cost">+10–18%</span>
-              <span class="tk-body"><span class="tk-claim">Build time</span><span class="tk-sub">+5% memory, 7–15 bits per node</span></span>
+              <span class="tk-num">+10–18%</span>
+              <span class="tk-body"><span class="tk-claim">Build time</span><span class="tk-sub">≤ +5% memory, 7–15 bits per node</span></span>
             </div>
           </li>
         </ol>
@@ -670,7 +671,10 @@
     <section id="slide-thanks" data-animator="closing">
       <div class="title-wrap">
         <h1 class="t-line paper-title">Thanks</h1>
-        <div class="t-line rule"></div>
+        <!-- No rule here: between "Thanks" and "Questions?" the lone
+             dash read as an unfilled placeholder (audit). The title
+             slide keeps its rule — there it separates title from
+             authorship. -->
         <p class="t-line authors">Questions?</p>
         <video class="slide-video big" src="video/bvh_levels_6_8_10_small.mp4" autoplay muted loop playsinline></video>
       </div>

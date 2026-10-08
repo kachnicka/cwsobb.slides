@@ -120,7 +120,8 @@
   var FAN_OFF = 10, FAN_N = 12;
 
   var TRI_FADE = 0.15;   // triangles stay faintly visible after s2
-  var GLYPH_LEN = 7;     // tree basis-glyph half-length (px)
+  var GLYPH_LEN = 10;    // tree basis-glyph half-length (px) — 7 read
+                         // as stray ✗/+ specks at 1280x720 (audit)
   var ARROW_LEN = 22;    // scene basis-arrow half-length (px)
 
   /* k-DOP overlay tags in the tree panel (M1 mirrored to the left edge
@@ -511,9 +512,11 @@
     Object.keys(CHILDREN).forEach(function (parent) {
       CHILDREN[parent].forEach(function (child) {
         var a = NODE_POS[parent], b = NODE_POS[child];
+        /* no .svg-edge class: its CSS stroke would beat the attribute
+         * tweens below (repo rule — animated paint = attributes) */
         edgeForChild[child] = el('line', {
-          'class': 'svg-edge',
-          x1: a.x, y1: a.y, x2: b.x, y2: b.y
+          x1: a.x, y1: a.y, x2: b.x, y2: b.y,
+          stroke: EDGE, 'stroke-width': 1.6
         }, treeSvg);
       });
     });
@@ -521,10 +524,14 @@
     Object.keys(NODE_POS).forEach(function (id) {
       var p = NODE_POS[id];
       var g = el('g', {}, treeSvg);
+      /* no .svg-node class: its CSS fill/stroke would beat the
+       * attribute tweens below (repo rule — animated paint =
+       * attributes). Values mirror the class defaults. */
       var rect = el('rect', {
-        'class': 'svg-node', rx: 5,
+        rx: 5,
         x: p.x - NODE_W / 2, y: p.y - NODE_H / 2,
-        width: NODE_W, height: NODE_H
+        width: NODE_W, height: NODE_H,
+        fill: '#ffffff', stroke: INK, 'stroke-width': 1.6
       }, g);
       nodeEls[id] = rect;
       /* no node name labels (user request — they carried no meaning) */
@@ -544,7 +551,7 @@
         return el('line', {
           x1: -GLYPH_LEN * v[0], y1: -GLYPH_LEN * v[1],
           x2: GLYPH_LEN * v[0], y2: GLYPH_LEN * v[1],
-          stroke: INK, 'stroke-width': 1.4
+          stroke: INK, 'stroke-width': 2
         }, g);
       });
     });
@@ -595,43 +602,38 @@
     }, costBadgeG);
   }
 
-  /* Flash tree nodes + incoming edges blue (transient eye candy). */
-  function pulseNodes(ids) {
-    ids.forEach(function (id) {
-      gsap.fromTo(nodeEls[id],
-        { fill: '#bcd6f8' },
-        { fill: '#ffffff', duration: 0.9, ease: 'power1.out' });
-      var e = edgeForChild[id];
-      if (!e) return;
-      gsap.fromTo(e,
-        { stroke: BLUE },
-        { stroke: EDGE, duration: 0.9, ease: 'power1.out' });
-    });
+  /* Flash tree nodes + incoming edges blue (transient eye candy).
+   * Positioned set+to in the timeline (pure attribute tweens), so
+   * stop() kills the flash with the timeline and backward stepping
+   * scrubs it away. */
+  function addNodePulse(ids, at) {
+    var rects = ids.map(function (id) { return nodeEls[id]; });
+    tl.set(rects, { attr: { fill: '#bcd6f8' } }, at);
+    tl.to(rects, { attr: { fill: '#ffffff' }, duration: 0.9, ease: 'power1.out' }, at);
+    addEdgePulse(ids, at);
   }
 
   /* Transient edge-only flash (leaf beat: the nodes themselves go
    * permanently blue via addNodesDone instead). */
-  function pulseEdges(ids) {
+  function addEdgePulse(ids, at) {
+    var lines = [];
     ids.forEach(function (id) {
-      var e = edgeForChild[id];
-      if (!e) return;
-      gsap.fromTo(e,
-        { stroke: BLUE },
-        { stroke: EDGE, duration: 0.9, ease: 'power1.out' });
+      if (edgeForChild[id]) lines.push(edgeForChild[id]);
     });
+    tl.set(lines, { attr: { stroke: BLUE } }, at);
+    tl.to(lines, { attr: { stroke: EDGE }, duration: 0.9, ease: 'power1.out' }, at);
   }
 
   /* Leaves only (user request — this slide's internal/root beats stay
    * transient, it's the "problem" story): after the leaf re-fit the
    * leaf nodes flash brighter blue, then settle to a steady #bcd6f8 and
-   * STAY blue — the level's refit is done. Timeline set+to (not a
-   * callback) so backward stepping scrubs the blue away and forward
-   * re-applies it. Fill is a CSS inline style — .svg-node's fill comes
-   * from a CSS class, an attribute tween would lose to it. */
+   * STAY blue — the level's refit is done. set+to in the timeline, so
+   * backward stepping scrubs the blue away and forward re-applies it.
+   * Fill is an SVG attribute (repo rule). */
   function addNodesDone(ids, at) {
     var rects = ids.map(function (id) { return nodeEls[id]; });
-    tl.set(rects, { fill: '#8db9f5' }, at);
-    tl.to(rects, { fill: '#bcd6f8', duration: 0.9, ease: 'power1.out' }, at);
+    tl.set(rects, { attr: { fill: '#8db9f5' } }, at);
+    tl.to(rects, { attr: { fill: '#bcd6f8' }, duration: 0.9, ease: 'power1.out' }, at);
   }
 
   /* Morph node SOBBs to their (aligned) moved corners, blue. */
@@ -668,14 +670,14 @@
       paraEls[id].el.setAttribute('opacity', 1);
       paraRestStyle(paraEls[id].el);
     });
-    // tree nodes and edges neutral (clear CSS overrides from pulses)
+    // tree nodes and edges neutral (paint is attribute-based now)
     Object.keys(nodeEls).forEach(function (id) {
       gsap.killTweensOf(nodeEls[id]);
-      gsap.set(nodeEls[id], { clearProps: 'fill' });
+      nodeEls[id].setAttribute('fill', '#ffffff');
     });
     Object.keys(edgeForChild).forEach(function (id) {
       gsap.killTweensOf(edgeForChild[id]);
-      gsap.set(edgeForChild[id], { clearProps: 'stroke' });
+      edgeForChild[id].setAttribute('stroke', EDGE);
     });
     // basis glyphs: rest rotation, neutral ink
     NODES.forEach(function (id) {
@@ -684,7 +686,7 @@
       glyphLines[id].forEach(function (l) {
         gsap.killTweensOf(l);
         l.setAttribute('stroke', INK);
-        l.setAttribute('stroke-width', 1.4);
+        l.setAttribute('stroke-width', 2);
         l.setAttribute('stroke-dasharray', 'none');
       });
     });
@@ -759,8 +761,8 @@
     // parents are not. The spacer keeps the s1 label clear of the
     // refit stroke .set.
     tl.to({}, { duration: 0.3 }, '>');
-    tl.add(function () { pulseEdges(LEAVES); }, '>');
     var leafAt = tl.duration();
+    addEdgePulse(LEAVES, leafAt);
     addNodesDone(LEAVES, leafAt);
     addParaRefit(LEAVES, '>', 0.9);
     addGlyphRot(LEAVES, function (id) { return clusterById(id).move.rot; }, leafAt, 0.9);
@@ -808,7 +810,7 @@
     // s5: same again at the root — every node, bottom-up, every frame.
     tl.to({}, { duration: 0.3 }, '>');
     addKdopRefit('R', [], tl.duration());
-    tl.add(function () { pulseNodes(['R']); }, '>');
+    addNodePulse(['R'], tl.duration());
     tl.addLabel('s5', tl.duration());
 
     // s6: cost — 4.4–4.7× an AABB refit, ~60 MB scratch.

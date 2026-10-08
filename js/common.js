@@ -56,7 +56,18 @@
   /* Fragment stop times for a timeline labelled s1..sN. */
   function stopsFor(tl, count) {
     var a = [0];
-    for (var i = 1; i <= count; i++) a.push(tl.labels['s' + i]);
+    for (var i = 1; i <= count; i++) {
+      var t = tl.labels['s' + i];
+      if (t === undefined || t !== t) {
+        /* Missing or NaN label: seek(NaN) wedges the slide silently.
+         * Warn and coerce to 0 so the timeline stays seekable. */
+        console.warn('DeckSVG.stopsFor: timeline missing label s' + i +
+          ' (module "' + (tl.vars && tl.vars.module) + '" or unlabelled)' +
+          ' — coercing stop ' + i + ' to 0');
+        t = 0;
+      }
+      a.push(t);
+    }
     return a;
   }
 
@@ -118,8 +129,8 @@
     RED: '#d93636',
     INK: '#14161a',
     EDGE: '#d4d8e0',
-    FAINT: '#9aa1ad',
-    LIGHT: '#edf0f7',
+    FAINT: '#828a96',
+    LIGHT: '#e2e8f2',
     /* Slab identity colors, keyed by fan angle (k-DOP directions at
      * 10 + 30k degrees). The winning SOBB pair is 100/160 (teal/amber)
      * — sobbmorph uses the same two for its SOBB slabs. CSS vars

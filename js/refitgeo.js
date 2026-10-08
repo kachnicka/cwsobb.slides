@@ -19,14 +19,14 @@
  *     is at the node, testing locally) — no floating wait rows that
  *     collide with the skewed bound edges.
  *   - thread order: departure ranks shuffled with a seeded mulberry32
- *     (local copy — DeckSVG.mulberry32 is not exported on window.DeckSVG
- *     and common.js is outside this file's edit allowance) plus jittered
- *     hop durations, so arrivals at parents are visibly out of order.
+ *     (local copy — common.js keeps its mulberry32 private to that file)
+ *     plus jittered hop durations, so arrivals at parents are visibly out
+ *     of order.
  *     The climb runs ~4x slower than the original draft so the viewer
  *     can parse each local test.
  *   - every arrival gets a comic starburst badge near the node — a big
- *     red "BANG!" for commits (atomic min/max write), a small dim "pew"
- *     for passes — plus ONE persistent red "atomic min/max" badge in
+ *     red "ATOMIC" for commits (atomic min/max write), a small dim
+ *     "local" for passes — plus ONE persistent red "atomic min/max" badge in
  *     the middle of the canvas, visible from the first thread reaching
  *     an internal node until the end.
  *
@@ -34,8 +34,8 @@
  *   s1: spawn — one green dot per leaf child; leaf SOBBs pop in fitted
  *       (bounds appear out of nothing)
  *   s2: climb — shuffled, overlapping; ghost local test per arrival;
- *       commits morph the SOBB + red flash + BANG! badge, passes get a
- *       quiet pew badge; the persistent atomic badge fades in at the
+ *       commits morph the SOBB + red flash + ATOMIC badge, passes get a
+ *       quiet local badge; the persistent atomic badge fades in at the
  *       first internal-node arrival and stays.
  */
 (function () {
@@ -229,8 +229,11 @@
   var leafTris = [];   // [leaf] -> array of 3-pt arrays (absolute viewBox)
   (function () {
     var rng = mulberry32(SEED ^ 0x5eed);
+    /* sizes up ~30% from the original 15–17 — at 1280x720 the leaf
+     * clusters read as noise specks (audit); the leaf fit is derived
+     * from the triangles, so the boxes grow with them and stay tight */
     var proto = [
-      { s: 17, rot: 0.9 }, { s: 15, rot: 2.8 }, { s: 16, rot: 4.6 }
+      { s: 22, rot: 0.9 }, { s: 20, rot: 2.8 }, { s: 21, rot: 4.6 }
     ];
     for (var i = 0; i < 8; i++) {
       var lite = TRI_LITE.indexOf(i) >= 0;
@@ -415,7 +418,8 @@
 
     function mk(node, ev, slot) {
       var strong = ev.kind !== 'pass';
-      var R = strong ? 22 + rng() * 4 : 14 + rng() * 3;
+      /* badge radii sized to the longer labels ("ATOMIC" / "local") */
+      var R = strong ? 26 + rng() * 4 : 17 + rng() * 3;
       var bx = Math.max(80, Math.min(1040, node.cx + slot[0] + (rng() * 2 - 1) * 8));
       var by = Math.max(58, Math.min(468, node.cy + slot[1] + (rng() * 2 - 1) * 8));
       var rot = (rng() * 2 - 1) * 24;
@@ -429,7 +433,7 @@
       var bd = {
         strong: strong, bx: bx, by: by, rot: rot, R: R, pts: pts,
         hold: strong ? 1.15 : 0.8,
-        label: strong ? 'BANG!' : 'pew'
+        label: strong ? 'ATOMIC' : 'local'
       };
       badges.push(bd);
       ev.bidx = badges.length - 1;
@@ -511,7 +515,7 @@
     /* leaf cluster triangles (full strength, static paint attrs) */
     leafTris.forEach(function (tris) {
       tris.forEach(function (t) {
-        el('polygon', { points: pts2str(t), fill: LIGHT, stroke: INK, 'stroke-width': 1.1, 'stroke-linejoin': 'round' }, svg);
+        el('polygon', { points: pts2str(t), fill: LIGHT, stroke: INK, 'stroke-width': 1.3, 'stroke-linejoin': 'round' }, svg);
       });
     });
 
@@ -526,16 +530,16 @@
       for (var k = 0; k < 4; k++) {
         var blob = blobVerts(m, midBasis[mi], k);
         miniEls.mids[mi].push([
-          addMini(blob.slice(0, 3), 0.8),
-          addMini(blob.slice(3, 6), 0.8)
+          addMini(blob.slice(0, 3), 1.0),
+          addMini(blob.slice(3, 6), 1.0)
         ]);
       }
     });
     for (var r = 0; r < 8; r++) {
       var rb = blobVerts(ROOT, ROOT_B, r);
       miniEls.root.push([
-        addMini(rb.slice(0, 3), 0.65),
-        addMini(rb.slice(3, 6), 0.65)
+        addMini(rb.slice(0, 3), 0.85),
+        addMini(rb.slice(3, 6), 0.85)
       ]);
     }
 
