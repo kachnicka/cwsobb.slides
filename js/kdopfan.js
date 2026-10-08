@@ -1,7 +1,7 @@
-/* Animator: L3 "EG25 in two slides — Fitting SOBBs".
+/* Animator: L3 "EG25 — Fitting SOBBs".
  *
  * How a SOBB is fitted from a k-DOP, told as a search over slab-pair
- * candidates (the second half of the two-slide EG25 story that the
+ * candidates (the second half of the EG25 story that the
  * L2.5 kdopintro slide begins):
  *   entry:  the slide opens PIXEL-IDENTICAL to slide L2.5 (kdopintro)'s
  *           final frame at scale 1.0 — colored slab lines at 1.5/0.65,

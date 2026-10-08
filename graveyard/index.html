@@ -201,6 +201,20 @@
       <div class="status-row"><span class="cap">Relative trace performance over 64 frames without rebuild (medium movement).</span></div>
     </section>
 
+    <!-- L4a (backup). Pipeline A — SOBB construction, the old paper's
+         chain; moved out of the main flow (the EG25 story is told in
+         one fitting slide now). Animated by pipesobb2 in pipeline.js. -->
+    <section id="slide-pipeline-sobb2" data-animator="pipesobb2">
+      <h2 class="slide-head">EG25 — SOBB BVH construction (backup)</h2>
+      <div class="canvas-row">
+        <div id="pipe-sobb2-canvas" class="panel"></div>
+      </div>
+      <div class="status-row"><span id="pipe-sobb2-caption" class="cap"></span></div>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+      <span class="fragment"></span>
+    </section>
+
     <!-- L15b. Backup — static scenes results, 38-DOP (build-cost-vs-
          traversal variant; moved out of the main flow, superseded by the
          speed-vs-cost orientation on #slide-results-speed).
@@ -665,6 +679,8 @@
 
 <script src="../vendor/reveal.js"></script>
 <script src="../vendor/gsap.min.js"></script>
+<script src="../js/common.js"></script>
+<script src="../js/pipeline.js"></script>
 <script src="../js/deck.js"></script>
 </body>
 </html>

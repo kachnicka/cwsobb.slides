@@ -792,7 +792,7 @@
    the Thanks/rule/Questions block rides up into the upper third with no
    dead center gap. */
 .slide-video.big {
-  width: 760px;
+  width: 1000px;
   margin-top: 6px;
 }
 
@@ -884,8 +884,10 @@
   white-space: nowrap;
 }
 
-/* Cost row uses the same blue emphasis as its siblings (audit D5:
-   the muted dark-gray one-off read as an inconsistency, not intent). */
+/* Cost row reads as ink, not accent — it's the price, not the payoff. */
+.tk-num.tk-num-cost {
+  color: var(--ink);
+}
 
 .tk-body {
   display: flex;
