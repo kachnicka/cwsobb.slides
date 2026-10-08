@@ -125,24 +125,28 @@
   var ARROW_LEN = 22;    // scene basis-arrow half-length (px)
 
   /* k-DOP overlay tags in the tree panel (M1 mirrored to the left edge
-   * of its overlay so it stays clear of M0's). */
+   * of its overlay so it stays clear of M0's). R's tag moved from above
+   * its overlay to the left of it (end-anchored at x=240, baseline 91):
+   * the doubled cost badge now owns the panel's whole top strip. Tag
+   * spans ~178–240 × y~76–96 — clears the root box (left edge 252) by
+   * 12px, the overlay (left edge 246) by 6px, and the R->M0 edge (x >=
+   * ~272 across that y-span) by ~30px. */
   var KDOP_TAG = {
     M0: { x: 190, y: 222, anchor: 'start' },
     M1: { x: 370, y: 222, anchor: 'end' },
-    R:  { x: 280, y: 52,  anchor: 'middle' }
+    R:  { x: 240, y: 91,  anchor: 'end' }
   };
 
-  /* s6: red cost badge, top-right of the tree panel. Clears the root
-   * node box (top 70 — badge bottom 40, 30px gap), the R k-DOP overlay
-   * (246–314 × 61–111 — fully left/below), both root edges (they live
-   * at y >= 86, 46px below the badge), and the 'root' level label
-   * (ends ~x=73). Right
-   * edge 536 — 24px inside the 560-wide viewBox; left edge 312 keeps a
-   * 4px horizontal gap to the 'k-DOP' tag (spans ~252–308 at y~36–52;
-   * only y 36–40 overlaps the badge's y-span). Font stepped down to 16
-   * so the longer '~5× slower than AABB refit' fits the 224-wide rect;
-   * baseline centered (see buildTree) for balanced breathing room. */
-  var COST_BADGE = { x: 312, y: 10, w: 224, h: 30, text: '~5× slower than AABB refit' };
+  /* s6: red cost badge, doubled (~2x linear), top-anchored across the
+   * tree panel's top strip: x 88–536, y 4–60. Right edge 536 stays 24px
+   * inside the 560-wide viewBox; left edge 88 keeps a 15px gap to the
+   * 'root' level label (ends ~x=73). Bottom 60 clears the R k-DOP
+   * overlay (top 61) and the root node box (top 70, 10px gap); both
+   * root edges live at y >= 86. The R 'k-DOP' tag was moved beside its
+   * overlay (see KDOP_TAG) so the badge can grow leftward over the
+   * tag's old spot. Font 30 (was 16) at the wider 448 rect keeps the
+   * same balanced side padding; baseline centered (see buildTree). */
+  var COST_BADGE = { x: 88, y: 4, w: 448, h: 56, text: '~5× slower than AABB refit' };
 
   var CAPTIONS = [
     'SOBBs — every node wraps its geometry in its own skew basis.',
@@ -597,8 +601,8 @@
        * rect ('~' and 'g'-free string — no descenders), balanced
        * breathing room top and bottom */
       x: COST_BADGE.x + COST_BADGE.w / 2,
-      y: COST_BADGE.y + COST_BADGE.h / 2 + 5.5,
-      'text-anchor': 'middle', 'font-size': 16, fill: RED, 'font-weight': 650
+      y: COST_BADGE.y + COST_BADGE.h / 2 + 12,
+      'text-anchor': 'middle', 'font-size': 30, fill: RED, 'font-weight': 650
     }, costBadgeG);
   }
 
